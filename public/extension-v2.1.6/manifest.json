@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "AEGIS-AI: Anti-Redirect, Video & Search Hijack Shield",
+  "version": "2.2.2",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn85ImfgUz7UgyGDIYMaLO+iQ8HAuGWr6oc7K33rc7w8+KLQokC068Bhp3iLoxHiWmuF8vnfhnZcMyIbsvD16rOqh2waQuvE6f3Phq1px3qOyz8P50/1RJKQQhLZAssE7ToUd+RVKGTcUTXn6m8mLBaUq+XHApy5p2GrNB1ovadDaRdm6Be1Ix3KjVeJ2wFLvyqVmptWmlf/PyV06jtoHODpnyjdcTt+70u3gfHUd7xokpQfPhpm5lUE54KCsoI3OsESq8rTbVkYScKumvon5E63OmcFjLVMIqwEkJ4/Mdqrb3iGrXX5kTdAhhrpuVNxYYI8o8iNCXkgEVLJoADthDQIDAQAB",
+  "description": "Blokir in-tab redirect judol, Shopee/affiliate, shortlink ad-rotator (hai8g.com), & search hijack bebas CSP dengan semua HUD bisa digeser ke pinggir layar & disimpan posisinya.",
+  "icons": {
+    "128": "icon.png"
+  },
+  "permissions": [
+    "storage",
+    "webNavigation",
+    "scripting",
+    "tabs",
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": "icon.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "main_world.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true,
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ]
+}

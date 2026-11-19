@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEGIS-AI Shield v2.2.2</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { width: 350px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    h3 { margin: 0; font-size: 14px; color: #34d399; }
+    .ver { font-size: 10px; background: rgba(16, 185, 129, 0.16); color: #34d399; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.45); font-weight: 700; }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; background: #020617; padding: 4px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 10px; }
+    .tab-btn { background: transparent; color: #94a3b8; border: none; border-radius: 6px; padding: 6px 2px; font-size: 10.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .tab-btn.active { background: #1e293b; color: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+    .tab-btn.active[data-tab="global"] { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+    .tab-btn.active[data-tab="blacklist"] { color: #fca5a5; border-bottom: 2px solid #ef4444; }
+    .tab-btn.active[data-tab="whitelist"] { color: #6ee7b7; border-bottom: 2px solid #10b981; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    p.desc { font-size: 11px; color: #94a3b8; margin: 0 0 8px; line-height: 1.4; }
+    .global-scroll { max-height: 380px; overflow-y: auto; padding-right: 3px; }
+
+    /* Clean Per-Group Card Layout */
+    .group-card {
+      background: #131d31;
+      border: 1px solid #26354d;
+      border-radius: 10px;
+      padding: 9px 10px;
+      margin-bottom: 9px;
+    }
+    .group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 6px;
+      margin-bottom: 7px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .group-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.03em;
+      color: #38bdf8;
+      text-transform: uppercase;
+    }
+    .group-pos-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 5px 8px;
+      margin-bottom: 6px;
+      font-size: 10px;
+    }
+    .group-pos-label { color: #94a3b8; font-weight: 600; }
+    .group-pos-right { display: flex; align-items: center; gap: 6px; }
+    .hud-pos-coord { color: #34d399; font-family: ui-monospace, monospace; font-size: 9.5px; font-weight: 700; }
+    .hud-pos-reset { background: #1e293b; color: #93c5fd; border: 1px solid #334155; border-radius: 4px; padding: 2px 6px; font-size: 9.5px; font-weight: 700; cursor: pointer; }
+    .hud-pos-reset:hover { background: #334155; color: #fff; }
+
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 11px; cursor: pointer; gap: 8px; }
+    .toggle-row:last-child { margin-bottom: 0; }
+    .toggle-row span { color: #e2e8f0; font-weight: 500; }
+    .toggle-row input[type="checkbox"] { accent-color: #10b981; margin: 0; cursor: pointer; }
+
+    .setting-card { background: #1e293b; border: 1px solid #334155; border-radius: 7px; padding: 6px 8px; margin-bottom: 6px; }
+    .setting-card:last-child { margin-bottom: 0; }
+    .setting-head { display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; color: #e2e8f0; margin-bottom: 3px; font-weight: 600; gap: 6px; }
+    .setting-val { color: #34d399; font-family: ui-monospace, monospace; font-size: 10.5px; font-weight: 700; }
+    .setting-sub { font-size: 9.5px; color: #94a3b8; margin-top: 2px; line-height: 1.35; }
+    .sliders-footer {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px dashed #26354d;
+    }
+    .sliders-label {
+      font-size: 9.5px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 5px;
+    }
+    input[type="range"] { width: 100%; accent-color: #10b981; cursor: pointer; margin: 2px 0; }
+    select { background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 5px; padding: 3px 6px; font-size: 10.5px; outline: none; }
+    select:focus { border-color: #10b981; }
+
+    .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; }
+    .menu-check { display: flex; align-items: center; justify-content: space-between; background: #0b1120; border: 1px solid #1e293b; border-radius: 5px; padding: 5px 7px; font-size: 10px; color: #e2e8f0; cursor: pointer; }
+    .menu-check input { accent-color: #10b981; margin: 0; cursor: pointer; }
+
+    input[type="password"], input[type="text"], textarea { width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 11.5px; outline: none; font-family: inherit; }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus { border-color: #10b981; }
+    textarea { font-family: ui-monospace, monospace; font-size: 10px; resize: vertical; min-height: 68px; background: #020617; }
+    .input-row { display: flex; gap: 5px; margin-bottom: 6px; }
+    .input-row input { flex: 1; min-width: 0; }
+    .btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; }
+    .btn { padding: 7px 10px; background: #10b981; color: #022c22; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; font-size: 11.5px; }
+    .btn-full { width: 100%; margin-bottom: 6px; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-sec { width: 100%; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-weight: 600; margin-bottom: 8px; font-size: 11px; padding: 6px; border-radius: 6px; cursor: pointer; }
+    .btn-sec:hover { background: #334155; }
+    .btn-mini { background: #1e293b; color: #93c5fd; border: 1px solid #334155; font-weight: 600; font-size: 10.5px; padding: 6px; border-radius: 6px; cursor: pointer; text-align: center; }
+    .btn-mini:hover { background: #334155; color: #fff; }
+    .domain-list { max-height: 150px; overflow-y: auto; background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 4px; }
+    .domain-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 7px; border-bottom: 1px solid #1e293b; font-size: 11px; }
+    .domain-item:last-child { border-bottom: none; }
+    .domain-name { color: #e2e8f0; word-break: break-all; font-family: ui-monospace, monospace; }
+    .del-btn { background: #334155; color: #f87171; border: none; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer; margin-left: 6px; }
+    .del-btn:hover { background: #ef4444; color: #fff; }
+    .empty-msg { padding: 14px 8px; text-align: center; color: #64748b; font-size: 11px; }
+    .backup-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e293b; }
+    .backup-title { font-size: 10.5px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
+    .transfer-drawer { display: none; margin-top: 6px; background: #020617; border: 1px solid #334155; border-radius: 7px; padding: 7px; }
+    .transfer-drawer.open { display: block; }
+    #status { margin-top: 8px; font-size: 11px; color: #38bdf8; text-align: center; min-height: 15px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h3>⚡ AEGIS-AI Shield</h3>
+    <span class="ver">v2.2.2</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="general">⚡ Umum</button>
+    <button class="tab-btn" data-tab="global">🎛️ Setting</button>
+    <button class="tab-btn" data-tab="blacklist" id="tabBlacklist">🚫 Block (0)</button>
+    <button class="tab-btn" data-tab="whitelist" id="tabWhitelist">✅ Trust (0)</button>
+  </div>
+
+  <!-- TAB 1: UMUM -->
+  <div class="panel active" id="panel-general">
+    <p class="desc">Blokir redirect judol, Shopee/affiliate & ad-rotator di level jaringan (DNR) + pengaturan HUD tersusun rapi per kelompok dengan slider timer, ukuran & opasitas di bagian bawah setiap kelompok.</p>
+    <label class="toggle-row">
+      <span>Strict Lintas-Domain (Tahan Semua)</span>
+      <input type="checkbox" id="strictCrossToggle" checked />
+    </label>
+    <label class="toggle-row">
+      <span>Auto-Skip Countdown Video (5–30d)</span>
+      <input type="checkbox" id="autoSkipToggle" checked />
+    </label>
+    <input type="password" id="apiKey" placeholder="Gemini API Key (AIza...)" style="margin-bottom: 8px;" />
+    <button class="btn btn-full" id="saveBtn">Simpan Konfigurasi</button>
+
+    <div class="backup-box">
+      <div class="backup-title">Cadangan & Transfer Data (Tanpa Tutup Popup)</div>
+      <div class="btn-pair">
+        <button class="btn-mini" id="copyBackupBtn">📋 Salin Backup</button>
+        <button class="btn-mini" id="toggleRestoreBtn">📥 Tempel Backup</button>
+      </div>
+      <div class="transfer-drawer" id="restoreDrawer">
+        <textarea id="backupJsonArea" placeholder="Tempel (Paste) teks JSON cadangan di sini..."></textarea>
+        <div class="btn-pair">
+          <button class="btn" id="applyRestoreBtn" style="padding:5px 8px; font-size:11px;">✓ Terapkan</button>
+          <button class="btn-mini" id="closeRestoreBtn">Tutup</button>
+        </div>
+      </div>
+      <button class="btn-mini" id="clearAiCacheBtn" style="width:100%; margin-top:6px; color:#fbbf24;">🧹 Bersihkan Cache AI (<span id="aiCacheCount">0</span>)</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: SETTING (PER KELOMPOK + SLIDER TIMER/UKURAN/OPASITAS DI BAWAH) -->
+  <div class="panel" id="panel-global">
+    <div class="global-scroll">
+
+      <!-- ================================================================= -->
+      <!-- KELOMPOK 1: 🎬 PIL & DOCK VIDEO                                   -->
+      <!-- ================================================================= -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="group-title">🎬 1. Pil & Dock Kontrol Video</span>
+          <button class="hud-pos-reset" data-reset-hud="videoDock" title="Reset posisi Pil Video ke Auto-Anchor">↺ Reset Posisi</button>
+        </div>
+
+        <label class="toggle-row">
+          <span>Tampilkan Pil Kontrol Video</span>
+          <input type="checkbox" id="videoDockEnabledToggle" checked />
+        </label>
+
+        <div class="group-pos-bar">
+          <span class="group-pos-label">✋ Posisi Geser Pil Video</span>
+          <div class="group-pos-right">
+            <span class="hud-pos-coord" id="posStatusVideoDock">Auto-Anchor</span>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-head">
+            <span>Arah Buka Pil Video</span>
+            <select id="videoDockDirSelect">
+              <option value="auto" selected>Otomatis (Ikuti Pinggir)</option>
+              <option value="ltr">Kiri ke Kanan (→)</option>
+              <option value="rtl">Kanan ke Kiri (←)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-head">
+            <span>Tombol yang Tampil di Menu Pil Video</span>
+          </div>
+          <div class="menu-grid">
+            <label class="menu-check">
+              <span>▶ Putar / Jeda</span>
+              <input type="checkbox" id="vpShowPlayPause" checked />
+            </label>
+            <label class="menu-check">
+              <span>☰ Daftar Stream</span>
+              <input type="checkbox" id="vpShowList" checked />
+            </label>
+            <label class="menu-check">
+              <span>⬇ Unduh / Buka</span>
+              <input type="checkbox" id="vpShowDownload" checked />
+            </label>
+            <label class="menu-check">
+              <span>⧉ Mini PiP</span>
+              <input type="checkbox" id="vpShowPip" checked />
+            </label>
+            <label class="menu-check" style="grid-column: span 2;">
+              <span>⛶ Layar Penuh (Fullscreen)</span>
+              <input type="checkbox" id="vpShowFullscreen" checked />
+            </label>
+          </div>
+        </div>
+
+        <!-- SLIDER KELOMPOK 1 DI BAGIAN BAWAH (TIMER DIM, UKURAN, OPASITAS) -->
+        <div class="sliders-footer">
+          <div class="sliders-label">Slider Timer, Ukuran & Opasitas Pil Video</div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>⏱️ Timer Dim / Auto-Lipat ke 🎬(N)</span>
+              <span class="setting-val" id="videoDockDimVal">2.5 detik</span>
+            </div>
+            <input type="range" id="videoDockDimRange" min="0" max="10" step="0.5" value="2.5" />
+          </div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>📐 Ukuran Pil Video</span>
+              <span class="setting-val" id="videoPillScaleVal">100% (1.00×)</span>
+            </div>
+            <input type="range" id="videoPillScaleRange" min="0.75" max="1.35" step="0.05" value="1.00" />
+          </div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>👁️ Opasitas / Transparansi Pil Video</span>
+              <span class="setting-val" id="videoPillOpacityVal">95% (0.95)</span>
+            </div>
+            <input type="range" id="videoPillOpacityRange" min="0.5" max="1.0" step="0.05" value="0.95" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- KELOMPOK 2: 🛡️ HUD PERINGATAN BLOKIR                              -->
+      <!-- ================================================================= -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="group-title">🛡️ 2. HUD Peringatan Blokir</span>
+          <button class="hud-pos-reset" data-reset-hud="topHud" title="Reset posisi HUD Blokir ke Preset">↺ Reset Posisi</button>
+        </div>
+
+        <label class="toggle-row">
+          <span>Tampilkan HUD Peringatan Blokir</span>
+          <input type="checkbox" id="hudEnabledToggle" checked />
+        </label>
+
+        <div class="group-pos-bar">
+          <span class="group-pos-label">✋ Posisi Geser HUD Blokir</span>
+          <div class="group-pos-right">
+            <span class="hud-pos-coord" id="posStatusTopHud">Preset Default</span>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-head">
+            <span>Preset Awal Posisi HUD</span>
+            <select id="hudPositionSelect">
+              <option value="top-center">Atas Tengah</option>
+              <option value="top-left">Atas Kiri</option>
+              <option value="top-right">Atas Kanan</option>
+              <option value="bottom-center">Bawah Tengah</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-head">
+            <span>Tombol yang Tampil di Menu HUD Blokir</span>
+          </div>
+          <div class="menu-grid">
+            <label class="menu-check">
+              <span>✓ Trust (Whitelist)</span>
+              <input type="checkbox" id="hudShowTrust" checked />
+            </label>
+            <label class="menu-check">
+              <span>⊞ Tab Grup</span>
+              <input type="checkbox" id="hudShowGroup" checked />
+            </label>
+            <label class="menu-check">
+              <span>↗ Buka Sekali</span>
+              <input type="checkbox" id="hudShowOpen" checked />
+            </label>
+            <label class="menu-check">
+              <span>🚫 Blokir Permanen</span>
+              <input type="checkbox" id="hudShowBlock" checked />
+            </label>
+            <label class="menu-check" style="grid-column: span 2;">
+              <span>🔗 Baris Detail URL Target</span>
+              <input type="checkbox" id="hudShowUrlDetail" checked />
+            </label>
+          </div>
+        </div>
+
+        <!-- SLIDER KELOMPOK 2 DI BAGIAN BAWAH (TIMER COUNTDOWN, UKURAN, OPASITAS) -->
+        <div class="sliders-footer">
+          <div class="sliders-label">Slider Timer Countdown, Ukuran & Opasitas HUD Blokir</div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>⏱️ Timer Countdown HUD Blokir Tampil</span>
+              <span class="setting-val" id="hudDurationVal">4.5 detik</span>
+            </div>
+            <input type="range" id="hudDurationRange" min="0" max="15" step="0.5" value="4.5" />
+          </div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>📐 Ukuran HUD Blokir</span>
+              <span class="setting-val" id="hudScaleVal">100% (1.00×)</span>
+            </div>
+            <input type="range" id="hudScaleRange" min="0.75" max="1.30" step="0.05" value="1.00" />
+          </div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>👁️ Opasitas / Transparansi HUD Blokir</span>
+              <span class="setting-val" id="hudOpacityVal">95% (0.95)</span>
+            </div>
+            <input type="range" id="hudOpacityRange" min="0.5" max="1.0" step="0.05" value="0.95" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- KELOMPOK 3: 📺 MINI-PLAYER PiP                                    -->
+      <!-- ================================================================= -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="group-title">📺 3. Jendela Mini-Player PiP</span>
+          <button class="hud-pos-reset" data-reset-hud="miniPip" title="Reset posisi Mini PiP ke Kanan Bawah">↺ Reset Posisi</button>
+        </div>
+
+        <div class="group-pos-bar">
+          <span class="group-pos-label">✋ Posisi Geser Mini PiP</span>
+          <div class="group-pos-right">
+            <span class="hud-pos-coord" id="posStatusMiniPip">Kanan Bawah</span>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-head">
+            <span>Ukuran Jendela Mini PiP</span>
+            <select id="pipSizeSelect">
+              <option value="small">Kecil (220×124)</option>
+              <option value="medium" selected>Sedang (260×146)</option>
+              <option value="large">Besar (320×180)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SLIDER KELOMPOK 3 DI BAGIAN BAWAH (OPASITAS MINI PiP) -->
+        <div class="sliders-footer">
+          <div class="sliders-label">Slider Opasitas Mini-Player PiP</div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>👁️ Opasitas / Transparansi Mini PiP</span>
+              <span class="setting-val" id="pipOpacityVal">95% (0.95)</span>
+            </div>
+            <input type="range" id="pipOpacityRange" min="0.5" max="1.0" step="0.05" value="0.95" />
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- KELOMPOK 4: ⚡ PROTEKSI & KECEPATAN                               -->
+      <!-- ================================================================= -->
+      <div class="group-card">
+        <div class="group-header">
+          <span class="group-title">⚡ 4. Proteksi & Kecepatan</span>
+          <button class="hud-pos-reset" id="resetAllHudPosBtn" title="Reset semua posisi geser HUD sekaligus">↺ Reset Semua Posisi</button>
+        </div>
+
+        <div class="setting-card">
+          <div class="setting-head">
+            <span>Kecepatan Iklan Pre-Roll</span>
+            <select id="adSkipSpeedSelect">
+              <option value="8">8× Lebih Cepat</option>
+              <option value="16" selected>16× (Maksimal)</option>
+              <option value="instant">Langsung Lompat Akhir</option>
+            </select>
+          </div>
+        </div>
+
+        <label class="toggle-row">
+          <span>Hapus Overlay Transparan Jebakan</span>
+          <input type="checkbox" id="removeOverlayToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Anti-History Trap (Tombol Back)</span>
+          <input type="checkbox" id="antiHistoryToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Blokir Jaringan DNR (Blacklist)</span>
+          <input type="checkbox" id="dnrEnabledToggle" checked />
+        </label>
+
+        <!-- SLIDER KELOMPOK 4 DI BAGIAN BAWAH (TIMER REDIRECT AUTO-REVERT) -->
+        <div class="sliders-footer">
+          <div class="sliders-label">Slider Timer Proteksi Redirect</div>
+
+          <div class="setting-card">
+            <div class="setting-head">
+              <span>⏱️ Timer Batas Redirect Auto-Revert</span>
+              <span class="setting-val" id="redirectWindowVal">3.5 detik</span>
+            </div>
+            <input type="range" id="redirectWindowRange" min="1" max="10" step="0.5" value="3.5" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="btn-pair" style="margin-top: 8px;">
+      <button class="btn" id="saveGlobalBtn">💾 Simpan Setting</button>
+      <button class="btn-mini" id="resetGlobalBtn" style="color:#fca5a5;">↺ Reset Default</button>
+    </div>
+  </div>
+
+  <!-- TAB 3: BLACKLIST -->
+  <div class="panel" id="panel-blacklist">
+    <p class="desc">Domain di Blacklist diblokir total di level jaringan (DNR) tanpa membuka koneksi sama sekali.</p>
+    <div class="input-row">
+      <input type="text" id="blacklistInput" placeholder="contoh: hai8g.com atau https://..." />
+      <button class="btn btn-danger" id="addBlacklistBtn">+ Blokir</button>
+    </div>
+    <button class="btn-sec" id="blockCurrentSiteBtn">🚫 Blokir Domain Tab Aktif Saat Ini</button>
+    <div class="domain-list" id="blacklistContainer"></div>
+  </div>
+
+  <!-- TAB 4: WHITELIST -->
+  <div class="panel" id="panel-whitelist">
+    <p class="desc">Domain di Whitelist diizinkan bebas tanpa ditahan oleh mode Strict Lintas-Domain.</p>
+    <div class="input-row">
+      <input type="text" id="whitelistInput" placeholder="contoh: google.com atau https://..." />
+      <button class="btn" id="addWhitelistBtn">+ Izinkan</button>
+    </div>
+    <button class="btn-sec" id="trustCurrentSiteBtn">✅ Percayai Domain Tab Aktif Saat Ini</button>
+    <div class="domain-list" id="whitelistContainer"></div>
+  </div>
+
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>

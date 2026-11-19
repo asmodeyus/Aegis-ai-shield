@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AEGIS-AI Shield v2.1.5</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { width: 340px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    h3 { margin: 0; font-size: 14px; color: #34d399; }
+    .ver { font-size: 10px; background: rgba(16, 185, 129, 0.16); color: #34d399; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.45); font-weight: 700; }
+    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; background: #020617; padding: 4px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 10px; }
+    .tab-btn { background: transparent; color: #94a3b8; border: none; border-radius: 6px; padding: 6px 2px; font-size: 10.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .tab-btn.active { background: #1e293b; color: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
+    .tab-btn.active[data-tab="global"] { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+    .tab-btn.active[data-tab="blacklist"] { color: #fca5a5; border-bottom: 2px solid #ef4444; }
+    .tab-btn.active[data-tab="whitelist"] { color: #6ee7b7; border-bottom: 2px solid #10b981; }
+    .panel { display: none; }
+    .panel.active { display: block; }
+    p.desc { font-size: 11px; color: #94a3b8; margin: 0 0 8px; line-height: 1.4; }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 7px 8px; margin-bottom: 6px; font-size: 11px; cursor: pointer; gap: 8px; }
+    .toggle-row span { color: #e2e8f0; }
+    .setting-card { background: #1e293b; border: 1px solid #334155; border-radius: 7px; padding: 7px 9px; margin-bottom: 6px; }
+    .setting-head { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #e2e8f0; margin-bottom: 4px; font-weight: 600; }
+    .setting-val { color: #38bdf8; font-family: ui-monospace, monospace; font-size: 11px; font-weight: 700; }
+    .setting-sub { font-size: 9.5px; color: #94a3b8; margin-top: 2px; }
+    input[type="range"] { width: 100%; accent-color: #10b981; cursor: pointer; margin: 2px 0; }
+    select { background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 5px; padding: 4px 6px; font-size: 11px; outline: none; }
+    select:focus { border-color: #10b981; }
+    .global-scroll { max-height: 330px; overflow-y: auto; padding-right: 2px; }
+    input[type="password"], input[type="text"], textarea { width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 11.5px; outline: none; font-family: inherit; }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus { border-color: #10b981; }
+    textarea { font-family: ui-monospace, monospace; font-size: 10px; resize: vertical; min-height: 68px; background: #020617; }
+    .input-row { display: flex; gap: 5px; margin-bottom: 6px; }
+    .input-row input { flex: 1; min-width: 0; }
+    .btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; }
+    .btn { padding: 7px 10px; background: #10b981; color: #022c22; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; font-size: 11.5px; }
+    .btn-full { width: 100%; margin-bottom: 6px; }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-sec { width: 100%; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-weight: 600; margin-bottom: 8px; font-size: 11px; padding: 6px; border-radius: 6px; cursor: pointer; }
+    .btn-sec:hover { background: #334155; }
+    .btn-mini { background: #1e293b; color: #93c5fd; border: 1px solid #334155; font-weight: 600; font-size: 10.5px; padding: 6px; border-radius: 6px; cursor: pointer; text-align: center; }
+    .btn-mini:hover { background: #334155; color: #fff; }
+    .domain-list { max-height: 150px; overflow-y: auto; background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 4px; }
+    .domain-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 7px; border-bottom: 1px solid #1e293b; font-size: 11px; }
+    .domain-item:last-child { border-bottom: none; }
+    .domain-name { color: #e2e8f0; word-break: break-all; font-family: ui-monospace, monospace; }
+    .del-btn { background: #334155; color: #f87171; border: none; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer; margin-left: 6px; }
+    .del-btn:hover { background: #ef4444; color: #fff; }
+    .empty-msg { padding: 14px 8px; text-align: center; color: #64748b; font-size: 11px; }
+    .backup-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e293b; }
+    .backup-title { font-size: 10.5px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
+    .transfer-drawer { display: none; margin-top: 6px; background: #020617; border: 1px solid #334155; border-radius: 7px; padding: 7px; }
+    .transfer-drawer.open { display: block; }
+    .section-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #38bdf8; font-weight: 700; margin: 8px 0 5px; }
+    .section-label:first-child { margin-top: 0; }
+    #status { margin-top: 8px; font-size: 11px; color: #38bdf8; text-align: center; min-height: 15px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h3>⚡ AEGIS-AI Shield</h3>
+    <span class="ver">v2.1.5</span>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="general">⚡ Umum</button>
+    <button class="tab-btn" data-tab="global">🎛️ Setting</button>
+    <button class="tab-btn" data-tab="blacklist" id="tabBlacklist">🚫 Block (0)</button>
+    <button class="tab-btn" data-tab="whitelist" id="tabWhitelist">✅ Trust (0)</button>
+  </div>
+
+  <!-- TAB 1: UMUM -->
+  <div class="panel active" id="panel-general">
+    <p class="desc">Blokir redirect judol, Shopee/affiliate & ad-rotator di level jaringan (DNR) + percepat countdown video.</p>
+    <label class="toggle-row">
+      <span>Strict Lintas-Domain (Tahan Semua)</span>
+      <input type="checkbox" id="strictCrossToggle" checked />
+    </label>
+    <label class="toggle-row">
+      <span>Auto-Skip Countdown Video (5–30d)</span>
+      <input type="checkbox" id="autoSkipToggle" checked />
+    </label>
+    <input type="password" id="apiKey" placeholder="Gemini API Key (AIza...)" style="margin-bottom: 8px;" />
+    <button class="btn btn-full" id="saveBtn">Simpan Konfigurasi</button>
+
+    <div class="backup-box">
+      <div class="backup-title">Cadangan & Transfer Data (Tanpa Tutup Popup)</div>
+      <div class="btn-pair">
+        <button class="btn-mini" id="copyBackupBtn">📋 Salin Backup</button>
+        <button class="btn-mini" id="toggleRestoreBtn">📥 Tempel Backup</button>
+      </div>
+      <div class="transfer-drawer" id="restoreDrawer">
+        <textarea id="backupJsonArea" placeholder="Tempel (Paste) teks JSON cadangan di sini..."></textarea>
+        <div class="btn-pair">
+          <button class="btn" id="applyRestoreBtn" style="padding:5px 8px; font-size:11px;">✓ Terapkan</button>
+          <button class="btn-mini" id="closeRestoreBtn">Tutup</button>
+        </div>
+      </div>
+      <button class="btn-mini" id="clearAiCacheBtn" style="width:100%; margin-top:6px; color:#fbbf24;">🧹 Bersihkan Cache AI (<span id="aiCacheCount">0</span>)</button>
+    </div>
+  </div>
+
+  <!-- TAB 2: SETTING -->
+  <div class="panel" id="panel-global">
+    <div class="global-scroll">
+      <div class="section-label">🛡️ HUD & Notifikasi Blokir</div>
+
+      <label class="toggle-row">
+        <span>Tampilkan HUD Peringatan Blokir</span>
+        <input type="checkbox" id="hudEnabledToggle" checked />
+      </label>
+
+      <div class="setting-card">
+        <div class="setting-head">
+          <span>Lama Popup HUD Tampil</span>
+          <span class="setting-val" id="hudDurationVal">4.5 detik</span>
+        </div>
+        <input type="range" id="hudDurationRange" min="0" max="15" step="0.5" value="4.5" />
+        <div class="setting-sub">Geser ke 0 detik agar HUD bertahan manual sampai ditutup.</div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-head">
+          <span>Posisi HUD Peringatan</span>
+          <select id="hudPositionSelect">
+            <option value="top-center">Atas Tengah</option>
+            <option value="top-left">Atas Kiri</option>
+            <option value="top-right">Atas Kanan</option>
+            <option value="bottom-center">Bawah Tengah</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">🎬 Pemutar Video & Mini PiP</div>
+
+      <label class="toggle-row">
+        <span>Tampilkan Dock Kontrol Video</span>
+        <input type="checkbox" id="videoDockEnabledToggle" checked />
+      </label>
+
+      <div class="setting-card">
+        <div class="setting-head">
+          <span>Jeda Auto-Redup Dock Video</span>
+          <span class="setting-val" id="videoDockDimVal">2.5 detik</span>
+        </div>
+        <input type="range" id="videoDockDimRange" min="0" max="10" step="0.5" value="2.5" />
+        <div class="setting-sub">0 detik = dock video selalu terang saat video diputar.</div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-head">
+          <span>Ukuran Jendela Mini PiP</span>
+          <select id="pipSizeSelect">
+            <option value="small">Kecil (220×124)</option>
+            <option value="medium" selected>Sedang (260×146)</option>
+            <option value="large">Besar (320×180)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section-label">⚡ Proteksi & Kecepatan</div>
+
+      <div class="setting-card">
+        <div class="setting-head">
+          <span>Kecepatan Iklan Pre-Roll</span>
+          <select id="adSkipSpeedSelect">
+            <option value="8">8× Lebih Cepat</option>
+            <option value="16" selected>16× (Maksimal)</option>
+            <option value="instant">Langsung Lompat Akhir</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="toggle-row">
+        <span>Hapus Overlay Transparan Jebakan</span>
+        <input type="checkbox" id="removeOverlayToggle" checked />
+      </label>
+
+      <label class="toggle-row">
+        <span>Anti-History Trap (Tombol Back)</span>
+        <input type="checkbox" id="antiHistoryToggle" checked />
+      </label>
+
+      <label class="toggle-row">
+        <span>Blokir Jaringan DNR (Blacklist)</span>
+        <input type="checkbox" id="dnrEnabledToggle" checked />
+      </label>
+
+      <div class="setting-card">
+        <div class="setting-head">
+          <span>Batas Redirect Auto-Revert</span>
+          <span class="setting-val" id="redirectWindowVal">3.5 detik</span>
+        </div>
+        <input type="range" id="redirectWindowRange" min="1" max="10" step="0.5" value="3.5" />
+        <div class="setting-sub">Tahan perpindahan domain otomatis setelah halaman dimuat.</div>
+      </div>
+
+      <div class="btn-pair" style="margin-top: 6px;">
+        <button class="btn" id="saveGlobalBtn">💾 Simpan Setting</button>
+        <button class="btn-mini" id="resetGlobalBtn" style="color:#fca5a5;">↺ Reset Setting</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: BLACKLIST -->
+  <div class="panel" id="panel-blacklist">
+    <p class="desc">Domain di Blacklist diblokir <strong>langsung di level jaringan (DNR)</strong> tanpa membuka koneksi.</p>
+    <div class="input-row">
+      <input type="text" id="blacklistInput" placeholder="contoh: hai8g.com atau shopee.co.id" />
+      <button class="btn btn-danger" id="addBlacklistBtn">+ Blokir</button>
+    </div>
+    <button class="btn-sec" id="addCurrentToBlacklistBtn">+ Blokir Domain Tab Aktif</button>
+    <div class="domain-list" id="blacklistContainer"></div>
+  </div>
+
+  <!-- TAB 4: WHITELIST -->
+  <div class="panel" id="panel-whitelist">
+    <p class="desc">Domain di Whitelist diizinkan bebas tanpa ditahan oleh HUD.</p>
+    <div class="input-row">
+      <input type="text" id="whitelistInput" placeholder="contoh: google.com atau drive.google.com" />
+      <button class="btn" id="addWhitelistBtn">+ Izinkan</button>
+    </div>
+    <button class="btn-sec" id="addCurrentToWhitelistBtn">+ Izinkan Domain Tab Aktif</button>
+    <div class="domain-list" id="whitelistContainer"></div>
+  </div>
+
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
