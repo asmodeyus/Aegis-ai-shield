@@ -3,21 +3,27 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AEGIS-AI Shield v2.2.2</title>
+  <title>AEGIS-AI Shield v2.2.7</title>
   <style>
     * { box-sizing: border-box; }
-    body { width: 350px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
+    body { width: 356px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
     .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     h3 { margin: 0; font-size: 14px; color: #34d399; }
     .ver { font-size: 10px; background: rgba(16, 185, 129, 0.16); color: #34d399; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.45); font-weight: 700; }
-    .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; background: #020617; padding: 4px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 10px; }
-    .tab-btn { background: transparent; color: #94a3b8; border: none; border-radius: 6px; padding: 6px 2px; font-size: 10.5px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+    .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; background: #020617; padding: 3px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 10px; }
+    .tab-btn { background: transparent; color: #94a3b8; border: none; border-radius: 6px; padding: 6px 2px; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
     .tab-btn.active { background: #1e293b; color: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
     .tab-btn.active[data-tab="global"] { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
+    .tab-btn.active[data-tab="logs"] { color: #fcd34d; border-bottom: 2px solid #f59e0b; }
     .tab-btn.active[data-tab="blacklist"] { color: #fca5a5; border-bottom: 2px solid #ef4444; }
     .tab-btn.active[data-tab="whitelist"] { color: #6ee7b7; border-bottom: 2px solid #10b981; }
     .panel { display: none; }
     .panel.active { display: block; }
+    .log-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 7px; }
+    .log-filter-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 5px; padding: 5px 4px; font-size: 10px; font-weight: 700; cursor: pointer; }
+    .log-filter-btn.active { background: #0f172a; color: #fcd34d; border-color: #f59e0b; }
+    .log-textarea { width: 100%; height: 220px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; line-height: 1.45; background: #020617; color: #cbd5e1; border: 1px solid #334155; border-radius: 7px; padding: 7px; resize: vertical; white-space: pre; overflow: auto; }
+    .log-actions { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 5px; margin-top: 7px; }
     p.desc { font-size: 11px; color: #94a3b8; margin: 0 0 8px; line-height: 1.4; }
     .global-scroll { max-height: 380px; overflow-y: auto; padding-right: 3px; }
 
@@ -122,19 +128,20 @@
 <body>
   <div class="header">
     <h3>⚡ AEGIS-AI Shield</h3>
-    <span class="ver">v2.2.2</span>
+    <span class="ver">v2.2.7</span>
   </div>
 
   <div class="tabs">
     <button class="tab-btn active" data-tab="general">⚡ Umum</button>
     <button class="tab-btn" data-tab="global">🎛️ Setting</button>
+    <button class="tab-btn" data-tab="logs" id="tabLogs">📋 Log (0)</button>
     <button class="tab-btn" data-tab="blacklist" id="tabBlacklist">🚫 Block (0)</button>
     <button class="tab-btn" data-tab="whitelist" id="tabWhitelist">✅ Trust (0)</button>
   </div>
 
   <!-- TAB 1: UMUM -->
   <div class="panel active" id="panel-general">
-    <p class="desc">Blokir redirect judol, Shopee/affiliate & ad-rotator di level jaringan (DNR) + pengaturan HUD tersusun rapi per kelompok dengan slider timer, ukuran & opasitas di bagian bawah setiap kelompok.</p>
+    <p class="desc">Blokir redirect judol, Shopee/affiliate & popunder (DNR) + Bypass Shortlink Debloated (decode Base64/Safelink/AdLinkFly), Log Diagnostik copy-paste, CTA HTTP 302 grace & blokir senyap Blacklist.</p>
     <label class="toggle-row">
       <span>Strict Lintas-Domain (Tahan Semua)</span>
       <input type="checkbox" id="strictCrossToggle" checked />
@@ -410,6 +417,26 @@
         </div>
 
         <label class="toggle-row">
+          <span>⚡ Bypass Shortlink Debloated (BloggerPemula Engine)</span>
+          <input type="checkbox" id="shortlinkBypassEnabledToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Auto-Klik & Submit Langkah Shortlink (Aman CAPTCHA)</span>
+          <input type="checkbox" id="shortlinkAutoClickToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>📋 Catat Log Diagnostik Navigasi (Tab Log)</span>
+          <input type="checkbox" id="loggingEnabledToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>AI Smart UGC & Deteksi Gambar Tersusupi Iklan</span>
+          <input type="checkbox" id="smartUgcSenseToggle" checked />
+        </label>
+
+        <label class="toggle-row">
           <span>Hapus Overlay Transparan Jebakan</span>
           <input type="checkbox" id="removeOverlayToggle" checked />
         </label>
@@ -446,7 +473,24 @@
     </div>
   </div>
 
-  <!-- TAB 3: BLACKLIST -->
+  <!-- TAB 3: LOG DIAGNOSTIK (COPY-PASTE) -->
+  <div class="panel" id="panel-logs">
+    <p class="desc">Salin log ini untuk melihat penyebab pasti mengapa halaman gagal lanjut ke link tujuan (transitionType, qualifiers, alasan blokir, atau aksi bypass).</p>
+    <div class="log-filters">
+      <button class="log-filter-btn active" data-log-filter="ALL">Semua</button>
+      <button class="log-filter-btn" data-log-filter="BLOCK">🚫 Blokir</button>
+      <button class="log-filter-btn" data-log-filter="BYPASS">⚡ Bypass</button>
+      <button class="log-filter-btn" data-log-filter="ALLOW">✅ Lolos</button>
+    </div>
+    <textarea id="logOutputArea" class="log-textarea" readonly placeholder="Memuat log diagnostik AEGIS-AI..."></textarea>
+    <div class="log-actions">
+      <button class="btn" id="copyLogBtn" style="padding:6px 8px; font-size:11px;">📋 Salin Log</button>
+      <button class="btn-mini" id="refreshLogBtn">🔄 Refresh</button>
+      <button class="btn-mini" id="clearLogBtn" style="color:#fca5a5;">🧹 Hapus</button>
+    </div>
+  </div>
+
+  <!-- TAB 4: BLACKLIST -->
   <div class="panel" id="panel-blacklist">
     <p class="desc">Domain di Blacklist diblokir total di level jaringan (DNR) tanpa membuka koneksi sama sekali.</p>
     <div class="input-row">

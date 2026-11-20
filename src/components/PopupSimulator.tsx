@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { AllHudPositions, SavedHudCoord } from '../utils/hudPositionMath';
+import {
+  AegisLogEntry,
+  AegisLogLevel,
+  formatAegisLogsForCopy,
+} from '../utils/shortlinkBypassEngine';
 import { GlobalSettingsState } from './InteractiveHudSandbox';
 
 interface PopupSimulatorProps {
@@ -15,6 +20,8 @@ interface PopupSimulatorProps {
   onRemoveTrusted: (domain: string) => void;
   onAddDenied: (domain: string) => void;
   onRemoveDenied: (domain: string) => void;
+  diagnosticLogs: AegisLogEntry[];
+  onClearLogs: () => void;
 }
 
 export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
@@ -30,8 +37,11 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
   onRemoveTrusted,
   onAddDenied,
   onRemoveDenied,
+  diagnosticLogs,
+  onClearLogs,
 }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'global' | 'blacklist' | 'whitelist'>('global');
+  const [activeTab, setActiveTab] = useState<'general' | 'global' | 'logs' | 'blacklist' | 'whitelist'>('global');
+  const [logFilter, setLogFilter] = useState<'ALL' | AegisLogLevel>('ALL');
   const [strictCross, setStrictCross] = useState(true);
   const [autoSkip, setAutoSkip] = useState(true);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -57,7 +67,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
   const handleCopyBackup = () => {
     const payload = {
       app: 'AEGIS-AI Shield',
-      version: '2.2.2',
+      version: '2.2.7',
       strictCrossOrigin: strictCross,
       autoSkipCountdown: autoSkip,
       globalSettings,
@@ -70,9 +80,20 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
     setBackupDrawerOpen(true);
     try {
       navigator.clipboard.writeText(jsonStr);
-      showStatus('Backup JSON v2.2.2 (pengaturan per kelompok & timer lengkap) tersalin!');
+      showStatus('Backup JSON v2.2.7 (Bypass Debloated + Log + Setting) tersalin!');
     } catch {
       showStatus('JSON Backup ditampilkan di bawah.');
+    }
+  };
+
+  const formattedLogText = formatAegisLogsForCopy(diagnosticLogs, logFilter, '2.2.7');
+
+  const handleCopyLogs = async () => {
+    try {
+      await navigator.clipboard.writeText(formattedLogText);
+      showStatus('Log diagnostik v2.2.7 tersalin ke Clipboard!');
+    } catch {
+      showStatus('Silakan pilih teks di kotak log lalu salin (Ctrl+C).');
     }
   };
 
@@ -111,16 +132,16 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
       {/* Popup Header */}
       <div className="flex items-center justify-between mb-2.5">
         <h3 className="m-0 text-sm font-bold text-emerald-400">⚡ AEGIS-AI Shield</h3>
-        <span className="text-[11px] font-mono font-bold text-emerald-300">v2.2.2</span>
+        <span className="text-[11px] font-mono font-bold text-emerald-300">v2.2.7</span>
       </div>
 
-      {/* 4 Navigation Tabs */}
-      <div className="grid grid-cols-4 gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 mb-3">
+      {/* 5 Navigation Tabs */}
+      <div className="grid grid-cols-5 gap-0.5 bg-slate-950 p-1 rounded-lg border border-slate-800 mb-3">
         <button
           type="button"
           data-testid="popup-tab-general"
           onClick={() => setActiveTab('general')}
-          className={`py-1.5 px-1 rounded-md text-[10.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
+          className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'general'
               ? 'bg-slate-800 text-white'
               : 'text-slate-400 hover:text-slate-200'
@@ -132,7 +153,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           type="button"
           data-testid="popup-tab-global"
           onClick={() => setActiveTab('global')}
-          className={`py-1.5 px-1 rounded-md text-[10.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
+          className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'global'
               ? 'bg-slate-800 text-sky-400 border-b-2 border-sky-400'
               : 'text-slate-400 hover:text-slate-200'
@@ -142,9 +163,21 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
         </button>
         <button
           type="button"
+          data-testid="popup-tab-logs"
+          onClick={() => setActiveTab('logs')}
+          className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
+            activeTab === 'logs'
+              ? 'bg-slate-800 text-amber-300 border-b-2 border-amber-400'
+              : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          📋 Log ({diagnosticLogs.length})
+        </button>
+        <button
+          type="button"
           data-testid="popup-tab-blacklist"
           onClick={() => setActiveTab('blacklist')}
-          className={`py-1.5 px-1 rounded-md text-[10.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
+          className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'blacklist'
               ? 'bg-slate-800 text-rose-300 border-b-2 border-rose-500'
               : 'text-slate-400 hover:text-slate-200'
@@ -156,7 +189,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           type="button"
           data-testid="popup-tab-whitelist"
           onClick={() => setActiveTab('whitelist')}
-          className={`py-1.5 px-1 rounded-md text-[10.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
+          className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'whitelist'
               ? 'bg-slate-800 text-emerald-300 border-b-2 border-emerald-500'
               : 'text-slate-400 hover:text-slate-200'
@@ -213,7 +246,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
 
           <button
             type="button"
-            onClick={() => showStatus('Konfigurasi Umum v2.2.2 tersimpan!')}
+            onClick={() => showStatus('Konfigurasi Umum v2.2.7 tersimpan!')}
             className="w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11.5px] cursor-pointer"
           >
             Simpan Konfigurasi
@@ -246,7 +279,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
                   value={backupText}
                   onChange={(e) => setBackupText(e.target.value)}
                   rows={3}
-                  placeholder="Tempel JSON cadangan v2.2.2 di sini..."
+                  placeholder="Tempel JSON cadangan v2.2.7 di sini..."
                   className="w-full p-1.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-slate-200"
                 />
               </div>
@@ -952,6 +985,70 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
             </div>
 
             <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
+              <span>⚡ Bypass Shortlink Debloated (BloggerPemula)</span>
+              <input
+                type="checkbox"
+                data-testid="toggle-shortlink-bypass"
+                checked={globalSettings.shortlinkBypassEnabled !== false}
+                onChange={(e) =>
+                  onUpdateGlobalSettings({
+                    ...globalSettings,
+                    shortlinkBypassEnabled: e.target.checked,
+                  })
+                }
+                className="accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
+              <span>Auto-Klik & Submit Langkah Shortlink</span>
+              <input
+                type="checkbox"
+                data-testid="toggle-shortlink-autoclick"
+                checked={globalSettings.shortlinkAutoClick !== false}
+                onChange={(e) =>
+                  onUpdateGlobalSettings({
+                    ...globalSettings,
+                    shortlinkAutoClick: e.target.checked,
+                  })
+                }
+                className="accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
+              <span>📋 Catat Log Diagnostik Navigasi</span>
+              <input
+                type="checkbox"
+                data-testid="toggle-logging-enabled"
+                checked={globalSettings.loggingEnabled !== false}
+                onChange={(e) =>
+                  onUpdateGlobalSettings({
+                    ...globalSettings,
+                    loggingEnabled: e.target.checked,
+                  })
+                }
+                className="accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
+              <span>AI Smart UGC & Deteksi Gambar Tersusupi Iklan</span>
+              <input
+                type="checkbox"
+                data-testid="toggle-smart-ugc-sense"
+                checked={globalSettings.smartUgcSense !== false}
+                onChange={(e) =>
+                  onUpdateGlobalSettings({
+                    ...globalSettings,
+                    smartUgcSense: e.target.checked,
+                  })
+                }
+                className="accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
               <span>Hapus Overlay Transparan Jebakan</span>
               <input
                 type="checkbox"
@@ -1042,7 +1139,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           <div className="grid grid-cols-2 gap-1.5 pt-1">
             <button
               type="button"
-              onClick={() => showStatus('Setting v2.2.2 berhasil disimpan!')}
+              onClick={() => showStatus('Setting v2.2.7 berhasil disimpan!')}
               className="py-1.5 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11px] cursor-pointer"
             >
               💾 Simpan Setting
@@ -1061,7 +1158,71 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
         </div>
       )}
 
-      {/* TAB 3: BLACKLIST */}
+      {/* TAB 3: LOG DIAGNOSTIK (COPY-PASTE) */}
+      {activeTab === 'logs' && (
+        <div data-testid="popup-panel-logs" className="space-y-2 text-xs">
+          <p className="text-[11px] text-slate-400 leading-relaxed">
+            Salin log ini untuk melihat penyebab pasti gagal lanjut ke link tujuan (<code>transitionType</code>, <code>qualifiers</code>, alasan blokir, atau hasil Bypass Shortlink).
+          </p>
+          <div className="grid grid-cols-4 gap-1">
+            {(
+              [
+                { id: 'ALL', label: 'Semua' },
+                { id: 'BLOCK', label: '🚫 Blokir' },
+                { id: 'BYPASS', label: '⚡ Bypass' },
+                { id: 'ALLOW', label: '✅ Lolos' },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                data-testid={`log-filter-${f.id.toLowerCase()}`}
+                onClick={() => setLogFilter(f.id)}
+                className={`py-1 px-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                  logFilter === f.id
+                    ? 'bg-slate-950 text-amber-300 border-amber-400'
+                    : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            data-testid="popup-log-textarea"
+            aria-label="Log Diagnostik AEGIS-AI"
+            readOnly
+            value={formattedLogText}
+            rows={10}
+            className="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 font-mono text-[9.5px] leading-relaxed text-slate-200 whitespace-pre overflow-auto resize-y"
+          />
+
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              data-testid="popup-copy-log-btn"
+              onClick={handleCopyLogs}
+              className="py-1.5 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11px] cursor-pointer"
+            >
+              📋 Salin Log
+            </button>
+            <button
+              type="button"
+              data-testid="popup-clear-log-btn"
+              onClick={() => {
+                onClearLogs();
+                showStatus('Log diagnostik dibersihkan!');
+              }}
+              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
+            >
+              🧹 Hapus Log
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: BLACKLIST */}
       {activeTab === 'blacklist' && (
         <div className="space-y-2 text-xs">
           <p className="text-[11px] text-slate-400">

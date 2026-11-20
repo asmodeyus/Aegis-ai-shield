@@ -15,11 +15,13 @@
     return;
   }
 
-  const GAMBLING_REGEX = /(slot|gacor|maxwin|zeus|pragmatic|togel|judol|casino|betting|scatter|rtp|deposit|wd|bonus100|situsresmi|linkalternatif|sbobet|poker|judi|bandar)/i;
+  const GAMBLING_REGEX = /(slot|gacor|maxwin|zeus|pragmatic|togel|judol|casino|betting|scatter|rtp|deposit|wd|bonus100|situsresmi|linkalternatif|sbobet|poker|judi|bandar|pascol4d|dewadora|toto4d)/i;
   const SUSPICIOUS_HOST = /\.(cfd|xyz|top|cyou|icu|buzz|click|link|monster|quest|rest|sbs|shop|site|tokyo|vip|wang|win|work|wtf|zone|live|asia|online|store|fun|pro|club|cam|cc|me|pw|tk|ml|ga|cf|gq)$/i;
-  const COMMERCE_AFFILIATE_REGEX = /(shopee\.|shope\.ee|tokopedia\.|lazada\.|blibli\.|bukalapak\.|tiktok\.com\/t\/|invol\.co|accesstrade|admitad|ecotrack|go2cloud|onclickalgo|popads|popcash|propellerads|adsterra|hilltopads|exoclick|juicyads|trafficjunky|monetag|richads)/i;
+  const COMMERCE_AFFILIATE_REGEX = /(shopee\.|shope\.ee|tokopedia\.|lazada\.|blibli\.|bukalapak\.|tiktok\.com\/t\/|invol\.co|accesstrade|admitad|ecotrack|go2cloud|onclickalgo|popads|popcash|propellerads|adsterra|hilltopads|exoclick|juicyads|trafficjunky|monetag|richads|wpadmngr|clickadu)/i;
   const RANDOM_SHORT_DOMAIN_REGEX = /^[a-z0-9]{2,4}[0-9][a-z0-9]{1,4}\.(com|net|org|co|id|io|info|biz)$/i;
   const SEARCH_ARBITRAGE_PARAMS = /(utm_source=.*ad|utm_medium=affiliate|af_siteid=|af_sub|clickid=|click_id=|subid=|sub_id=|aff_id=|zoneid=|bannerid=|popunder|redirect|gclid=)/i;
+  const SAFE_MEDIA_HOST_REGEX = /(^|\.)(ibb\.co|ibb\.co\.com|imgur\.com|postimg\.cc|pixhost\.to|imgbox\.com|imagebam\.com|prnt\.sc|prntscr\.com|gyazo\.com|flickr\.com|staticflickr\.com|wikimedia\.org|tenor\.com|giphy\.com|redgifs\.com|catbox\.moe|bunkr\.(si|ru|is|la|sk|ax|ac|black|red|media|site)|cyberdrop\.(me|to|cc)|pixeldrain\.com|gofile\.io|mega\.nz|mediafire\.com|drive\.google\.com|docs\.google\.com|dropbox\.com)$/i;
+  const KNOWN_AD_SHORTENER_REGEX = /(^|\.)(optional\.me|see\.optional\.me|rebrand\.ly|bit\.ly|t\.ly|tinyurl\.com|is\.gd|v\.gd|cutt\.ly|shorturl\.at|ouo\.io|shrinkme\.io|exe\.io|bc\.vc|adf\.ly|linkvertise\.com)$/i;
   const NON_VIDEO_ASSET_REGEX = /\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|avif|css|js|json|woff2?|ttf|eot|vtt|srt)(\?|#|$)/i;
   const VIDEO_EXT_REGEX = /\.(mp4|m3u8|mkv|webm|mov|avi|flv|ts|mpd)(\?|#|$)/i;
   const VIDEO_STREAM_HINT_REGEX = /(\/pass_md5\/|\/hls\/|\/stream\/|\/get_video|mime=video|videoplayback|master\.txt|index\.txt|doodcdn|cloudcdn|vidcdn|\/token\/|\/delivery\/)/i;
@@ -29,7 +31,12 @@
   const AUTH_URL_REGEX = /(\/(login|signin|sign-in|log-in|auth|oauth|oauth2|sso|saml|openid|oidc|authorize|callback|session|account|accounts|passport|idp|cas|connect\/authorize|v2\/auth)(\/|$)|[?&](client_id|redirect_uri|response_type|state|scope|openid|code_challenge|samlrequest|return_to|continue|_xfRedirect)=)/i;
   const AUTH_SUBDOMAIN_REGEX = /^(accounts|auth|login|signin|sso|id|oauth|passport|idp|iam)\./i;
 
-  const LEGIT_COMMUNITY_HOST_REGEX = /(^|\.)(semprot\.com|kaskus\.co\.id|reddit\.com)$/i;
+  const SEARCH_ENGINE_HOST_REGEX = /(^|\.)(google\.[a-z.]+|bing\.com|duckduckgo\.com|search\.yahoo\.com|yandex\.[a-z.]+|ya\.ru|search\.brave\.com|ecosia\.org|startpage\.com|baidu\.com)$/i;
+  const MESSENGER_OR_SOCIAL_ENTRY_REGEX = /(^|\.)(t\.me|telegram\.me|telegram\.org|telegra\.ph|wa\.me|whatsapp\.com|l\.wl\.co|l\.facebook\.com|lm\.facebook\.com|l\.instagram\.com|t\.co|redd\.it|out\.reddit\.com|discord\.com|discordapp\.com|line\.me)$/i;
+  const EXTERNAL_APP_REFERRER_REGEX = /^(android-app:\/\/|ios-app:\/\/|tg:\/\/|whatsapp:\/\/|intent:\/\/)/i;
+  const DISGUISED_AD_CSS_CLASS_REGEX = /(^|\s)(itr|samBannerUnit|samCodeUnit|adsbygoogle|floating-ad|popup-ad|banner-ad|iklan-banner|sponsor-banner|sticky-ad|exo-native|mgid-widget|taboola|outbrain|revcontent|adsterra|propellerads)(\s|$)/i;
+  const SHORTLINK_CTA_TEXT_REGEX = /\b(go\s*to\s*link|get\s*link|continue|proceed|download|unduh|lanjut|lanjutkan|menuju\s*link|open\s*link|visit\s*link|unlock\s*link|generate\s*link|buka\s*link|ambil\s*link)\b/i;
+  const SHORTLINK_CTA_HREF_REGEX = /([?&](download|dl|go|out|url|link|target|redirect|token|t)=|\/(go|out|redirect|download|dl|get-link|visit|jump|r|l)(\/|$|\?))/i;
 
   const SAFE_ECOSYSTEM_GROUPS = [
     /(^|\.)(yandex\.(com|ru|kz|by|uz|ua|tr|net)|ya\.ru|yastatic\.net)$/i,
@@ -79,6 +86,10 @@
     pipSize: "medium",
     pipOpacity: 0.95,
     adSkipSpeed: "16",
+    smartUgcSense: true,
+    shortlinkBypassEnabled: true,
+    shortlinkAutoClick: true,
+    loggingEnabled: true,
     removeTransparentOverlay: true,
     antiHistoryTrap: true,
     dnrEnabled: true,
@@ -224,6 +235,22 @@
     }
   }
 
+  let storageRulesLoaded = false;
+  let resolveStorageReady;
+  const storageReadyPromise = new Promise((resolve) => {
+    resolveStorageReady = resolve;
+  });
+
+  function purgeBlacklistedOrTrustedPrompts() {
+    if (!Array.isArray(promptQueue) || promptQueue.length === 0) return;
+    for (let i = promptQueue.length - 1; i >= 0; i--) {
+      const item = promptQueue[i];
+      if (!item || !item.blockedUrl || isUrlInDeniedList(item.blockedUrl) || isUrlInTrustedList(item.blockedUrl)) {
+        promptQueue.splice(i, 1);
+      }
+    }
+  }
+
   chrome.storage.local.get(
     ["trustedDomains", "deniedDomains", "strictCrossOrigin", "autoSkipCountdown", "globalSettings", "hudPositions"],
     (res) => {
@@ -233,10 +260,13 @@
       autoSkipCountdown = res.autoSkipCountdown !== false;
       globalSettings = { ...DEFAULT_GLOBAL_SETTINGS, ...(res.globalSettings || {}) };
       hudPositions = { ...DEFAULT_HUD_POSITIONS, ...(res.hudPositions || {}) };
+      storageRulesLoaded = true;
+      if (typeof resolveStorageReady === "function") resolveStorageReady();
+      purgeBlacklistedOrTrustedPrompts();
       applyPipDimensionsFromGlobal();
       syncMainWorldRules();
       if (window.top === window.self) {
-        if (isRenderingHud) renderTopManualHUD();
+        if (isRenderingHud || promptQueue.length > 0) renderTopManualHUD();
         renderFloatingVideoDock();
       }
     }
@@ -258,9 +288,10 @@
         updateMiniPlayerPosition();
       }
     }
+    purgeBlacklistedOrTrustedPrompts();
     syncMainWorldRules();
     if (window.top === window.self) {
-      if (isRenderingHud) renderTopManualHUD();
+      if (isRenderingHud || promptQueue.length === 0) renderTopManualHUD();
       renderFloatingVideoDock();
     }
   });
@@ -285,6 +316,33 @@
     } catch (e) {}
   });
 
+  function logAegisEvent(level, code, toUrl, detail) {
+    if (globalSettings.loggingEnabled === false) return;
+    try {
+      chrome.runtime.sendMessage({
+        type: "APPEND_AEGIS_LOG",
+        entry: {
+          level: level || "WARN",
+          source: "content",
+          code: code || "CONTENT_EVENT",
+          fromUrl: location.href,
+          toUrl: toUrl ? String(toUrl) : "",
+          detail: detail ? String(detail) : ""
+        }
+      });
+    } catch (e) {}
+  }
+
+  window.addEventListener("__AEGIS_LOG_EVENT__", (ev) => {
+    if (!ev.detail || globalSettings.loggingEnabled === false) return;
+    try {
+      chrome.runtime.sendMessage({
+        type: "APPEND_AEGIS_LOG",
+        entry: ev.detail
+      });
+    } catch (e) {}
+  });
+
   function getBaseDomain(hostname) {
     const parts = hostname.split(".").filter(Boolean);
     if (parts.length <= 2) return hostname;
@@ -303,26 +361,51 @@
     return VIDEO_EXT_REGEX.test(clean) || VIDEO_STREAM_HINT_REGEX.test(clean);
   }
 
-  function isUrlInDeniedList(urlStr) {
+  function normalizeRuleDomain(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0]
+      .split("?")[0]
+      .split("#")[0];
+  }
+
+  function isUrlMatchedInList(urlStr, list) {
+    if (!urlStr || !Array.isArray(list) || list.length === 0) return false;
     try {
       const target = new URL(urlStr, location.href);
-      const host = target.hostname.toLowerCase();
+      const host = target.hostname.toLowerCase().replace(/^www\./, "");
+      if (!host) return false;
       const baseHost = getBaseDomain(host);
-      return deniedDomains.includes(host) || deniedDomains.includes(baseHost);
+      for (const item of list) {
+        const rule = normalizeRuleDomain(item);
+        if (!rule) continue;
+        const ruleBase = getBaseDomain(rule);
+        if (
+          host === rule ||
+          baseHost === rule ||
+          host === ruleBase ||
+          baseHost === ruleBase ||
+          host.endsWith("." + rule) ||
+          host.endsWith("." + ruleBase)
+        ) {
+          return true;
+        }
+      }
+      return false;
     } catch {
       return false;
     }
   }
 
+  function isUrlInDeniedList(urlStr) {
+    return isUrlMatchedInList(urlStr, deniedDomains);
+  }
+
   function isUrlInTrustedList(urlStr) {
-    try {
-      const target = new URL(urlStr, location.href);
-      const host = target.hostname.toLowerCase();
-      const baseHost = getBaseDomain(host);
-      return trustedDomains.includes(host) || trustedDomains.includes(baseHost);
-    } catch {
-      return false;
-    }
+    return isUrlMatchedInList(urlStr, trustedDomains);
   }
 
   function addDomainToBlacklist(urlStr, callback) {
@@ -332,12 +415,13 @@
       if (!baseHost) return;
       chrome.storage.local.get(["deniedDomains", "trustedDomains"], (res) => {
         const denied = Array.isArray(res.deniedDomains) ? [...res.deniedDomains] : [];
-        const trusted = Array.isArray(res.trustedDomains) ? res.trustedDomains.filter((d) => d !== baseHost && d !== u.hostname.toLowerCase()) : [];
+        const trusted = Array.isArray(res.trustedDomains) ? res.trustedDomains.filter((d) => normalizeRuleDomain(d) !== baseHost && normalizeRuleDomain(d) !== u.hostname.toLowerCase()) : [];
         if (!denied.includes(baseHost)) {
           denied.push(baseHost);
         }
         deniedDomains = denied;
         trustedDomains = trusted;
+        purgeBlacklistedOrTrustedPrompts();
         syncMainWorldRules();
         chrome.storage.local.set({ deniedDomains: denied, trustedDomains: trusted }, () => {
           if (typeof callback === "function") callback(baseHost);
@@ -353,12 +437,13 @@
       if (!baseHost) return;
       chrome.storage.local.get(["trustedDomains", "deniedDomains"], (res) => {
         const trusted = Array.isArray(res.trustedDomains) ? [...res.trustedDomains] : [];
-        const denied = Array.isArray(res.deniedDomains) ? res.deniedDomains.filter((d) => d !== baseHost && d !== u.hostname.toLowerCase()) : [];
+        const denied = Array.isArray(res.deniedDomains) ? res.deniedDomains.filter((d) => normalizeRuleDomain(d) !== baseHost && normalizeRuleDomain(d) !== u.hostname.toLowerCase()) : [];
         if (!trusted.includes(baseHost)) {
           trusted.push(baseHost);
         }
         trustedDomains = trusted;
         deniedDomains = denied;
+        purgeBlacklistedOrTrustedPrompts();
         syncMainWorldRules();
         chrome.storage.local.set({ trustedDomains: trusted, deniedDomains: denied }, () => {
           if (typeof callback === "function") callback(baseHost);
@@ -378,8 +463,8 @@
       const baseHost = getBaseDomain(host);
       const currentBase = getBaseDomain(curHost);
 
-      if (trustedDomains.includes(host) || trustedDomains.includes(baseHost)) return false;
-      if (deniedDomains.includes(host) || deniedDomains.includes(baseHost)) return true;
+      if (isUrlInTrustedList(target.href)) return false;
+      if (isUrlInDeniedList(target.href)) return true;
       if (baseHost === currentBase) return false;
       if (isSameSafeEcosystem(curHost, host)) return false;
       if (isAuthUrlStr(target.href)) return false;
@@ -387,11 +472,17 @@
       if (host.includes("google.") && target.pathname === "/search") return true;
       if (
         GAMBLING_REGEX.test(target.href) ||
-        SUSPICIOUS_HOST.test(host) ||
         COMMERCE_AFFILIATE_REGEX.test(target.href) ||
         RANDOM_SHORT_DOMAIN_REGEX.test(baseHost) ||
-        SEARCH_ARBITRAGE_PARAMS.test(target.href)
+        SEARCH_ARBITRAGE_PARAMS.test(target.href) ||
+        KNOWN_AD_SHORTENER_REGEX.test(host)
       ) {
+        return true;
+      }
+      if (SAFE_MEDIA_HOST_REGEX.test(host)) {
+        return false;
+      }
+      if (SUSPICIOUS_HOST.test(host)) {
         return true;
       }
       return false;
@@ -400,33 +491,279 @@
     }
   }
 
+  // =========================================================================
+  // AI-LEVEL SMART UGC vs. AD-INFILTRATED IMAGE CLASSIFIER (OPSI 1 + OPSI 2)
+  // Memindai pola class CSS, atribut URL (.click / .top / shortener), & kecocokan domain thumbnail
+  // =========================================================================
+  function hasDisguisedAdCssClass(el) {
+    if (!el) return false;
+    const ownClass = typeof el.className === "string" ? el.className : "";
+    const parentEl = el.parentElement;
+    const parentClass = parentEl && typeof parentEl.className === "string" ? parentEl.className : "";
+    return DISGUISED_AD_CSS_CLASS_REGEX.test(ownClass) || DISGUISED_AD_CSS_CLASS_REGEX.test(parentClass);
+  }
+
+  function isRealAdSlotContainer(el) {
+    if (!el || !el.closest) return false;
+    if (hasDisguisedAdCssClass(el)) return true;
+    // Abaikan class jebakan anti-adblock (.message-main.ads, img.bbImage.adUnit)
+    return Boolean(
+      el.closest(
+        ".itr, #header_sp, [id^='header_sp'], .samBannerUnit, .samCodeUnit, [data-revive-zoneid], ins.adsbygoogle, [id^='div-gpt-ad'], [class*='floating-ad' i], [class*='popup-ad' i], [class*='banner-ad' i], [class*='iklan-banner' i], [class*='sponsor-banner' i], [class*='exo-native' i], [class*='mgid-widget' i]"
+      )
+    );
+  }
+
+  function isInsideUserPostContent(el) {
+    if (!el || !el.closest) return false;
+    if (isRealAdSlotContainer(el)) return false;
+    const rel = (el.getAttribute && el.getAttribute("rel")) || "";
+    const hasUgcRel = /\bugc\b/i.test(rel);
+    const hasBbImage = Boolean(el.querySelector && el.querySelector("img.bbImage, img[data-url]"));
+    const inContentContainer = Boolean(
+      el.closest(
+        ".bbWrapper, .message-userContent, article.message-body, .message-content, .postbody, .post-content, .entry-content, .comment-content, .markdown-body, [data-xf-init*='lightbox' i]"
+      )
+    );
+    return hasUgcRel || hasBbImage || inContentContainer;
+  }
+
+  function checkThumbnailMatchesDestination(anchorEl, destBaseHost) {
+    if (!anchorEl || !anchorEl.querySelector || !destBaseHost) return false;
+    const imgEl = anchorEl.querySelector("img");
+    if (!imgEl) return false;
+    const rawImgSrc = imgEl.getAttribute("data-url") || imgEl.getAttribute("data-src") || imgEl.currentSrc || imgEl.src || "";
+    if (!rawImgSrc) return false;
+    try {
+      const imgHost = new URL(rawImgSrc, location.href).hostname.toLowerCase();
+      const imgBase = getBaseDomain(imgHost);
+      return Boolean(imgBase && (imgBase === destBaseHost || SAFE_MEDIA_HOST_REGEX.test(imgHost)));
+    } catch {
+      return false;
+    }
+  }
+
+  function classifyContentLinkOrImage(anchorEl, rawHref) {
+    const raw = String(rawHref || "").trim();
+    if (!raw || raw.startsWith("#") || raw.startsWith("javascript:")) {
+      return {
+        category: "AUTH_OR_SAME_ORIGIN",
+        resolvedUrl: raw,
+        shouldAllowDirectly: true,
+        shouldHoldInHud: false,
+        shouldSilentBlock: false,
+        reason: ""
+      };
+    }
+
+    if (/^(intent|shopeeid|tokopedia|lazada|market):/i.test(raw)) {
+      return {
+        category: "AD_INFILTRATED_IMAGE_OR_BANNER",
+        resolvedUrl: raw,
+        shouldAllowDirectly: false,
+        shouldHoldInHud: true,
+        shouldSilentBlock: false,
+        reason: "Deep-link aplikasi belanja/iklan ditahan"
+      };
+    }
+
+    let target;
+    try {
+      target = new URL(raw, location.href);
+    } catch {
+      return {
+        category: "AUTH_OR_SAME_ORIGIN",
+        resolvedUrl: raw,
+        shouldAllowDirectly: true,
+        shouldHoldInHud: false,
+        shouldSilentBlock: false,
+        reason: ""
+      };
+    }
+
+    if (!target.protocol.startsWith("http")) {
+      return {
+        category: "AUTH_OR_SAME_ORIGIN",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: true,
+        shouldHoldInHud: false,
+        shouldSilentBlock: false,
+        reason: ""
+      };
+    }
+
+    const curHost = location.hostname.toLowerCase();
+    const curBase = getBaseDomain(curHost);
+    const host = target.hostname.toLowerCase();
+    const baseHost = getBaseDomain(host);
+
+    if (
+      baseHost === curBase ||
+      isSameSafeEcosystem(curHost, host) ||
+      isUrlInTrustedList(target.href) ||
+      isAuthUrlStr(target.href)
+    ) {
+      return {
+        category: "AUTH_OR_SAME_ORIGIN",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: true,
+        shouldHoldInHud: false,
+        shouldSilentBlock: false,
+        reason: ""
+      };
+    }
+
+    // Domain yang sudah ada di Blacklist pengguna diblokir secara SENYAP tanpa memunculkan HUD Block Menu!
+    if (isUrlInDeniedList(target.href)) {
+      return {
+        category: "BLACKLISTED_SILENT_BLOCK",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: false,
+        shouldHoldInHud: false,
+        shouldSilentBlock: true,
+        reason: "Domain berada di daftar Blacklist (diblokir senyap)"
+      };
+    }
+
+    const inRealAdSlot = isRealAdSlotContainer(anchorEl);
+    const inUserPost = isInsideUserPostContent(anchorEl);
+    const hasImgChild = Boolean(anchorEl && anchorEl.querySelector && anchorEl.querySelector("img"));
+    const inlineOnclick = (anchorEl && anchorEl.getAttribute && (anchorEl.getAttribute("onclick") || anchorEl.getAttribute("onmousedown"))) || "";
+    const hasSuspiciousInlineOnclick = /(window\.open|location\.href|popunder|adsterra|onclickalgo)/i.test(inlineOnclick);
+    const thumbnailMatchesDest = checkThumbnailMatchesDestination(anchorEl, baseHost);
+
+    const isHardAdOrGambling =
+      GAMBLING_REGEX.test(target.href) ||
+      COMMERCE_AFFILIATE_REGEX.test(target.href) ||
+      SEARCH_ARBITRAGE_PARAMS.test(target.href) ||
+      RANDOM_SHORT_DOMAIN_REGEX.test(baseHost) ||
+      (host.includes("google.") && target.pathname === "/search");
+
+    const isKnownAdShortener = KNOWN_AD_SHORTENER_REGEX.test(host);
+    const isSuspiciousTld = SUSPICIOUS_HOST.test(host);
+    const isSafeMediaHost = SAFE_MEDIA_HOST_REGEX.test(host);
+
+    if (inRealAdSlot || hasSuspiciousInlineOnclick) {
+      return {
+        category: "AD_INFILTRATED_IMAGE_OR_BANNER",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: false,
+        shouldHoldInHud: true,
+        shouldSilentBlock: false,
+        reason: "Banner iklan / gambar tersusupi iklan ditahan"
+      };
+    }
+
+    if (isHardAdOrGambling || isKnownAdShortener) {
+      return {
+        category: "AD_INFILTRATED_IMAGE_OR_BANNER",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: false,
+        shouldHoldInHud: true,
+        shouldSilentBlock: false,
+        reason: hasImgChild
+          ? "Gambar tersusupi tautan iklan/judol ditahan"
+          : "Tautan iklan/affiliate/judol ditahan"
+      };
+    }
+
+    // Opsi 1: Hosting gambar & media populer (ibb.co.com, imgur.com, postimg.cc, pixhost.to, dll.) langsung dibuka
+    if (isSafeMediaHost) {
+      return {
+        category: "SAFE_MEDIA_OR_UGC",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: true,
+        shouldHoldInHud: false,
+        shouldSilentBlock: false,
+        reason: ""
+      };
+    }
+
+    // Opsi 1 + Opsi 2: AI Smart UGC Classifier untuk konten di dalam postingan member (.bbWrapper / rel~="ugc" / img.bbImage)
+    if (globalSettings.smartUgcSense !== false && inUserPost) {
+      if (isSuspiciousTld) {
+        return {
+          category: "SUSPICIOUS_EXTERNAL_UGC_HOLD",
+          resolvedUrl: target.href,
+          shouldAllowDirectly: false,
+          shouldHoldInHud: true,
+          shouldSilentBlock: false,
+          reason: "Konten eksternal (.click/.top) ditahan — Pilih ↗ Buka jika aman"
+        };
+      }
+      return {
+        category: "SAFE_MEDIA_OR_UGC",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: true,
+        shouldHoldInHud: false,
+        shouldSilentBlock: false,
+        reason: thumbnailMatchesDest ? "Gambar thumbnail sesuai dengan domain tujuan" : ""
+      };
+    }
+
+    if (isSuspiciousTld) {
+      return {
+        category: "SUSPICIOUS_EXTERNAL_UGC_HOLD",
+        resolvedUrl: target.href,
+        shouldAllowDirectly: false,
+        shouldHoldInHud: true,
+        shouldSilentBlock: false,
+        reason: "Tautan eksternal (.click/.top) ditahan — Pilih ↗ Buka jika aman"
+      };
+    }
+
+    return {
+      category: "SAFE_MEDIA_OR_UGC",
+      resolvedUrl: target.href,
+      shouldAllowDirectly: true,
+      shouldHoldInHud: false,
+      shouldSilentBlock: false,
+      reason: ""
+    };
+  }
+
   if (window.top === window.self) {
     const currentHost = location.hostname.toLowerCase();
     const currentBase = getBaseDomain(currentHost);
+    const rawRef = String(document.referrer || "").trim();
     const refHost = (() => {
-      try { return document.referrer ? new URL(document.referrer).hostname.toLowerCase() : ""; } catch { return ""; }
+      try { return rawRef ? new URL(rawRef).hostname.toLowerCase() : ""; } catch { return ""; }
     })();
-    const isFromSearchReferrer = /(^|\.)(google\.|bing\.com|duckduckgo\.com|search\.yahoo\.com|yandex\.|ya\.ru)/i.test(refHost);
-    const isDirectExternalEntry = !document.referrer && window.history.length <= 2;
+    const isFromSearchReferrer = SEARCH_ENGINE_HOST_REGEX.test(refHost) || /com\.google\.android\.googlequicksearchbox/i.test(rawRef);
+    const isFromMessengerOrSocialReferrer =
+      MESSENGER_OR_SOCIAL_ENTRY_REGEX.test(refHost) ||
+      EXTERNAL_APP_REFERRER_REGEX.test(rawRef);
+    const isDirectFirstPageEntry = !rawRef && window.history.length <= 2;
 
     if (
       !isSameSafeEcosystem(currentHost, currentHost) &&
-      !LEGIT_COMMUNITY_HOST_REGEX.test(currentHost) &&
+      !SAFE_MEDIA_HOST_REGEX.test(currentHost) &&
       !isFromSearchReferrer &&
-      !isDirectExternalEntry &&
+      !isFromMessengerOrSocialReferrer &&
+      !isDirectFirstPageEntry &&
       (GAMBLING_REGEX.test(location.href) ||
       SUSPICIOUS_HOST.test(currentHost) ||
       COMMERCE_AFFILIATE_REGEX.test(location.href) ||
       RANDOM_SHORT_DOMAIN_REGEX.test(currentBase))
     ) {
-      chrome.storage.local.get(["trustedDomains"], (res) => {
-        const list = Array.isArray(res.trustedDomains) ? res.trustedDomains : [];
-        if (!list.includes(currentHost) && !list.includes(currentBase)) {
-          try { window.stop(); } catch (e) {}
-          chrome.runtime.sendMessage({
-            type: "FORCE_GO_BACK",
-            reason: "Redirect iklan/affiliate ditahan"
-          });
+      chrome.storage.local.get(["trustedDomains", "deniedDomains"], (res) => {
+        const trustedList = Array.isArray(res.trustedDomains) ? res.trustedDomains : [];
+        const deniedList = Array.isArray(res.deniedDomains) ? res.deniedDomains : [];
+        const isTrusted = isUrlMatchedInList(location.href, trustedList);
+        const isDenied = isUrlMatchedInList(location.href, deniedList);
+        if (!isTrusted) {
+          chrome.runtime.sendMessage(
+            { type: "CHECK_SHOULD_BLOCK_ENTRY", url: location.href },
+            (check) => {
+              if (check && check.shouldRevert) {
+                try { window.stop(); } catch (e) {}
+                chrome.runtime.sendMessage({
+                  type: "FORCE_GO_BACK",
+                  reason: isDenied || check.isBlacklisted ? "Domain Blacklist diblokir senyap" : (check.reason || "Redirect iklan/affiliate ditahan")
+                });
+              }
+            }
+          );
         }
       });
     }
@@ -470,6 +807,15 @@
     if (!item || !item.blockedUrl) return;
     const cleanUrl = String(item.blockedUrl).trim();
     if (!cleanUrl.startsWith("http") && !/^(intent|shopeeid|tokopedia|lazada):/i.test(cleanUrl)) return;
+
+    // Pastikan rules dari chrome.storage.local sudah dimuat sebelum memproses antrean HUD,
+    // sehingga domain yang sudah masuk Blacklist TIDAK PERNAH memunculkan HUD Block Menu!
+    if (!storageRulesLoaded) {
+      storageReadyPromise.then(() => {
+        enqueueManualPrompt(item);
+      });
+      return;
+    }
 
     if (isUrlInDeniedList(cleanUrl) || isUrlInTrustedList(cleanUrl)) {
       return;
@@ -527,8 +873,7 @@
   function runIsolatedAutoSkip() {
     if (!autoSkipCountdown) return;
     const curHost = location.hostname.toLowerCase();
-    const curBase = getBaseDomain(curHost);
-    if (trustedDomains.includes(curHost) || trustedDomains.includes(curBase) || isSameSafeEcosystem(curHost, curHost) || LEGIT_COMMUNITY_HOST_REGEX.test(curHost)) return;
+    if (isUrlInTrustedList(location.href) || isSameSafeEcosystem(curHost, curHost)) return;
 
     let skipped = false;
     document.querySelectorAll("button, a, [role='button']").forEach((el) => {
@@ -629,6 +974,9 @@
   }
 
   if (window.top === window.self) {
+    storageReadyPromise.then(() => {
+      tryEarlyDirectShortlinkBypass();
+    });
     window.addEventListener("DOMContentLoaded", () => {
       chrome.runtime.sendMessage({ type: "GET_PENDING_PROMPTS" }, (res) => {
         if (res && Array.isArray(res.prompts)) {
@@ -637,10 +985,35 @@
       });
       scanDomForVideos();
       ensureVideoControlsVisible();
-      setTimeout(() => { scanDomForVideos(); ensureVideoControlsVisible(); }, 1500);
-      setTimeout(() => { scanDomForVideos(); ensureVideoControlsVisible(); }, 4000);
-      setTimeout(runAiDomAudit, 1200);
+      neutralizeEmptyTrapOverlays();
+      storageReadyPromise.then(() => {
+        if (!tryEarlyDirectShortlinkBypass()) {
+          runShortlinkDebloatedBypassStep();
+        }
+      });
+      setTimeout(() => {
+        scanDomForVideos();
+        ensureVideoControlsVisible();
+        neutralizeEmptyTrapOverlays();
+        runShortlinkDebloatedBypassStep();
+      }, 1500);
+      setTimeout(() => {
+        scanDomForVideos();
+        ensureVideoControlsVisible();
+        neutralizeEmptyTrapOverlays();
+        runShortlinkDebloatedBypassStep();
+      }, 4000);
+      setTimeout(() => {
+        storageReadyPromise.then(() => {
+          runAiDomAudit();
+        });
+      }, 1200);
     });
+    setInterval(() => {
+      if (document.readyState !== "loading") {
+        runShortlinkDebloatedBypassStep();
+      }
+    }, 1100);
   }
 
   function scanDomForVideos() {
@@ -1580,7 +1953,9 @@
       renderFloatingVideoDock();
     };
 
-    // Universal Drag Handler untuk Video Dock (mendukung edge docking kiri/kanan pada pil ringkas 🎬(N))
+    // Universal Drag Handler untuk Video Dock (Pointer Capture pada handleEl — tanpa leak listener di window)
+    let lastPointerDownOnBadge = false;
+
     const attachVideoDockDrag = (handleEl) => {
       if (!handleEl) return;
       let pointerActive = false;
@@ -1592,6 +1967,10 @@
 
       handleEl.addEventListener("pointerdown", (e) => {
         if (e.button !== undefined && e.button !== 0) return;
+        if (e.target && e.target.closest && e.target.closest("button")) return;
+        lastPointerDownOnBadge = Boolean(
+          e.target && e.target.closest && e.target.closest("#dimCompactBadge")
+        );
         const rect = dockHost.getBoundingClientRect();
         pointerActive = true;
         dragMoved = false;
@@ -1600,9 +1979,12 @@
         startLeft = rect.left;
         startTop = rect.top;
         clearTimeout(videoDockDimTimer);
+        try {
+          handleEl.setPointerCapture(e.pointerId);
+        } catch (err) {}
       });
 
-      window.addEventListener("pointermove", (e) => {
+      handleEl.addEventListener("pointermove", (e) => {
         if (!pointerActive) return;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
@@ -1627,9 +2009,12 @@
         }
       });
 
-      const endDockDrag = () => {
+      const endDockDrag = (e) => {
         if (!pointerActive) return;
         pointerActive = false;
+        try {
+          handleEl.releasePointerCapture(e.pointerId);
+        } catch (err) {}
         if (dragMoved) {
           isDraggingVideoDock = false;
           const rect = dockHost.getBoundingClientRect();
@@ -1647,8 +2032,8 @@
         }
       };
 
-      window.addEventListener("pointerup", endDockDrag);
-      window.addEventListener("pointercancel", endDockDrag);
+      handleEl.addEventListener("pointerup", endDockDrag);
+      handleEl.addEventListener("pointercancel", endDockDrag);
     };
 
     attachVideoDockDrag(pillEl);
@@ -1702,6 +2087,13 @@
           e.preventDefault();
           wakePill();
           scheduleDockDim(Math.max(effectiveDimMs, 4000));
+          return;
+        }
+        if (lastPointerDownOnBadge) {
+          lastPointerDownOnBadge = false;
+          e.stopPropagation();
+          e.preventDefault();
+          collapsePill();
         }
       }, true);
     }
@@ -1710,6 +2102,7 @@
       dimBadgeEl.addEventListener("click", (e) => {
         if (suppressNextDockClick) return;
         if (pillEl && !pillEl.classList.contains("auto-dimmed")) {
+          lastPointerDownOnBadge = false;
           e.stopPropagation();
           e.preventDefault();
           collapsePill();
@@ -1877,6 +2270,7 @@
     if (window.top !== window.self) return;
 
     clearTimeout(hudAutoCloseTimer);
+    purgeBlacklistedOrTrustedPrompts();
     const existing = document.getElementById("aegis-top-manual-hud");
 
     const hasPrompt = promptQueue.length > 0;
@@ -2370,6 +2764,598 @@
   }
 
   // =========================================================================
+  // v2.2.5: DETEKSI CTA SHORTLINK (GO TO LINK) & AUTO-BYPASS OVERLAY JEBAKAN KOSONG
+  // =========================================================================
+  function isShortlinkCtaElement(el, rawHref) {
+    if (!el) return false;
+    try {
+      const hrefStr = String(rawHref || "").trim();
+      const label = (
+        (el.innerText || el.textContent || el.value || el.getAttribute("aria-label") || el.getAttribute("title") || "") +
+        " " +
+        (el.id || "")
+      ).trim();
+
+      if (hrefStr && SHORTLINK_CTA_HREF_REGEX.test(hrefStr)) {
+        return true;
+      }
+      if (label && SHORTLINK_CTA_TEXT_REGEX.test(label)) {
+        return true;
+      }
+      const cardContainer = el.closest(".card, [class*='redirect' i], [class*='download' i], [class*='shortlink' i], [id*='redirect' i]");
+      if (cardContainer) {
+        const cardText = (cardContainer.innerText || "").slice(0, 300);
+        if (/(redirect\s*ready|please\s*wait|link\s*ready|link\s*siap|go\s*to\s*link|get\s*link)/i.test(cardText)) {
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  function signalShortlinkCtaClick(hrefUrl) {
+    try {
+      window.dispatchEvent(new CustomEvent("__AEGIS_SHORTLINK_CTA_CLICK__", {
+        detail: { href: String(hrefUrl || "") }
+      }));
+    } catch (e) {}
+    try {
+      chrome.runtime.sendMessage({
+        type: "USER_CLICKED_SHORTLINK_CTA",
+        sourceUrl: location.href,
+        href: String(hrefUrl || "")
+      });
+    } catch (e) {}
+  }
+
+  function isEmptyFullscreenTrapOverlay(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (
+      el.id === "aegis-top-manual-hud" ||
+      el.id === "aegis-video-bottom-dock" ||
+      el.id === "aegis-miniplayer-dragbar" ||
+      el.closest("#aegis-top-manual-hud, #aegis-video-bottom-dock, #aegis-miniplayer-dragbar")
+    ) {
+      return false;
+    }
+    if (el.matches("html, body, main, article, video, canvas, iframe, form, dialog, input, textarea, button")) {
+      return false;
+    }
+    if (el.querySelector && el.querySelector("video, canvas, iframe, form, dialog, input, textarea, button, select, img, svg")) {
+      return false;
+    }
+    const textLen = (el.innerText || el.textContent || "").trim().length;
+    if (textLen > 0) return false;
+
+    const st = window.getComputedStyle(el);
+    if (st.display === "none" || st.visibility === "hidden" || st.pointerEvents === "none") return false;
+    if (st.position !== "fixed" && st.position !== "absolute") return false;
+
+    const rect = el.getBoundingClientRect();
+    const vw = window.innerWidth || 360;
+    const vh = window.innerHeight || 640;
+    if (rect.width < vw * 0.65 || rect.height < vh * 0.65) return false;
+
+    const bg = st.backgroundColor || "";
+    const isTransparentOrLightBackdrop =
+      parseFloat(st.opacity) < 0.25 ||
+      bg === "transparent" ||
+      bg === "rgba(0, 0, 0, 0)" ||
+      /^rgba\([^,]+,[^,]+,[^,]+,\s*0(\.[0-4]\d*)?\s*\)$/i.test(bg);
+
+    const idCls = ((el.id || "") + " " + (typeof el.className === "string" ? el.className : "")).toLowerCase();
+    const isExplicitOverlayTrap = /(^|\b)(overlay|click-?overlay|ad-?overlay|pop-?overlay|backdrop-?trap)(\b|$)/i.test(idCls);
+
+    return isTransparentOrLightBackdrop || isExplicitOverlayTrap;
+  }
+
+  function neutralizeEmptyTrapOverlays() {
+    if (globalSettings.removeTransparentOverlay === false) return;
+    const curHost = location.hostname.toLowerCase();
+    if (
+      isSameSafeEcosystem(curHost, curHost) ||
+      isUrlInTrustedList(location.href)
+    ) {
+      return;
+    }
+    try {
+      const hasInteractiveUnderneath = Boolean(document.querySelector("a[href], button, [role='button']"));
+      if (!hasInteractiveUnderneath) return;
+
+      const candidates = document.querySelectorAll(
+        "#overlay, [id*='overlay' i], [class*='overlay' i], body > div, body > a"
+      );
+      candidates.forEach((el) => {
+        if (isEmptyFullscreenTrapOverlay(el)) {
+          el.style.setProperty("pointer-events", "none", "important");
+          el.style.setProperty("display", "none", "important");
+          el.style.setProperty("visibility", "hidden", "important");
+          if (el.dataset.aegisTrapBypassed !== "1") {
+            el.dataset.aegisTrapBypassed = "1";
+            logAegisEvent(
+              "BYPASS",
+              "BYPASS_TRAP_OVERLAY",
+              "",
+              `Overlay jebakan kosong dinonaktifkan (#${el.id || "anon"})`
+            );
+          }
+        }
+      });
+    } catch (e) {}
+  }
+
+  // =========================================================================
+  // BYPASS ALL SHORTLINKS DEBLOATED ENGINE (BLOGGERPEMULA / AMM0NI4 PATTERN)
+  // Ringan, tanpa bloat/donasi/telemetri, 100% terintegrasi keamanan AEGIS-AI
+  // =========================================================================
+  const SHORTLINK_QUERY_KEYS = [
+    "url", "u", "to", "go", "link", "r", "o", "site", "target",
+    "dest", "destination", "redirect", "k", "m", "d", "l", "data"
+  ];
+  let shortlinkDirectBypassTriggered = false;
+  let shortlinkBypassActionTaken = false;
+  let shortlinkCaptchaLoggedOnce = false;
+
+  function safeShortlinkBase64Decode(raw) {
+    try {
+      const cleaned = String(raw || "").trim().replace(/-/g, "+").replace(/_/g, "/");
+      if (cleaned.length < 8 || !/^[A-Za-z0-9+/=]+$/.test(cleaned)) return null;
+      const padded = cleaned + "=".repeat((4 - (cleaned.length % 4)) % 4);
+      const decoded = atob(padded);
+      if (!decoded || /[\x00-\x08\x0E-\x1F]/.test(decoded)) return null;
+      return decoded.trim();
+    } catch {
+      return null;
+    }
+  }
+
+  function extractHttpUrlFromDecodedStr(raw) {
+    if (!raw) return null;
+    const trimmed = String(raw).trim();
+    if (/^https?:\/\/[^\s"'<>]+$/i.test(trimmed)) return trimmed;
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        const obj = JSON.parse(trimmed);
+        const cand = obj.url || obj.link || obj.target || obj.to || obj.href || "";
+        if (typeof cand === "string" && /^https?:\/\//i.test(cand.trim())) {
+          return cand.trim();
+        }
+      } catch {}
+    }
+    return null;
+  }
+
+  function decodeShortlinkCandidateValue(rawValue) {
+    if (!rawValue || String(rawValue).length < 8) return null;
+    let uriDecoded = String(rawValue).trim();
+    try {
+      uriDecoded = decodeURIComponent(uriDecoded);
+    } catch {}
+
+    const direct = extractHttpUrlFromDecodedStr(uriDecoded);
+    if (direct) return { url: direct, method: "QUERY_DIRECT" };
+
+    const revPlain = uriDecoded.split("").reverse().join("");
+    const revDirect = extractHttpUrlFromDecodedStr(revPlain);
+    if (revDirect) return { url: revDirect, method: "QUERY_REVERSED" };
+
+    const b64Once = safeShortlinkBase64Decode(uriDecoded);
+    if (b64Once) {
+      const fromOnce = extractHttpUrlFromDecodedStr(b64Once);
+      if (fromOnce) return { url: fromOnce, method: "QUERY_BASE64" };
+      const revB64 = extractHttpUrlFromDecodedStr(b64Once.split("").reverse().join(""));
+      if (revB64) return { url: revB64, method: "QUERY_REVERSED" };
+      const b64Twice = safeShortlinkBase64Decode(b64Once);
+      if (b64Twice) {
+        const fromTwice = extractHttpUrlFromDecodedStr(b64Twice);
+        if (fromTwice) return { url: fromTwice, method: "QUERY_DOUBLE_BASE64" };
+      }
+    }
+
+    const b64Rev = safeShortlinkBase64Decode(revPlain);
+    if (b64Rev) {
+      const fromRevB64 = extractHttpUrlFromDecodedStr(b64Rev);
+      if (fromRevB64) return { url: fromRevB64, method: "QUERY_REVERSED" };
+    }
+    return null;
+  }
+
+  function isShortlinkBypassTargetSafe(candidateUrl) {
+    try {
+      const dest = new URL(candidateUrl, location.href);
+      if (dest.protocol !== "http:" && dest.protocol !== "https:") {
+        return { safe: false, reason: "Protokol non-HTTP ditolak" };
+      }
+      if (dest.href === location.href) {
+        return { safe: false, reason: "URL sama dengan halaman saat ini" };
+      }
+      if (isUrlInDeniedList(dest.href)) {
+        return { safe: false, reason: "Domain hasil decode ada di Blacklist" };
+      }
+      const host = dest.hostname.toLowerCase();
+      const base = getBaseDomain(host);
+      if (
+        GAMBLING_REGEX.test(dest.href) ||
+        COMMERCE_AFFILIATE_REGEX.test(dest.href) ||
+        SEARCH_ARBITRAGE_PARAMS.test(dest.href) ||
+        RANDOM_SHORT_DOMAIN_REGEX.test(base)
+      ) {
+        return { safe: false, reason: "URL hasil decode terindikasi iklan/judol/affiliate" };
+      }
+      return { safe: true, resolvedUrl: dest.href };
+    } catch {
+      return { safe: false, reason: "Format URL tidak valid" };
+    }
+  }
+
+  function extractDirectShortlinkUrlFromPage() {
+    try {
+      const cur = new URL(location.href);
+
+      // 1. Parameter query (WP Safelink / Blogger Safelink / Redirector)
+      for (const key of SHORTLINK_QUERY_KEYS) {
+        const val = cur.searchParams.get(key);
+        if (!val) continue;
+        const decoded = decodeShortlinkCandidateValue(val);
+        if (decoded) {
+          const check = isShortlinkBypassTargetSafe(decoded.url);
+          if (check.safe) {
+            return { found: true, url: check.resolvedUrl, method: decoded.method };
+          }
+          logAegisEvent("BLOCK", "BYPASS_DECODE_REJECTED", decoded.url, `Decode ${decoded.method} ditolak: ${check.reason}`);
+          return { found: false };
+        }
+      }
+
+      // 2. Hash fragment (#aHR0c...)
+      const rawHash = (cur.hash || "").replace(/^#/, "").trim();
+      if (rawHash.length >= 12) {
+        const hashCand = rawHash.includes("=") ? rawHash.split("=").slice(1).join("=") : rawHash;
+        const decoded = decodeShortlinkCandidateValue(hashCand);
+        if (decoded) {
+          const check = isShortlinkBypassTargetSafe(decoded.url);
+          if (check.safe) {
+            return { found: true, url: check.resolvedUrl, method: "HASH_BASE64" };
+          }
+          logAegisEvent("BLOCK", "BYPASS_DECODE_REJECTED", decoded.url, `Decode HASH ditolak: ${check.reason}`);
+          return { found: false };
+        }
+      }
+
+      // 3. Hidden input WP/Blogger Safelink (newwpsafelink, go, url, link, target)
+      if (document.body) {
+        const hiddenInputs = document.querySelectorAll(
+          "input[type='hidden'][name], input[name*='safelink' i], input[name='go'], input[name='url'], input[name='link']"
+        );
+        for (const inp of hiddenInputs) {
+          const nm = String(inp.name || "").toLowerCase();
+          if (!/(safelink|newwpsafelink|go|url|link|target|dest|data|redirect)/i.test(nm)) continue;
+          const decoded = decodeShortlinkCandidateValue(inp.value || "");
+          if (decoded) {
+            const check = isShortlinkBypassTargetSafe(decoded.url);
+            if (check.safe) {
+              return { found: true, url: check.resolvedUrl, method: "HIDDEN_INPUT_PAYLOAD" };
+            }
+            logAegisEvent("BLOCK", "BYPASS_DECODE_REJECTED", decoded.url, `Decode hidden input (${nm}) ditolak: ${check.reason}`);
+            return { found: false };
+          }
+        }
+      }
+
+      // 4. <meta http-equiv="refresh" content="5;url=https://...">
+      const metaRefresh = document.querySelector("meta[http-equiv='refresh' i]");
+      if (metaRefresh) {
+        const content = metaRefresh.getAttribute("content") || "";
+        const m = content.match(/url\s*=\s*['"]?([^'"\s;>]+)['"]?/i);
+        if (m && m[1]) {
+          const check = isShortlinkBypassTargetSafe(m[1]);
+          if (check.safe) {
+            return { found: true, url: check.resolvedUrl, method: "META_REFRESH" };
+          }
+        }
+      }
+    } catch (e) {}
+    return { found: false };
+  }
+
+  function isShortlinkBypassAllowedOnCurrentHost() {
+    if (globalSettings.shortlinkBypassEnabled === false) return false;
+    const curHost = location.hostname.toLowerCase();
+    if (
+      isSameSafeEcosystem(curHost, curHost) ||
+      SAFE_MEDIA_HOST_REGEX.test(curHost) ||
+      SEARCH_ENGINE_HOST_REGEX.test(curHost) ||
+      MESSENGER_OR_SOCIAL_ENTRY_REGEX.test(curHost) ||
+      isUrlInTrustedList(location.href) ||
+      isAuthUrlStr(location.href)
+    ) {
+      return false;
+    }
+    return true;
+  }
+
+  function showShortlinkBypassToast(targetUrl, method) {
+    try {
+      const mountParent = document.body || document.documentElement;
+      if (!mountParent) return;
+      const existing = document.getElementById("aegis-shortlink-bypass-toast");
+      if (existing) existing.remove();
+
+      let targetHost = "";
+      try {
+        targetHost = new URL(targetUrl, location.href).hostname.replace(/^www\./, "");
+      } catch (e) {}
+
+      const hostEl = document.createElement("div");
+      hostEl.id = "aegis-shortlink-bypass-toast";
+      Object.assign(hostEl.style, {
+        position: "fixed",
+        right: "16px",
+        bottom: "18px",
+        zIndex: "2147483647",
+        pointerEvents: "none",
+        maxWidth: "min(340px, calc(100vw - 32px))"
+      });
+
+      const shadow = hostEl.attachShadow({ mode: "closed" });
+      shadow.innerHTML = `
+        <style>
+          @keyframes aegisToastIn {
+            from { opacity: 0; transform: translateY(8px) scale(0.97); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+          }
+          .toast {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            background: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(52, 211, 153, 0.55);
+            border-radius: 12px;
+            padding: 9px 13px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65);
+            font-family: system-ui, -apple-system, sans-serif;
+            animation: aegisToastIn 0.18s ease-out forwards;
+          }
+          .title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #34d399;
+            letter-spacing: 0.01em;
+          }
+          .sub {
+            font-size: 10.5px;
+            color: #cbd5e1;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+        </style>
+        <div class="toast" role="status" aria-live="polite">
+          <span class="title">⚡ AEGIS Bypass: Melompati Safelink...</span>
+          <span class="sub">${escapeHtml(targetHost ? `→ ${targetHost} (${method || "DIRECT"})` : `Metode: ${method || "DIRECT"}`)}</span>
+        </div>
+      `;
+      mountParent.appendChild(hostEl);
+    } catch (e) {}
+  }
+
+  function tryEarlyDirectShortlinkBypass() {
+    if (window.top !== window.self || shortlinkDirectBypassTriggered) return false;
+    if (!isShortlinkBypassAllowedOnCurrentHost()) return false;
+
+    const extracted = extractDirectShortlinkUrlFromPage();
+    if (!extracted.found || !extracted.url) return false;
+
+    shortlinkDirectBypassTriggered = true;
+    shortlinkBypassActionTaken = true;
+    signalShortlinkCtaClick(extracted.url);
+    showShortlinkBypassToast(extracted.url, extracted.method);
+    logAegisEvent(
+      "BYPASS",
+      `BYPASS_${extracted.method}`,
+      extracted.url,
+      `Bypass Shortlink Debloated mengekstrak URL tujuan langsung (${extracted.method}) — menampilkan toast & redirect`
+    );
+
+    const startTs = Date.now();
+    let didRedirect = false;
+    const executeRedirect = () => {
+      if (didRedirect) return;
+      didRedirect = true;
+      try {
+        location.replace(extracted.url);
+      } catch {
+        location.href = extracted.url;
+      }
+    };
+    const fallbackTimer = setTimeout(executeRedirect, 1100);
+
+    try {
+      chrome.runtime.sendMessage(
+        {
+          type: "ALLOW_SHORTLINK_BYPASS_NAV",
+          url: extracted.url,
+          sourceUrl: location.href,
+          method: extracted.method
+        },
+        () => {
+          const remainingMs = Math.max(0, 800 - (Date.now() - startTs));
+          clearTimeout(fallbackTimer);
+          setTimeout(executeRedirect, remainingMs);
+        }
+      );
+    } catch {
+      clearTimeout(fallbackTimer);
+      setTimeout(executeRedirect, 800);
+    }
+    return true;
+  }
+
+  function hasVisibleUnsolvedCaptcha() {
+    const captchaNodes = document.querySelectorAll(
+      ".g-recaptcha, .h-captcha, .cf-turnstile, iframe[src*='recaptcha'], iframe[src*='hcaptcha'], iframe[src*='challenges.cloudflare.com']"
+    );
+    for (const node of captchaNodes) {
+      const rect = node.getBoundingClientRect();
+      if (rect.width > 20 && rect.height > 20) {
+        const resp = document.querySelector(
+          "textarea[name='g-recaptcha-response'], textarea[name='h-captcha-response'], input[name='cf-turnstile-response']"
+        );
+        if (!resp || !String(resp.value || "").trim()) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  function runShortlinkDebloatedBypassStep() {
+    if (window.top !== window.self || shortlinkDirectBypassTriggered) return shortlinkBypassActionTaken;
+    if (!isShortlinkBypassAllowedOnCurrentHost()) return false;
+    if (globalSettings.shortlinkAutoClick === false) return false;
+
+    // Coba decode ulang jika DOM baru menyuntikkan hidden input safelink
+    if (tryEarlyDirectShortlinkBypass()) return true;
+
+    // Pastikan tidak pernah mengganggu halaman login atau halaman dengan CAPTCHA yang belum diselesaikan
+    if (document.querySelector("input[type='password']")) return false;
+    if (hasVisibleUnsolvedCaptcha()) {
+      if (!shortlinkCaptchaLoggedOnce) {
+        shortlinkCaptchaLoggedOnce = true;
+        logAegisEvent("WARN", "BYPASS_WAIT_CAPTCHA", "", "CAPTCHA terdeteksi — Bypass Shortlink menunggu verifikasi pengguna");
+      }
+      return false;
+    }
+
+    neutralizeEmptyTrapOverlays();
+
+    // 1. Cek form AdLinkFly / WP Safelink siap submit (tanpa CAPTCHA)
+    const adlinkForm = document.querySelector(
+      "form#go-link, form[name='wpsafelink'], form.go-link, form[action*='wpsafelink' i]"
+    );
+    if (adlinkForm && adlinkForm.dataset.aegisBypassSubmitted !== "1") {
+      const submitBtn = adlinkForm.querySelector("button[type='submit'], input[type='submit'], button.get-link");
+      const isDisabled = submitBtn && (submitBtn.disabled || submitBtn.classList.contains("disabled"));
+      if (!isDisabled) {
+        adlinkForm.dataset.aegisBypassSubmitted = "1";
+        shortlinkBypassActionTaken = true;
+        signalShortlinkCtaClick(adlinkForm.getAttribute("action") || location.href);
+        logAegisEvent("BYPASS", "BYPASS_FORM_SUBMIT", adlinkForm.getAttribute("action") || location.href, "Form shortlink AdLinkFly/Safelink dikirim otomatis");
+        try {
+          if (submitBtn) submitBtn.click();
+          else adlinkForm.submit();
+        } catch (e) {}
+        return true;
+      }
+    }
+
+    // 2. Cek tombol CTA shortlink populer yang sudah siap (tidak disabled & countdown selesai)
+    const ctaSelectors = [
+      "a.get-link[href]",
+      "#wpsafe-link a[href]",
+      "a#wpsafe-generate[href]",
+      "a#btn-main[href]",
+      "a#gotolink[href]",
+      "a#getlink[href]",
+      "a#babay[href]",
+      ".card a[href*='download=']",
+      "a.btn-download[href]",
+      "button#wpsafe-generate",
+      "button#btn-main"
+    ];
+
+    for (const sel of ctaSelectors) {
+      const el = document.querySelector(sel);
+      if (!el || el.dataset.aegisBypassClicked === "1") continue;
+      if (isRealAdSlotContainer(el) || isInsideUserPostContent(el)) continue;
+
+      const st = window.getComputedStyle(el);
+      if (st.display === "none" || st.visibility === "hidden" || parseFloat(st.opacity) < 0.1) continue;
+
+      const cls = typeof el.className === "string" ? el.className : "";
+      const isDisabled =
+        el.disabled ||
+        el.hasAttribute("disabled") ||
+        /\bdisabled\b/i.test(cls) ||
+        el.getAttribute("aria-disabled") === "true";
+      if (isDisabled) continue;
+
+      const rawHref = el.getAttribute("href") || "";
+      if (el.tagName === "A") {
+        if (!rawHref || rawHref === "#" || /^javascript:/i.test(rawHref)) continue;
+        let absHref = "";
+        try {
+          absHref = new URL(rawHref, location.href).href;
+        } catch {
+          continue;
+        }
+        if (isUrlInDeniedList(absHref)) {
+          logAegisEvent("BLOCK", "BYPASS_CTA_BLACKLIST_SKIP", absHref, "Tombol CTA tujuan ada di Blacklist — tidak diklik otomatis");
+          continue;
+        }
+        const sameOrigin = new URL(absHref).origin === location.origin;
+        if (!sameOrigin) {
+          const check = isShortlinkBypassTargetSafe(absHref);
+          if (!check.safe) {
+            logAegisEvent("BLOCK", "BYPASS_CTA_UNSAFE_SKIP", absHref, `Tombol CTA dilewati: ${check.reason}`);
+            continue;
+          }
+        }
+        el.dataset.aegisBypassClicked = "1";
+        shortlinkBypassActionTaken = true;
+        signalShortlinkCtaClick(absHref);
+        logAegisEvent(
+          "BYPASS",
+          "BYPASS_AUTO_CLICK_CTA",
+          absHref,
+          `Tombol tujuan "${(el.innerText || el.id || sel).trim().slice(0, 40)}" diklik otomatis oleh Bypass Debloated`
+        );
+        try {
+          el.click();
+        } catch (e) {}
+        return true;
+      } else {
+        el.dataset.aegisBypassClicked = "1";
+        shortlinkBypassActionTaken = true;
+        signalShortlinkCtaClick(location.href);
+        logAegisEvent(
+          "BYPASS",
+          "BYPASS_AUTO_CLICK_BTN",
+          location.href,
+          `Tombol langkah "${(el.innerText || el.id || sel).trim().slice(0, 40)}" diklik otomatis`
+        );
+        try {
+          el.click();
+        } catch (e) {}
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  let trapOverlayDebounce = null;
+  const trapOverlayObserver = new MutationObserver(() => {
+    if (globalSettings.removeTransparentOverlay === false) return;
+    clearTimeout(trapOverlayDebounce);
+    trapOverlayDebounce = setTimeout(neutralizeEmptyTrapOverlays, 120);
+  });
+
+  if (document.documentElement) {
+    trapOverlayObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style", "class"]
+    });
+  }
+
+  // =========================================================================
   // CLICK GUARD & AI DOM AUDIT (AMAN UNTUK TOMBOL LOGIN, FORM & PENGATURAN)
   // =========================================================================
   document.addEventListener(
@@ -2398,7 +3384,7 @@
       }
 
       const curHost = location.hostname.toLowerCase();
-      if (isSameSafeEcosystem(curHost, curHost) || isUrlInTrustedList(location.href) || LEGIT_COMMUNITY_HOST_REGEX.test(curHost)) {
+      if (isSameSafeEcosystem(curHost, curHost) || isUrlInTrustedList(location.href)) {
         return;
       }
 
@@ -2427,6 +3413,26 @@
         }
       }
 
+      if (globalSettings.removeTransparentOverlay !== false && isEmptyFullscreenTrapOverlay(target)) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        target.style.setProperty("pointer-events", "none", "important");
+        target.style.setProperty("display", "none", "important");
+        target.dataset.aegisTrapBypassed = "1";
+        // Teruskan klik pengguna langsung ke tombol CTA di bawah overlay kosong
+        try {
+          const underneath = document.elementFromPoint(e.clientX, e.clientY);
+          if (underneath && underneath !== target) {
+            const underAnchor = underneath.closest("a[href], button, [role='button']");
+            if (underAnchor && isShortlinkCtaElement(underAnchor, underAnchor.getAttribute("href") || "")) {
+              signalShortlinkCtaClick(underAnchor.getAttribute("href") || location.href);
+              underAnchor.click();
+            }
+          }
+        } catch (err) {}
+        return;
+      }
+
       const style = window.getComputedStyle(target);
       const isTransparentOverlay =
         (style.position === "fixed" || style.position === "absolute") &&
@@ -2435,7 +3441,7 @@
         target.offsetHeight > window.innerHeight * 0.65;
 
       const isProtectedUiElement = Boolean(
-        target.closest("form, dialog, [role='dialog'], [role='menu'], [aria-modal='true'], nav, header, video, canvas, input, textarea, .overlay-container, .overlay, [class*='player'], [id*='player'], [class*='video'], [id*='video'], [class*='vjs-'], [class*='jw-'], [class*='plyr'], [class*='modal'], [class*='drawer'], [class*='popup'], [class*='settings'], [class*='login' i], [id*='login' i], [class*='auth' i], [id*='auth' i]")
+        target.closest("form, dialog, [role='dialog'], [role='menu'], [aria-modal='true'], nav, header, video, canvas, input, textarea, .overlay-container, [class*='player'], [id*='player'], [class*='video'], [id*='video'], [class*='vjs-'], [class*='jw-'], [class*='plyr'], [class*='modal'], [class*='drawer'], [class*='popup'], [class*='settings'], [class*='login' i], [id*='login' i], [class*='auth' i], [id*='auth' i]")
       );
 
       if (globalSettings.removeTransparentOverlay !== false && isTransparentOverlay && !isProtectedUiElement) {
@@ -2455,27 +3461,102 @@
         if (rawHref && isVideoUrl(rawHref)) {
           registerDetectedVideo(rawHref);
         }
-        if (rawHref && isDangerousUrl(rawHref)) {
-          e.preventDefault();
-          e.stopImmediatePropagation();
-          let resolved = rawHref;
-          try { resolved = new URL(rawHref, location.href).href; } catch (err) {}
-          if (!isUrlInDeniedList(resolved)) {
+        if (rawHref) {
+          const verdict = classifyContentLinkOrImage(anchor, rawHref);
+          if (verdict.shouldAllowDirectly) {
+            if (verdict.category === "SAFE_MEDIA_OR_UGC" && verdict.resolvedUrl.startsWith("http")) {
+              try {
+                chrome.runtime.sendMessage({
+                  type: "ALLOW_USER_CONTENT_NAVIGATION",
+                  url: verdict.resolvedUrl
+                });
+              } catch (err) {}
+            } else if (verdict.category === "AUTH_OR_SAME_ORIGIN" && isShortlinkCtaElement(anchor, rawHref)) {
+              // v2.2.5+: Tombol CTA shortlink same-origin (misal ?download=1&t=... "Go To Link") -> beri grace window untuk HTTP 302 tujuan!
+              signalShortlinkCtaClick(verdict.resolvedUrl);
+              logAegisEvent(
+                "ALLOW",
+                "CLICK_SHORTLINK_CTA_SIGNAL",
+                verdict.resolvedUrl,
+                `Klik CTA shortlink same-origin ("${(anchor.innerText || anchor.id || "CTA").trim().slice(0, 35)}") -> izinkan HTTP 302`
+              );
+            }
+            return;
+          }
+          // Domain yang sudah ada di Blacklist pengguna diblokir secara SENYAP tanpa memunculkan HUD Block Menu
+          if (verdict.shouldSilentBlock || isUrlInDeniedList(verdict.resolvedUrl)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            logAegisEvent(
+              "BLOCK",
+              "CLICK_GUARD_SILENT_BLACKLIST",
+              verdict.resolvedUrl,
+              "Klik tautan diblokir senyap (domain ada di Blacklist)"
+            );
+            return;
+          }
+          if (verdict.shouldHoldInHud) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            logAegisEvent(
+              "BLOCK",
+              "CLICK_GUARD_HOLD_HUD",
+              verdict.resolvedUrl,
+              `Klik tautan ditahan ke HUD | kategori=${verdict.category} | alasan=${verdict.reason}`
+            );
             enqueueManualPrompt({
-              blockedUrl: resolved,
+              blockedUrl: verdict.resolvedUrl,
               kind: anchor.target === "_blank" ? "popup" : "redirect",
-              message: "Tautan iklan/affiliate ditahan"
+              message: verdict.reason || "Tautan iklan/affiliate ditahan"
             });
           }
         }
+        return;
+      }
+
+      // Tombol CTA shortlink non-anchor (button / role="button") yang memicu redirect JS/form
+      const ctaButton = target.closest("button, [role='button'], input[type='submit'], input[type='button']");
+      if (ctaButton && isShortlinkCtaElement(ctaButton, "")) {
+        signalShortlinkCtaClick(location.href);
       }
     },
     true
   );
 
   function runAiDomAudit() {
+    const curHost = location.hostname.toLowerCase();
     const elements = Array.from(document.querySelectorAll("a[href], button, [role='button']"));
     if (elements.length === 0) return;
+
+    // Daftarkan video link yang terdeteksi tanpa pernah mematikan pointer-events gambar/konten pengguna
+    elements.forEach((el) => {
+      const href = el.getAttribute("href") || "";
+      if (href && isVideoUrl(href)) {
+        registerDetectedVideo(href);
+      }
+    });
+
+    // Jangan jalankan audit tombol jebakan shortlink pada domain tepercaya atau ekosistem aman
+    if (
+      isSameSafeEcosystem(curHost, curHost) ||
+      isUrlInTrustedList(location.href)
+    ) {
+      return;
+    }
+
+    // Efisiensi kuota Gemini API (v2.2.7):
+    // Hanya jalankan AI DOM Audit sebagai fallback cerdas jika auto-click shortlink dimatikan
+    // ATAU jika runShortlinkDebloatedBypassStep() tidak menemukan CTA/form untuk di-bypass.
+    if (shortlinkDirectBypassTriggered) return;
+    if (globalSettings.shortlinkAutoClick !== false) {
+      if (shortlinkBypassActionTaken || runShortlinkDebloatedBypassStep()) {
+        return;
+      }
+    }
+
+    const pageText = document.body ? document.body.innerText.toLowerCase() : "";
+    const isShortlink = /(get link|continue to link|verify human|generate link|menuju link|link siap dalam)/i.test(pageText);
+    if (!isShortlink) return;
 
     const candidates = [];
     const elementMap = [];
@@ -2488,19 +3569,11 @@
       if (
         AUTH_BUTTON_REGEX.test(text) ||
         (href && isAuthUrlStr(href)) ||
+        isInsideUserPostContent(el) ||
+        Boolean(el.querySelector && el.querySelector("img")) ||
         /spoiler/i.test(text + " " + (el.className || "")) ||
         el.closest(".bbCodeSpoiler, [class*='spoiler' i], [data-xf-click*='toggle' i]")
       ) {
-        return;
-      }
-
-      if (href && isVideoUrl(href)) {
-        registerDetectedVideo(href);
-      }
-
-      if (href && isDangerousUrl(href)) {
-        el.style.pointerEvents = "none";
-        el.style.opacity = "0.25";
         return;
       }
 
@@ -2515,9 +3588,7 @@
       }
     });
 
-    const pageText = document.body ? document.body.innerText.toLowerCase() : "";
-    const isShortlink = /(get link|continue|verify|human|download|unduh|generate link|menuju link|lanjutkan)/i.test(pageText);
-    if (!isShortlink || candidates.length < 2) return;
+    if (candidates.length < 2) return;
 
     const applyAuditResult = (data) => {
       if (!data) return;
@@ -2528,9 +3599,8 @@
           const badEl = elementMap[idx];
           if (badEl) {
             const btnTxt = (badEl.innerText || badEl.value || "").trim();
-            if (AUTH_BUTTON_REGEX.test(btnTxt)) return;
-            badEl.style.pointerEvents = "none";
-            badEl.style.opacity = "0.2";
+            if (AUTH_BUTTON_REGEX.test(btnTxt) || isInsideUserPostContent(badEl)) return;
+            badEl.style.opacity = "0.35";
             badEl.style.textDecoration = "line-through";
           }
         });

@@ -7,6 +7,20 @@ import {
   resolveSavedHudCoord,
   resolveVideoDockExpandDirection,
 } from '../utils/hudPositionMath';
+import {
+  classifyContentLinkOrImage,
+  evaluateFirstPageOrExternalEntry,
+  evaluateShortlinkServerRedirect,
+  isDomainMatchedInList,
+  isEmptyTrapOverlayElement,
+  isShortlinkCtaClick,
+  shouldNeutralizeAntiAdblockFetchProbe,
+} from '../utils/smartContentClassifier';
+import {
+  AegisLogEntry,
+  detectShortlinkBypassAction,
+  extractDirectShortlinkUrl,
+} from '../utils/shortlinkBypassEngine';
 
 export interface GlobalSettingsState {
   hudEnabled: boolean;
@@ -32,6 +46,10 @@ export interface GlobalSettingsState {
   pipSize: 'small' | 'medium' | 'large';
   pipOpacity: number;
   adSkipSpeed: '8' | '16' | 'instant';
+  smartUgcSense?: boolean;
+  shortlinkBypassEnabled?: boolean;
+  shortlinkAutoClick?: boolean;
+  loggingEnabled?: boolean;
   removeTransparentOverlay: boolean;
   antiHistoryTrap: boolean;
   dnrEnabled: boolean;
@@ -54,26 +72,29 @@ interface InteractiveHudSandboxProps {
   onResetAllPositions: () => void;
   globalSettings: GlobalSettingsState;
   onUpdateGlobalSettings: (next: GlobalSettingsState) => void;
+  trustedDomains?: string[];
+  deniedDomains?: string[];
   onTrustDomain: (domain: string) => void;
   onBlockDomain: (domain: string) => void;
+  onAppendLog?: (entry: Omit<AegisLogEntry, 'id' | 'ts'>) => void;
 }
 
 const SAMPLE_PROMPTS: BlockedPromptItem[] = [
   {
     id: 'p1',
-    blockedUrl: 'https://hai8g.com/rotator?aff_id=9921&subid=jump_slot88',
-    message: 'Redirect iklan/affiliate ditahan',
-    kind: 'redirect',
+    blockedUrl: 'https://vikuy.click/watch?v=ac033',
+    message: 'Konten eksternal (.click/.top) ditahan — Pilih ↗ Buka jika aman',
+    kind: 'popup',
   },
   {
     id: 'p2',
-    blockedUrl: 'https://shope.ee/9zK1mAffiliateTrap?utm_source=popads',
-    message: 'Popup ditahan',
+    blockedUrl: 'https://rebrand.ly/pascol4d-semprot',
+    message: 'Gambar tersusupi tautan iklan/judol ditahan',
     kind: 'popup',
   },
   {
     id: 'p3',
-    blockedUrl: 'https://maxwin-zeus88.cfd/register?clickid=adsterra_77',
+    blockedUrl: 'https://promo-gacor88.top/spin?clickid=adsterra_77',
     message: 'Auto-redirect lintas domain ditahan',
     kind: 'redirect',
   },
@@ -91,8 +112,11 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
   onResetAllPositions,
   globalSettings,
   onUpdateGlobalSettings,
+  trustedDomains = [],
+  deniedDomains = [],
   onTrustDomain,
   onBlockDomain,
+  onAppendLog,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const topHudRef = useRef<HTMLDivElement>(null);
@@ -105,9 +129,19 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
   const [videoDockDimmed, setVideoDockDimmed] = useState(true);
   const [isVideoPlaying, setIsVideoPlaying] = useState(true);
   const [isMiniPipOpen, setIsMiniPipOpen] = useState(true);
+  const [bypassToast, setBypassToast] = useState<{ host: string; method: string } | null>(null);
+  const bypassToastTimerRef = useRef<number | null>(null);
   const [activeActionLog, setActiveActionLog] = useState<string>(
-    'v2.2.1: Pengaturan tersusun rapi per kelompok dengan opasitas & ukuran terpisah untuk Pil Video, HUD Blokir, dan Mini PiP.'
+    'v2.2.7: Drag Pil Video anti-leak (setPointerCapture), Toast Bypass Safelink, default Whitelist komunitas, & Log Diagnostik aktif. Klik skenario uji di bawah.'
   );
+
+  useEffect(() => {
+    return () => {
+      if (bypassToastTimerRef.current) {
+        window.clearTimeout(bypassToastTimerRef.current);
+      }
+    };
+  }, []);
 
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number }>({
     width: 820,
@@ -451,7 +485,14 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
     };
   };
 
-  const currentPrompt = prompts[0] || null;
+  // Purge any prompts whose domain is already in deniedDomains or trustedDomains (Silent Blacklist Rule)
+  const activePrompts = prompts.filter(
+    (p) =>
+      !isDomainMatchedInList(p.blockedUrl, deniedDomains) &&
+      !isDomainMatchedInList(p.blockedUrl, trustedDomains)
+  );
+
+  const currentPrompt = activePrompts[0] || null;
   const currentHost = (() => {
     if (!currentPrompt) return '';
     try {
@@ -468,7 +509,9 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
       setActiveActionLog(`Domain ${currentHost} ditambahkan ke Whitelist (Trust) & dibuka.`);
     } else if (action === 'blacklist') {
       onBlockDomain(currentHost);
-      setActiveActionLog(`Domain ${currentHost} diblokir permanen di DNR Blacklist.`);
+      setActiveActionLog(
+        `Domain ${currentHost} dimasukkan ke Blacklist — mulai sekarang diblokir senyap tanpa memunculkan HUD lagi!`
+      );
     } else if (action === 'redirect') {
       setActiveActionLog(`Navigasi sekali (Buka) diizinkan ke ${currentHost}.`);
     } else if (action === 'group') {
@@ -476,13 +519,15 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
     } else {
       setActiveActionLog(`Peringatan untuk ${currentHost} ditutup.`);
     }
-    setPrompts((prev) => prev.slice(1));
+    setPrompts((prev) => prev.filter((item) => item.id !== currentPrompt.id));
     setPreviewOpen(false);
   };
 
   const triggerSimulatedBlock = () => {
     setPrompts(SAMPLE_PROMPTS);
-    setActiveActionLog('3 simulasi redirect/popup iklan dipicu kembali ke dalam antrean HUD.');
+    setActiveActionLog(
+      'Simulasi redirect/popup dipicu (domain yang sudah ada di Blacklist otomatis disaring & tidak memunculkan HUD).'
+    );
   };
 
   const visibleTopHudActions = [
@@ -563,7 +608,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
             onClick={triggerSimulatedBlock}
             className="px-2.5 py-1.5 text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
-            + Picu HUD ({prompts.length})
+            + Picu HUD ({activePrompts.length})
           </button>
           <button
             type="button"
@@ -584,16 +629,16 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
         data-testid="hud-sandbox-canvas"
         className="relative w-full h-[520px] bg-slate-950 overflow-hidden select-none"
       >
-        {/* Background Simulated Streaming Webpage Content */}
-        <div className="p-6 max-w-2xl">
-          <div className="flex items-center gap-2 text-xs text-slate-500 mb-3 font-mono">
-            <span>https://stream-cinema21.example/watch/episode-04</span>
+        {/* Background Simulated Streaming & Forum Webpage Content */}
+        <div className="p-5 max-w-2xl space-y-3">
+          <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
+            <span>https://www.semprot.com/threads/ponakan-pemuas-nafsu.1545645/page-512</span>
             <span>·</span>
-            <span>DNR Shield v2.2.2 Active</span>
+            <span className="text-emerald-400">AEGIS Shield v2.2.7 Active</span>
           </div>
 
           {/* Simulated Primary Video Player Box */}
-          <div className="relative w-full max-w-[460px] h-[230px] rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col justify-between p-4">
+          <div className="relative w-full max-w-[460px] h-[165px] rounded-xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col justify-between p-3.5">
             <div className="flex items-center justify-between text-xs text-slate-400">
               <span className="font-medium text-slate-300">Pemutar Video Utama (HLS 1080p)</span>
               <span className="font-mono text-[11px] text-emerald-400">
@@ -606,11 +651,11 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                 type="button"
                 onClick={() => setIsVideoPlaying((p) => !p)}
                 aria-label={isVideoPlaying ? 'Jeda simulasi video' : 'Putar simulasi video'}
-                className="w-12 h-12 rounded-full bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
+                className="w-9 h-9 rounded-full bg-slate-800/90 hover:bg-slate-700 border border-slate-600 text-white flex items-center justify-center transition-transform active:scale-95 cursor-pointer"
               >
                 {isVideoPlaying ? '❚❚' : '▶'}
               </button>
-              <p className="text-xs text-slate-400 mt-2">
+              <p className="text-xs text-slate-400 mt-1">
                 Auto-Skip Countdown 5–30d Aktif ({globalSettings.adSkipSpeed === 'instant' ? 'Instan' : `${globalSettings.adSkipSpeed}×`})
               </p>
             </div>
@@ -619,11 +664,335 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
               <div className="bg-emerald-500 h-full w-3/5" />
             </div>
           </div>
+
+          {/* Simulated Shortlink Bypass Debloated, 302 CTA, First-Page Entry & Silent Blacklist Test Bench (v2.2.7) */}
+          <div
+            data-testid="smart-ugc-test-bench"
+            className="w-full max-w-[535px] rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 space-y-2"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-sky-300">
+                🧠 Uji Logika v2.2.7: Toast Bypass Shortlink, Log Diagnostik & AI UGC
+              </span>
+              <span className="text-[10px] font-mono text-emerald-400">
+                v2.2.7 Ready
+              </span>
+            </div>
+
+            <div className="grid grid-cols-3 gap-1.5 text-[10px]">
+              {/* Case 1: First Page Entry from Telegram / WhatsApp / Google Search */}
+              <button
+                type="button"
+                data-testid="test-first-page-entry"
+                onClick={() => {
+                  const res = evaluateFirstPageOrExternalEntry({
+                    targetUrl: 'https://vikuy.click/watch?v=ac033',
+                    previousTabUrl: 'https://t.me/s/channel_film',
+                    referrerUrl: 'https://t.me/',
+                    transitionType: 'link',
+                    transitionQualifiers: [],
+                    isTabStackEmpty: false,
+                    trustedDomains,
+                    deniedDomains,
+                  });
+                  if (res.shouldAllowEntry) {
+                    setActiveActionLog(
+                      `✅ [Halaman Pertama TG/WA/Google] Membuka link pertama (vikuy.click) dari Telegram/WhatsApp/Google Search langsung diizinkan (${res.entrySource})!`
+                    );
+                  }
+                }}
+                className="flex flex-col items-start justify-between p-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/40 text-left transition-colors cursor-pointer"
+              >
+                <span className="font-bold text-emerald-300">📲 1. Link TG/WA</span>
+                <span className="font-mono text-[9px] text-slate-300 truncate w-full my-0.5">
+                  t.me → vikuy.click
+                </span>
+                <span className="text-[8.5px] text-emerald-400 font-semibold">
+                  Langsung Buka →
+                </span>
+              </button>
+
+              {/* Case 2: Blacklisted Domain Silent Block (No HUD) */}
+              <button
+                type="button"
+                data-testid="test-blacklist-silent-block"
+                onClick={() => {
+                  const targetDomain = deniedDomains[0] || 'hai8g.com';
+                  const verdict = classifyContentLinkOrImage({
+                    pageUrl: 'https://www.semprot.com/threads/ponakan-pemuas-nafsu.1545645/page-512',
+                    rawHref: `https://rotator.${targetDomain}/jump?aff_id=99`,
+                    isInsideUserPostContent: true,
+                    isInsideRealAdSlot: false,
+                    trustedDomains,
+                    deniedDomains,
+                  });
+                  if (verdict.shouldSilentBlock && !verdict.shouldHoldInHud) {
+                    setActiveActionLog(
+                      `🔇 [Blokir Senyap Blacklist] Domain ${targetDomain} sudah ada di Blacklist — langsung diblokir tanpa memunculkan HUD Block Menu!`
+                    );
+                  }
+                }}
+                className="flex flex-col items-start justify-between p-1.5 rounded-lg bg-amber-950/40 hover:bg-amber-900/50 border border-amber-500/40 text-left transition-colors cursor-pointer"
+              >
+                <span className="font-bold text-amber-300">🔇 2. Blacklist</span>
+                <span className="font-mono text-[9px] text-slate-300 truncate w-full my-0.5">
+                  {deniedDomains[0] || 'hai8g.com'}
+                </span>
+                <span className="text-[8.5px] text-amber-400 font-semibold">
+                  Senyap Tanpa HUD
+                </span>
+              </button>
+
+              {/* Case 3: Safe UGC Image Host with Anti-Adblock Bait Class */}
+              <button
+                type="button"
+                data-testid="test-ugc-safe-image"
+                onClick={() => {
+                  const verdict = classifyContentLinkOrImage({
+                    pageUrl: 'https://www.semprot.com/threads/ponakan-pemuas-nafsu.1545645/page-512',
+                    rawHref: 'https://ibb.co.com/cK57k0fZ',
+                    isInsideUserPostContent: true,
+                    isInsideRealAdSlot: false,
+                    hasAntiAdblockBaitClass: true,
+                    cssClassSignature: 'bbImage adUnit',
+                    hasImgChild: true,
+                    imgSrc: 'https://i.ibb.co.com/KcMGv01D/Lanjutkan-10.jpg',
+                    smartUgcSense: globalSettings.smartUgcSense !== false,
+                    trustedDomains,
+                    deniedDomains,
+                  });
+                  if (verdict.shouldAllowDirectly) {
+                    setActiveActionLog(
+                      '✅ [AI Smart UGC] Gambar Post #10,235 (ibb.co.com · class="bbImage adUnit") dikenali sebagai Konten Asli & langsung dibuka!'
+                    );
+                  }
+                }}
+                className="flex flex-col items-start justify-between p-1.5 rounded-lg bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/40 text-left transition-colors cursor-pointer"
+              >
+                <span className="font-bold text-emerald-300">🖼️ 3. Gambar UGC</span>
+                <span className="font-mono text-[9px] text-slate-300 truncate w-full my-0.5">
+                  ibb.co.com/cK57k0fZ
+                </span>
+                <span className="text-[8.5px] text-emerald-400 font-semibold">
+                  Konten Asli →
+                </span>
+              </button>
+
+              {/* Case 4: Suspicious TLD (.click) Thumbnail Image inside User Post */}
+              <button
+                type="button"
+                data-testid="test-ugc-suspicious-click"
+                onClick={() => {
+                  const verdict = classifyContentLinkOrImage({
+                    pageUrl: 'https://www.semprot.com/threads/ponakan-pemuas-nafsu.1545645/page-512',
+                    rawHref: 'https://vikuy.click/watch?v=ac033',
+                    isInsideUserPostContent: true,
+                    isInsideRealAdSlot: false,
+                    hasAntiAdblockBaitClass: true,
+                    cssClassSignature: 'js-lbImage',
+                    hasImgChild: true,
+                    imgSrc: 'https://cdn.vikuy.click/thumbnails/thumb_64efc538dbe75fcaf8020a72.webp',
+                    smartUgcSense: globalSettings.smartUgcSense !== false,
+                    trustedDomains,
+                    deniedDomains,
+                  });
+                  if (verdict.shouldHoldInHud) {
+                    setPrompts((prev) => [
+                      {
+                        id: `ugc-${Date.now()}`,
+                        blockedUrl: verdict.resolvedUrl,
+                        message: verdict.reason,
+                        kind: 'popup',
+                      },
+                      ...prev.filter((p) => p.blockedUrl !== verdict.resolvedUrl),
+                    ]);
+                    setActiveActionLog(
+                      '🛡️ [AI Smart UGC .click/.top] Gambar GAMGER (vikuy.click) ditahan dengan aman di HUD atas — pilih ↗ Buka / ⊞ Tab Grup!'
+                    );
+                  }
+                }}
+                className="flex flex-col items-start justify-between p-1.5 rounded-lg bg-sky-950/40 hover:bg-sky-900/50 border border-sky-500/40 text-left transition-colors cursor-pointer"
+              >
+                <span className="font-bold text-sky-300">🎬 4. Link .click</span>
+                <span className="font-mono text-[9px] text-slate-300 truncate w-full my-0.5">
+                  vikuy.click/watch
+                </span>
+                <span className="text-[8.5px] text-sky-400 font-semibold">
+                  Tanya di HUD ↑
+                </span>
+              </button>
+
+              {/* Case 5: Disguised Ad Element scanned by CSS Class (.itr / .samBannerUnit) & Shortener URL */}
+              <button
+                type="button"
+                data-testid="test-ad-infiltrated-image"
+                onClick={() => {
+                  const verdict = classifyContentLinkOrImage({
+                    pageUrl: 'https://www.semprot.com/threads/ponakan-pemuas-nafsu.1545645/page-512',
+                    rawHref: 'https://rebrand.ly/pascol4d-semprot',
+                    isInsideUserPostContent: true,
+                    isInsideRealAdSlot: false,
+                    cssClassSignature: 'itr samBannerUnit',
+                    hasImgChild: true,
+                    imgSrc: 'https://i.imgur.com/zOfaFQf.gif',
+                    smartUgcSense: globalSettings.smartUgcSense !== false,
+                    trustedDomains,
+                    deniedDomains,
+                  });
+                  if (verdict.shouldHoldInHud) {
+                    setPrompts((prev) => [
+                      {
+                        id: `ad-${Date.now()}`,
+                        blockedUrl: verdict.resolvedUrl,
+                        message: verdict.reason,
+                        kind: 'popup',
+                      },
+                      ...prev.filter((p) => p.blockedUrl !== verdict.resolvedUrl),
+                    ]);
+                    setActiveActionLog(
+                      '🚫 [AI CSS + URL Scan] Elemen iklan terselubung (class=".itr .samBannerUnit" + shortlink rebrand.ly/pascol4d) tertangkap & ditahan!'
+                    );
+                  }
+                }}
+                className="flex flex-col items-start justify-between p-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/50 border border-rose-500/40 text-left transition-colors cursor-pointer"
+              >
+                <span className="font-bold text-rose-300">🎰 5. Iklan CSS</span>
+                <span className="font-mono text-[9px] text-slate-300 truncate w-full my-0.5">
+                  .itr / rebrand.ly
+                </span>
+                <span className="text-[8.5px] text-rose-400 font-semibold">
+                  Tertangkap AI 🚫
+                </span>
+              </button>
+
+              {/* Case 6: v2.2.5 Shortlink Redirect Ready (#overlay + #babay ?download=1&t=... HTTP 302 + Anti-Adblock fetch) */}
+              <button
+                type="button"
+                data-testid="test-shortlink-302-cta"
+                onClick={() => {
+                  const trapBypassed = isEmptyTrapOverlayElement({
+                    id: 'overlay',
+                    className: '',
+                    textContent: '',
+                    hasInteractiveChildren: false,
+                    position: 'fixed',
+                    display: 'flex',
+                    widthRatio: 1.0,
+                    heightRatio: 1.0,
+                    opacity: 1,
+                    backgroundColor: 'rgba(0, 0, 0, 0)',
+                  });
+                  const probeNeutralized = shouldNeutralizeAntiAdblockFetchProbe(
+                    'https://js.wpadmngr.com?t=1732100000',
+                    'no-cors'
+                  );
+                  const ctaDetected = isShortlinkCtaClick({
+                    rawHref: '?download=1&t=498109fe-e3a2-4cc6-96b4-702a66caa45b',
+                    buttonText: 'Go To Link',
+                    elementId: 'babay',
+                    cardText: 'Redirect Ready Please wait a moment...',
+                  });
+                  const verdict = evaluateShortlinkServerRedirect({
+                    destinationUrl: 'https://files.example-cdn.org/video/download-target.mp4',
+                    shortlinkCtaGraceActive: ctaDetected,
+                    transitionQualifiers: ['server_redirect'],
+                    deniedDomains,
+                    trustedDomains,
+                  });
+                  if (trapBypassed && probeNeutralized && verdict.shouldAllow) {
+                    onAppendLog?.({
+                      level: 'ALLOW',
+                      source: 'background',
+                      code: 'ALLOW_SHORTLINK_302',
+                      fromUrl: 'https://go.short-redirect.net/?download=1&t=498109fe',
+                      toUrl: 'https://files.example-cdn.org/video/download-target.mp4',
+                      detail: 'HTTP 302 dari tombol CTA Go To Link diizinkan (overlay #overlay & probe fetch dinetralkan)',
+                    });
+                    setActiveActionLog(
+                      '🔗 [Shortlink 302] #overlay jebakan di-bypass otomatis, anti-adblock fetch() dinetralkan, & klik "Go To Link" (?download=1&t=...) lolos HTTP 302 (tercatat di Tab 📋 Log)!'
+                    );
+                  }
+                }}
+                className="flex flex-col items-start justify-between p-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-400/50 text-left transition-colors cursor-pointer"
+              >
+                <span className="font-bold text-emerald-300">🔗 6. Shortlink 302</span>
+                <span className="font-mono text-[9px] text-slate-300 truncate w-full my-0.5">
+                  #overlay + Go To Link
+                </span>
+                <span className="text-[8.5px] text-emerald-300 font-semibold">
+                  Lolos 302 ✓
+                </span>
+              </button>
+
+              {/* Case 7: v2.2.6 Bypass All Shortlinks Debloated (BloggerPemula / Amm0ni4 Engine) */}
+              <button
+                type="button"
+                data-testid="test-bypass-debloated"
+                onClick={() => {
+                  const target = 'https://drive.google.com/file/d/1AegisBypassDemo/view';
+                  const doubleB64 = btoa(btoa(target));
+                  const extracted = extractDirectShortlinkUrl({
+                    pageUrl: `https://safelink-blogger.example.net/p/verify.html?go=${encodeURIComponent(doubleB64)}`,
+                    deniedDomains,
+                  });
+                  const stepVerdict = detectShortlinkBypassAction({
+                    hasVisibleUnsolvedCaptcha: false,
+                    hasAdLinkFlyForm: false,
+                    ctaHref: '?download=1&t=498109fe',
+                    ctaText: 'Go To Link',
+                    ctaDisabled: false,
+                    ctaId: 'babay',
+                    pageUrl: 'https://safelink-blogger.example.net/p/verify.html',
+                    deniedDomains,
+                  });
+                  if (extracted.found && stepVerdict.action === 'AUTO_CLICK_CTA') {
+                    let targetHost = extracted.decodedUrl;
+                    try {
+                      targetHost = new URL(extracted.decodedUrl).hostname;
+                    } catch {
+                      // fallback to full string
+                    }
+                    if (bypassToastTimerRef.current) {
+                      window.clearTimeout(bypassToastTimerRef.current);
+                    }
+                    setBypassToast({ host: targetHost, method: extracted.method });
+                    bypassToastTimerRef.current = window.setTimeout(() => {
+                      setBypassToast(null);
+                    }, 2400);
+                    onAppendLog?.({
+                      level: 'BYPASS',
+                      source: 'content',
+                      code: `BYPASS_${extracted.method}`,
+                      fromUrl: 'https://safelink-blogger.example.net/p/verify.html?go=***',
+                      toUrl: extracted.decodedUrl,
+                      detail: `Bypass Shortlink Debloated mengekstrak URL tujuan langsung dengan Toast 800ms (${extracted.method})`,
+                    });
+                    setActiveActionLog(
+                      `⚡ [Bypass Toast v2.2.7] Double-Base64 Safelink didekode (${extracted.method}) → Toast tampil ~800ms sebelum lompat ke ${extracted.decodedUrl} & dicatat ke Tab 📋 Log!`
+                    );
+                  }
+                }}
+                className="col-span-3 flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-amber-950/50 hover:bg-amber-900/50 border border-amber-400/50 text-left transition-colors cursor-pointer"
+              >
+                <div className="min-w-0">
+                  <span className="font-bold text-amber-300">
+                    ⚡ 7. Uji Bypass Shortlink Debloated (BloggerPemula Engine)
+                  </span>
+                  <span className="ml-2 font-mono text-[9px] text-slate-300">
+                    ?go=DoubleBase64 → drive.google.com + Auto-Step + Catat Log
+                  </span>
+                </div>
+                <span className="text-[9px] text-amber-300 font-bold shrink-0 ml-2">
+                  Decode Instan ⚡
+                </span>
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* ================================================================= */}
         {/* HUD 1: #aegis-top-manual-hud (Draggable Redirect / Popup Shield)  */}
-        {/* v2.2.2: Dedicated hudOpacity, hudScale & hudDurationSec Timer     */}
+        {/* v2.2.4: Never renders for domains in deniedDomains (Blacklist)    */}
         {/* ================================================================= */}
         {globalSettings.hudEnabled && currentPrompt && (
           <div
@@ -1047,6 +1416,25 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        )}
+        {/* v2.2.7 Brief Corner Toast Notification on Early Direct Shortlink Bypass */}
+        {bypassToast && (
+          <div
+            data-testid="sandbox-bypass-toast"
+            className="absolute bottom-3 right-3 z-40 max-w-[330px] rounded-xl bg-slate-900/95 border border-emerald-400/50 px-3.5 py-2.5 shadow-2xl backdrop-blur-md flex items-center gap-2.5"
+          >
+            <span className="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-sm shrink-0">
+              ⚡
+            </span>
+            <div className="min-w-0">
+              <div className="text-[11px] font-extrabold text-emerald-300 leading-tight">
+                ⚡ AEGIS Bypass: Melompati Safelink...
+              </div>
+              <div className="text-[10px] font-mono text-slate-300 truncate mt-0.5">
+                → {bypassToast.host} ({bypassToast.method})
+              </div>
             </div>
           </div>
         )}

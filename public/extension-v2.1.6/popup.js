@@ -22,6 +22,10 @@ const DEFAULT_GLOBAL_SETTINGS = {
   pipSize: "medium",
   pipOpacity: 0.95,
   adSkipSpeed: "16",
+  smartUgcSense: true,
+  shortlinkBypassEnabled: true,
+  shortlinkAutoClick: true,
+  loggingEnabled: true,
   removeTransparentOverlay: true,
   antiHistoryTrap: true,
   dnrEnabled: true,
@@ -81,11 +85,22 @@ document.addEventListener("DOMContentLoaded", async () => {
   const pipSizeSelect = document.getElementById("pipSizeSelect");
 
   const adSkipSpeedSelect = document.getElementById("adSkipSpeedSelect");
+  const shortlinkBypassEnabledToggle = document.getElementById("shortlinkBypassEnabledToggle");
+  const shortlinkAutoClickToggle = document.getElementById("shortlinkAutoClickToggle");
+  const loggingEnabledToggle = document.getElementById("loggingEnabledToggle");
+  const smartUgcSenseToggle = document.getElementById("smartUgcSenseToggle");
   const removeOverlayToggle = document.getElementById("removeOverlayToggle");
   const antiHistoryToggle = document.getElementById("antiHistoryToggle");
   const dnrEnabledToggle = document.getElementById("dnrEnabledToggle");
   const redirectWindowRange = document.getElementById("redirectWindowRange");
   const redirectWindowVal = document.getElementById("redirectWindowVal");
+
+  // Diagnostic Log controls
+  const tabLogsBtn = document.getElementById("tabLogs");
+  const logOutputArea = document.getElementById("logOutputArea");
+  const copyLogBtn = document.getElementById("copyLogBtn");
+  const refreshLogBtn = document.getElementById("refreshLogBtn");
+  const clearLogBtn = document.getElementById("clearLogBtn");
 
   // HUD Custom Position status
   const posStatusTopHud = document.getElementById("posStatusTopHud");
@@ -106,6 +121,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   let trustedDomains = [];
   let deniedDomains = [];
   let hudPositions = { ...DEFAULT_HUD_POSITIONS };
+  let aegisLogs = [];
+  let activeLogFilter = "ALL";
 
   function showStatus(msg) {
     statusEl.textContent = msg;
@@ -196,6 +213,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     videoDockDimRange.value = String(g.videoDockDimSec ?? 2.5);
     pipSizeSelect.value = g.pipSize || "medium";
     adSkipSpeedSelect.value = String(g.adSkipSpeed || "16");
+    if (shortlinkBypassEnabledToggle) shortlinkBypassEnabledToggle.checked = g.shortlinkBypassEnabled !== false;
+    if (shortlinkAutoClickToggle) shortlinkAutoClickToggle.checked = g.shortlinkAutoClick !== false;
+    if (loggingEnabledToggle) loggingEnabledToggle.checked = g.loggingEnabled !== false;
+    if (smartUgcSenseToggle) smartUgcSenseToggle.checked = g.smartUgcSense !== false;
     removeOverlayToggle.checked = g.removeTransparentOverlay !== false;
     antiHistoryToggle.checked = g.antiHistoryTrap !== false;
     dnrEnabledToggle.checked = g.dnrEnabled !== false;
@@ -233,6 +254,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       pipSize: pipSizeSelect.value,
       pipOpacity: Number(Math.max(0.5, Math.min(1.0, Number.isFinite(rawPipOp) ? rawPipOp : 0.95)).toFixed(2)),
       adSkipSpeed: adSkipSpeedSelect.value,
+      shortlinkBypassEnabled: shortlinkBypassEnabledToggle ? shortlinkBypassEnabledToggle.checked : true,
+      shortlinkAutoClick: shortlinkAutoClickToggle ? shortlinkAutoClickToggle.checked : true,
+      loggingEnabled: loggingEnabledToggle ? loggingEnabledToggle.checked : true,
+      smartUgcSense: smartUgcSenseToggle ? smartUgcSenseToggle.checked : true,
       removeTransparentOverlay: removeOverlayToggle.checked,
       antiHistoryTrap: antiHistoryToggle.checked,
       dnrEnabled: dnrEnabledToggle.checked,
@@ -269,13 +294,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     hudShowGroup,
     hudShowOpen,
     hudShowBlock,
-    hudShowUrlDetail
+    hudShowUrlDetail,
+    shortlinkBypassEnabledToggle,
+    shortlinkAutoClickToggle,
+    loggingEnabledToggle,
+    smartUgcSenseToggle
   ].forEach((chk) => {
     if (chk) {
       chk.addEventListener("change", async () => {
         const globalSettings = collectGlobalForm();
         await chrome.storage.local.set({ globalSettings });
-        showStatus("Tampilan tombol menu HUD diperbarui!");
+        showStatus("Pengaturan HUD & proteksi diperbarui!");
       });
     }
   });
@@ -336,7 +365,57 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (areaName === "local" && changes.globalSettings) {
       applyGlobalForm(changes.globalSettings.newValue);
     }
+    if (areaName === "local" && changes.aegisLogs) {
+      aegisLogs = Array.isArray(changes.aegisLogs.newValue) ? changes.aegisLogs.newValue : [];
+      renderDiagnosticLogs();
+    }
   });
+
+  function formatLogsText(entries, filter) {
+    const filtered = filter === "ALL" ? entries : entries.filter((e) => e && e.level === filter);
+    const header = [
+      "=== AEGIS-AI SHIELD v2.2.7 DIAGNOSTIC LOG ===",
+      `Filter: ${filter} | Total Tercatat: ${filtered.length} entri`,
+      "Petunjuk: Salin teks ini untuk analisa penyebab gagal lanjut ke link tujuan.",
+      "--------------------------------------------------"
+    ];
+    if (filtered.length === 0) {
+      return [...header, "(Belum ada catatan log untuk filter ini.)"].join("\n");
+    }
+    const pad = (n) => String(n).padStart(2, "0");
+    const lines = filtered.map((entry) => {
+      const dt = new Date(entry.ts || Date.now());
+      const timeStr = `${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+      const targetPart = entry.toUrl ? ` -> ${entry.toUrl}` : "";
+      return `[${timeStr}] [${entry.level || "WARN"}/${entry.source || "background"}] ${entry.code || "EVENT"}\n  Detail : ${entry.detail || "-"}\n  URL    : ${entry.fromUrl || "-"}${targetPart}`;
+    });
+    return [...header, ...lines].join("\n\n");
+  }
+
+  function renderDiagnosticLogs() {
+    if (tabLogsBtn) {
+      tabLogsBtn.textContent = `📋 Log (${aegisLogs.length})`;
+    }
+    if (logOutputArea) {
+      logOutputArea.value = formatLogsText(aegisLogs, activeLogFilter);
+    }
+  }
+
+  async function refreshDiagnosticLogs() {
+    try {
+      const res = await new Promise((resolve) => {
+        chrome.runtime.sendMessage({ type: "GET_AEGIS_LOGS" }, (r) => resolve(r));
+      });
+      if (res && Array.isArray(res.logs)) {
+        aegisLogs = res.logs;
+        renderDiagnosticLogs();
+        return;
+      }
+    } catch (e) {}
+    const storedLogs = await chrome.storage.local.get(["aegisLogs"]);
+    aegisLogs = Array.isArray(storedLogs.aegisLogs) ? storedLogs.aegisLogs : [];
+    renderDiagnosticLogs();
+  }
 
   function cleanDomain(raw) {
     if (!raw) return "";
@@ -428,8 +507,59 @@ document.addEventListener("DOMContentLoaded", async () => {
       btn.classList.add("active");
       const tabId = btn.getAttribute("data-tab");
       document.getElementById(`panel-${tabId}`).classList.add("active");
+      if (tabId === "logs") {
+        refreshDiagnosticLogs();
+      }
     });
   });
+
+  document.querySelectorAll(".log-filter-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".log-filter-btn").forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      activeLogFilter = btn.getAttribute("data-log-filter") || "ALL";
+      renderDiagnosticLogs();
+    });
+  });
+
+  if (copyLogBtn) {
+    copyLogBtn.addEventListener("click", async () => {
+      const text = logOutputArea ? logOutputArea.value : "";
+      try {
+        await navigator.clipboard.writeText(text);
+        showStatus("Log diagnostik tersalin ke Clipboard!");
+      } catch {
+        if (logOutputArea) {
+          logOutputArea.focus();
+          logOutputArea.select();
+          try { document.execCommand("copy"); } catch {}
+        }
+        showStatus("Teks log dipilih — silakan tekan Salin (Copy).");
+      }
+    });
+  }
+
+  if (refreshLogBtn) {
+    refreshLogBtn.addEventListener("click", async () => {
+      await refreshDiagnosticLogs();
+      showStatus("Log diagnostik diperbarui!");
+    });
+  }
+
+  if (clearLogBtn) {
+    clearLogBtn.addEventListener("click", async () => {
+      aegisLogs = [];
+      try {
+        await new Promise((resolve) => {
+          chrome.runtime.sendMessage({ type: "CLEAR_AEGIS_LOGS" }, () => resolve());
+        });
+      } catch {
+        await chrome.storage.local.set({ aegisLogs: [] });
+      }
+      renderDiagnosticLogs();
+      showStatus("Log diagnostik dibersihkan!");
+    });
+  }
 
   async function refreshCacheCount() {
     const { aiAuditCache } = await chrome.storage.local.get(["aiAuditCache"]);
@@ -445,7 +575,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     "trustedDomains",
     "deniedDomains",
     "globalSettings",
-    "hudPositions"
+    "hudPositions",
+    "aegisLogs"
   ]);
   if (stored.geminiApiKey) apiInput.value = stored.geminiApiKey;
   strictToggle.checked = stored.strictCrossOrigin !== false;
@@ -453,9 +584,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   trustedDomains = Array.isArray(stored.trustedDomains) ? stored.trustedDomains : [];
   deniedDomains = Array.isArray(stored.deniedDomains) ? stored.deniedDomains : [];
   hudPositions = { ...DEFAULT_HUD_POSITIONS, ...(stored.hudPositions || {}) };
+  aegisLogs = Array.isArray(stored.aegisLogs) ? stored.aegisLogs : [];
   applyGlobalForm(stored.globalSettings);
   renderHudPositionStatus();
   renderLists();
+  renderDiagnosticLogs();
   refreshCacheCount();
 
   document.getElementById("saveBtn").addEventListener("click", async () => {
@@ -472,7 +605,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("saveGlobalBtn").addEventListener("click", async () => {
     const globalSettings = collectGlobalForm();
     await chrome.storage.local.set({ globalSettings });
-    showStatus("Setting v2.2.2 berhasil disimpan!");
+    showStatus("Setting v2.2.7 berhasil disimpan!");
   });
 
   document.getElementById("resetGlobalBtn").addEventListener("click", async () => {
@@ -490,7 +623,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   document.getElementById("copyBackupBtn").addEventListener("click", async () => {
     const payload = {
       app: "AEGIS-AI Shield",
-      version: "2.2.2",
+      version: "2.2.7",
       geminiApiKey: apiInput.value.trim(),
       strictCrossOrigin: strictToggle.checked,
       autoSkipCountdown: autoSkipToggle.checked,

@@ -29,11 +29,9 @@
     return;
   }
 
-  const legitCommunityHostRegex = /(^|\.)(semprot\.com|kaskus\.co\.id|reddit\.com)$/i;
-
   try {
     const initialHost = (location.hostname || "").toLowerCase();
-    if (legitCommunityHostRegex.test(initialHost) || earlySafeEcosystemRegex.test(initialHost)) {
+    if (earlySafeEcosystemRegex.test(initialHost)) {
       return;
     }
   } catch (e) {}
@@ -44,8 +42,31 @@
   window.__AEGIS_AUTO_SKIP__ = true;
   window.__AEGIS_ANTI_HISTORY__ = true;
   window.__AEGIS_AD_SKIP_SPEED__ = "16";
+  window.__AEGIS_LOGGING_ENABLED__ = true;
+  window.__AEGIS_SHORTLINK_BYPASS__ = true;
   window.__AEGIS_LAST_USER_CLICK__ = 0;
   window.__AEGIS_LAST_AUTH_CLICK__ = 0;
+  window.__AEGIS_LAST_SHORTLINK_CTA__ = 0;
+
+  window.addEventListener("__AEGIS_SHORTLINK_CTA_CLICK__", () => {
+    window.__AEGIS_LAST_SHORTLINK_CTA__ = Date.now();
+  });
+
+  function emitAegisLog(level, code, toUrl, detail) {
+    if (!window.__AEGIS_LOGGING_ENABLED__) return;
+    try {
+      window.dispatchEvent(new CustomEvent("__AEGIS_LOG_EVENT__", {
+        detail: {
+          level: level || "WARN",
+          source: "main_world",
+          code: code || "MAIN_WORLD_EVENT",
+          fromUrl: location.href,
+          toUrl: toUrl ? String(toUrl) : "",
+          detail: detail ? String(detail) : ""
+        }
+      }));
+    } catch (e) {}
+  }
 
   const authButtonRegex = /\b(log\s?in|sign\s?in|masuk|daftar|register|sign\s?up|sso|oauth|continue with|lanjutkan dengan|google|microsoft|apple|github|facebook|yandex|discord)\b/i;
   const authUrlRegex = /(\/(login|signin|sign-in|log-in|auth|oauth|oauth2|sso|saml|openid|oidc|authorize|callback|session|account|accounts|passport|idp|cas|connect\/authorize|v2\/auth)(\/|$)|[?&](client_id|redirect_uri|response_type|state|scope|openid|code_challenge|samlrequest|return_to|continue|_xfRedirect)=)/i;
@@ -102,15 +123,20 @@
       if (ev.detail.globalSettings) {
         window.__AEGIS_ANTI_HISTORY__ = ev.detail.globalSettings.antiHistoryTrap !== false;
         window.__AEGIS_AD_SKIP_SPEED__ = String(ev.detail.globalSettings.adSkipSpeed || "16");
+        window.__AEGIS_LOGGING_ENABLED__ = ev.detail.globalSettings.loggingEnabled !== false;
+        window.__AEGIS_SHORTLINK_BYPASS__ = ev.detail.globalSettings.shortlinkBypassEnabled !== false;
       }
     }
   });
 
-  const blockRegex = /(slot|gacor|maxwin|zeus|pragmatic|togel|judol|casino|betting|scatter|rtp|deposit|wd|bonus100|situsresmi|linkalternatif|sbobet|poker|judi|bandar)/i;
+  const blockRegex = /(slot|gacor|maxwin|zeus|pragmatic|togel|judol|casino|betting|scatter|rtp|deposit|wd|bonus100|situsresmi|linkalternatif|sbobet|poker|judi|bandar|pascol4d|dewadora|toto4d)/i;
   const badTld = /\.(cfd|xyz|top|cyou|icu|buzz|click|link|monster|quest|rest|sbs|shop|site|tokyo|vip|wang|win|work|wtf|zone|live|asia|online|store|fun|pro|club|cam|cc|me|pw|tk|ml|ga|cf|gq)$/i;
-  const commerceRegex = /(shopee\.|shope\.ee|tokopedia\.|lazada\.|blibli\.|bukalapak\.|tiktok\.com\/t\/|invol\.co|accesstrade|admitad|ecotrack|go2cloud|onclickalgo|popads|popcash|propellerads|adsterra|hilltopads|exoclick|juicyads|trafficjunky|monetag|richads)/i;
+  const commerceRegex = /(shopee\.|shope\.ee|tokopedia\.|lazada\.|blibli\.|bukalapak\.|tiktok\.com\/t\/|invol\.co|accesstrade|admitad|ecotrack|go2cloud|onclickalgo|popads|popcash|propellerads|adsterra|hilltopads|exoclick|juicyads|trafficjunky|monetag|richads|wpadmngr|clickadu)/i;
   const randomShortDomain = /^[a-z0-9]{2,4}[0-9][a-z0-9]{1,4}\.(com|net|org|co|id|io|info|biz)$/i;
   const arbitrageParams = /(utm_source=.*ad|utm_medium=affiliate|af_siteid=|af_sub|clickid=|click_id=|subid=|sub_id=|aff_id=|zoneid=|bannerid=|popunder|redirect|gclid=)/i;
+  const safeMediaHostRegex = /(^|\.)(ibb\.co|ibb\.co\.com|imgur\.com|postimg\.cc|pixhost\.to|imgbox\.com|imagebam\.com|prnt\.sc|prntscr\.com|gyazo\.com|flickr\.com|staticflickr\.com|wikimedia\.org|tenor\.com|giphy\.com|redgifs\.com|catbox\.moe|bunkr\.(si|ru|is|la|sk|ax|ac|black|red|media|site)|cyberdrop\.(me|to|cc)|pixeldrain\.com|gofile\.io|mega\.nz|mediafire\.com|drive\.google\.com|docs\.google\.com|dropbox\.com)$/i;
+  const knownAdShortenerRegex = /(^|\.)(optional\.me|see\.optional\.me|rebrand\.ly|bit\.ly|t\.ly|tinyurl\.com|is\.gd|v\.gd|cutt\.ly|shorturl\.at|ouo\.io|shrinkme\.io|exe\.io|bc\.vc|adf\.ly|linkvertise\.com)$/i;
+  const antiAdblockProbeHostRegex = /(^|\.)(wpadmngr\.com|googletagmanager\.com|googlesyndication\.com|doubleclick\.net|google-analytics\.com|adservice\.google\.com|adsterra\.com|propellerads\.com|onclickalgo\.com|clickadu\.com|popads\.net|popcash\.net)$/i;
   const nonVideoAssetRegex = /\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|avif|css|js|json|woff2?|ttf|eot|vtt|srt)(\?|#|$)/i;
   const videoRegex = /\.(mp4|m3u8|mkv|webm|mov|avi|flv|ts|mpd)(\?|#|$)/i;
   const videoStreamHintRegex = /(\/pass_md5\/|\/hls\/|\/stream\/|\/get_video|mime=video|videoplayback|master\.txt|index\.txt|doodcdn|cloudcdn|vidcdn|\/token\/|\/delivery\/)/i;
@@ -148,61 +174,37 @@
     return p.slice(-2).join(".");
   }
 
-  function isHostTrusted(urlStr) {
-    try {
-      const h = new URL(urlStr, location.href).hostname.toLowerCase();
-      const b = getBase(h);
-      return window.__AEGIS_TRUSTED__.includes(h) || window.__AEGIS_TRUSTED__.includes(b);
-    } catch { return false; }
+  function normalizeRuleDomain(raw) {
+    return String(raw || "")
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0]
+      .split("?")[0]
+      .split("#")[0];
   }
 
-  function isHostDenied(urlStr) {
+  function isHostMatchedInArray(urlStr, list) {
+    if (!urlStr || !Array.isArray(list) || list.length === 0) return false;
     try {
-      const h = new URL(urlStr, location.href).hostname.toLowerCase();
+      const h = new URL(urlStr, location.href).hostname.toLowerCase().replace(/^www\./, "");
+      if (!h) return false;
       const b = getBase(h);
-      return window.__AEGIS_DENIED__.includes(h) || window.__AEGIS_DENIED__.includes(b);
-    } catch { return false; }
-  }
-
-  function shouldBlockDestination(urlStr, isUserEvent = false) {
-    if (!urlStr) return true;
-    const raw = String(urlStr).trim();
-    if (/^(intent|shopeeid|tokopedia|lazada|market):/i.test(raw)) return true;
-
-    try {
-      const dest = new URL(raw, location.href);
-      if (!dest.protocol.startsWith("http")) return false;
-      const curHost = location.hostname.toLowerCase();
-      const destHost = dest.hostname.toLowerCase();
-      const destBase = getBase(destHost);
-      const curBase = getBase(curHost);
-
-      if (destBase === curBase) return false;
-      if (isSameSafeEcosystem(curHost, destHost)) return false;
-      if (cfChallengeHostRegex.test(destHost)) return false;
-      if (isHostTrusted(dest.href)) return false;
-      if (isHostDenied(dest.href)) return true;
-
-      const isSearchHijack = destHost.includes("google.") && dest.pathname === "/search";
-      const isBadPattern =
-        blockRegex.test(dest.href) ||
-        badTld.test(destHost) ||
-        commerceRegex.test(dest.href) ||
-        randomShortDomain.test(destBase) ||
-        arbitrageParams.test(dest.href);
-
-      if (isSearchHijack || isBadPattern) return true;
-
-      const now = Date.now();
-      const hasRecentUserGesture = isUserEvent || (now - window.__AEGIS_LAST_USER_CLICK__) < 1800;
-      const hasRecentAuthGesture = (now - window.__AEGIS_LAST_AUTH_CLICK__) < 6000;
-
-      if (hasRecentUserGesture && (isAuthUrl(dest) || hasRecentAuthGesture)) {
-        return false;
-      }
-
-      if (!hasRecentUserGesture || window.__AEGIS_STRICT_CROSS__) {
-        return true;
+      for (const item of list) {
+        const rule = normalizeRuleDomain(item);
+        if (!rule) continue;
+        const ruleBase = getBase(rule);
+        if (
+          h === rule ||
+          b === rule ||
+          h === ruleBase ||
+          b === ruleBase ||
+          h.endsWith("." + rule) ||
+          h.endsWith("." + ruleBase)
+        ) {
+          return true;
+        }
       }
       return false;
     } catch {
@@ -210,15 +212,83 @@
     }
   }
 
-  function nukeTimers() {
-    const maxId = setTimeout(() => {}, 0);
-    for (let i = Math.max(0, maxId - 60); i <= maxId; i++) {
-      clearInterval(i);
-      clearTimeout(i);
+  function isHostTrusted(urlStr) {
+    return isHostMatchedInArray(urlStr, window.__AEGIS_TRUSTED__);
+  }
+
+  function isHostDenied(urlStr) {
+    return isHostMatchedInArray(urlStr, window.__AEGIS_DENIED__);
+  }
+
+  function diagnoseDestinationBlock(urlStr, isUserEvent = false) {
+    if (!urlStr) return { block: true, reason: "empty_url" };
+    const raw = String(urlStr).trim();
+    if (/^(intent|shopeeid|tokopedia|lazada|market):/i.test(raw)) return { block: true, reason: "deep_link_app" };
+
+    try {
+      const dest = new URL(raw, location.href);
+      if (!dest.protocol.startsWith("http")) return { block: false, reason: "non_http" };
+      const curHost = location.hostname.toLowerCase();
+      const destHost = dest.hostname.toLowerCase();
+      const destBase = getBase(destHost);
+      const curBase = getBase(curHost);
+
+      if (destBase === curBase) return { block: false, reason: "same_base_domain" };
+      if (isSameSafeEcosystem(curHost, destHost)) return { block: false, reason: "safe_ecosystem" };
+      if (cfChallengeHostRegex.test(destHost)) return { block: false, reason: "cf_challenge" };
+      if (isHostTrusted(dest.href)) return { block: false, reason: "trusted_whitelist" };
+      if (isHostDenied(dest.href)) return { block: true, reason: "denied_blacklist" };
+
+      const isSearchHijack = destHost.includes("google.") && dest.pathname === "/search";
+      const isHardBadPattern =
+        blockRegex.test(dest.href) ||
+        commerceRegex.test(dest.href) ||
+        randomShortDomain.test(destBase) ||
+        arbitrageParams.test(dest.href) ||
+        knownAdShortenerRegex.test(destHost);
+
+      if (isSearchHijack) return { block: true, reason: "search_hijack" };
+      if (isHardBadPattern) return { block: true, reason: "hard_ad_or_gambling_pattern" };
+
+      const now = Date.now();
+      const hasRecentUserGesture = isUserEvent || (now - window.__AEGIS_LAST_USER_CLICK__) < 1800;
+      const hasRecentAuthGesture = (now - window.__AEGIS_LAST_AUTH_CLICK__) < 6000;
+      const hasRecentShortlinkCta = (now - window.__AEGIS_LAST_SHORTLINK_CTA__) < 7000;
+
+      if (hasRecentUserGesture && safeMediaHostRegex.test(destHost)) {
+        return { block: false, reason: "safe_media_host" };
+      }
+
+      if (hasRecentShortlinkCta && !isHardBadPattern && !isSearchHijack) {
+        return { block: false, reason: "shortlink_cta_grace" };
+      }
+
+      if (badTld.test(destHost)) return { block: true, reason: "suspicious_tld" };
+
+      if (hasRecentUserGesture && (isAuthUrl(dest) || hasRecentAuthGesture)) {
+        return { block: false, reason: "auth_flow" };
+      }
+
+      if (!hasRecentUserGesture) {
+        return { block: true, reason: "no_recent_user_gesture" };
+      }
+      if (window.__AEGIS_STRICT_CROSS__) {
+        return { block: true, reason: "strict_cross_origin" };
+      }
+      return { block: false, reason: "allowed" };
+    } catch {
+      return { block: false, reason: "parse_error" };
     }
   }
 
+  function shouldBlockDestination(urlStr, isUserEvent = false) {
+    return diagnoseDestinationBlock(urlStr, isUserEvent).block;
+  }
+
   function emitBlocked(url, kind) {
+    if (url && isHostDenied(url)) {
+      return;
+    }
     window.dispatchEvent(new CustomEvent("__AEGIS_BLOCKED_EVENT__", {
       detail: { url: String(url || ""), kind }
     }));
@@ -240,13 +310,31 @@
     } catch (e) {}
   }
 
+  function isAntiAdblockFetchProbe(reqUrl, initObj) {
+    if (!reqUrl) return false;
+    try {
+      const u = new URL(reqUrl, location.href);
+      const host = u.hostname.toLowerCase();
+      if (!antiAdblockProbeHostRegex.test(host) && !isHostDenied(u.href)) return false;
+      const mode = initObj && typeof initObj === "object" ? String(initObj.mode || "").toLowerCase() : "";
+      if (mode === "no-cors") return true;
+      if (antiAdblockProbeHostRegex.test(host) && (u.pathname === "/" || u.search.includes("t="))) {
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   const origFetch = window.fetch;
-  window.fetch = maskAsNative(function(input) {
+  window.fetch = maskAsNative(function(input, init) {
     const reqUrl = typeof input === "string" ? input : (input && input.url ? input.url : "");
     reportVideoCandidate(reqUrl, false);
+    const isAdblockProbe = isAntiAdblockFetchProbe(reqUrl, init);
     const p = origFetch.apply(this, arguments);
     if (p && typeof p.then === "function") {
-      p.then((res) => {
+      const handled = p.then((res) => {
         try {
           if (res && res.headers) {
             const ct = res.headers.get("content-type") || "";
@@ -255,7 +343,22 @@
             }
           }
         } catch (e) {}
-      }).catch(() => {});
+        return res;
+      });
+
+      if (isAdblockProbe) {
+        // v2.2.5+: Netralkan probe anti-adblock (misal fetch no-cors ke googletagmanager / js.wpadmngr.com)
+        // agar jika diblokir DNR/adblocker, halaman TIDAK menghapus body dengan "Disable Adblock"!
+        return handled.catch(() => {
+          emitAegisLog("BYPASS", "BYPASS_ANTI_ADBLOCK_FETCH", reqUrl, "Probe anti-adblock fetch(no-cors) dinetralkan -> respons 200 OK palsu");
+          try {
+            return new Response("", { status: 200, statusText: "OK" });
+          } catch {
+            return { ok: true, status: 200, type: "opaque", text: async () => "" };
+          }
+        });
+      }
+      return handled;
     }
     return p;
   }, origFetch);
@@ -284,11 +387,19 @@
       try {
         const destUrl = event.destination.url;
         const recentGesture = Boolean(event.userInitiated) || (Date.now() - window.__AEGIS_LAST_USER_CLICK__) < 1800;
-        if (shouldBlockDestination(destUrl, recentGesture)) {
+        const diag = diagnoseDestinationBlock(destUrl, recentGesture);
+        if (diag.block) {
           if (event.cancelable) {
             event.preventDefault();
-            nukeTimers();
-            emitBlocked(destUrl, "redirect");
+            emitAegisLog(
+              "BLOCK",
+              "BLOCK_MAIN_NAVIGATE",
+              destUrl,
+              `window.navigation.navigate ditahan | reason=${diag.reason} | userGesture=${recentGesture} | strictCross=${window.__AEGIS_STRICT_CROSS__}`
+            );
+            if (!isHostDenied(destUrl)) {
+              emitBlocked(destUrl, "redirect");
+            }
           }
         }
       } catch (err) {}
@@ -301,6 +412,11 @@
     const now = Date.now();
     const recentGesture = (now - window.__AEGIS_LAST_USER_CLICK__) < 1800;
     const recentAuth = (now - window.__AEGIS_LAST_AUTH_CLICK__) < 6000;
+
+    if (resolved && isHostDenied(resolved)) {
+      emitAegisLog("BLOCK", "BLOCK_WINDOW_OPEN_BLACKLIST", resolved, "window.open diblokir senyap (Blacklist)");
+      return null;
+    }
 
     if (resolved) {
       try {
@@ -318,8 +434,17 @@
       return origOpen.apply(this, arguments);
     }
 
-    if (!resolved || shouldBlockDestination(resolved, recentGesture)) {
-      emitBlocked(resolved || location.href, "popup");
+    const diag = diagnoseDestinationBlock(resolved, recentGesture);
+    if (!resolved || diag.block) {
+      emitAegisLog(
+        "BLOCK",
+        "BLOCK_WINDOW_OPEN",
+        resolved || location.href,
+        `window.open ditahan | reason=${diag.reason} | userGesture=${recentGesture}`
+      );
+      if (!resolved || !isHostDenied(resolved)) {
+        emitBlocked(resolved || location.href, "popup");
+      }
       return null;
     }
     return origOpen.apply(this, arguments);
@@ -330,9 +455,18 @@
     try {
       const href = this.getAttribute("href") || this.href || "";
       const recentGesture = (Date.now() - window.__AEGIS_LAST_USER_CLICK__) < 1800;
-      if (href && shouldBlockDestination(href, recentGesture)) {
+      const diag = href ? diagnoseDestinationBlock(href, recentGesture) : { block: false, reason: "" };
+      if (href && diag.block) {
         const abs = new URL(href, location.href).href;
-        emitBlocked(abs, this.target === "_blank" ? "popup" : "redirect");
+        emitAegisLog(
+          "BLOCK",
+          "BLOCK_ANCHOR_JS_CLICK",
+          abs,
+          `HTMLAnchorElement.click() ditahan | reason=${diag.reason} | userGesture=${recentGesture}`
+        );
+        if (!isHostDenied(abs)) {
+          emitBlocked(abs, this.target === "_blank" ? "popup" : "redirect");
+        }
         return;
       }
     } catch (e) {}
@@ -437,7 +571,22 @@
     }
   }
 
+  function isServerTokenShortlinkPage() {
+    try {
+      if (document.querySelector("video")) return false;
+      const tokenLink = document.querySelector(
+        "a[href*='download='], a[href*='&t='], a[href*='?t='], a[href*='token='], a[href*='hash='], a#babay, a.btn-download"
+      );
+      if (tokenLink) return true;
+      const bodyText = document.body ? (document.body.innerText || "").slice(0, 600) : "";
+      return /(redirect\s*ready|go\s*to\s*link|link\s*ready|please\s*wait\s*a\s*moment)/i.test(bodyText);
+    } catch {
+      return false;
+    }
+  }
+
   function has5to30CountdownOnPage() {
+    if (isServerTokenShortlinkPage()) return false;
     const nodes = document.querySelectorAll(
       "[id*='count'], [class*='count'], [id*='timer'], [class*='timer'], [id*='wait'], [class*='wait'], [class*='skip'], [id*='skip'], [class*='ad-text'], [class*='preroll'], [class*='seconds'], [id*='seconds']"
     );
@@ -471,7 +620,6 @@
       window.__AEGIS_AUTO_SKIP__ &&
       !isHostTrusted(location.href) &&
       !isSameSafeEcosystem(curHost, curHost) &&
-      !legitCommunityHostRegex.test(curHost) &&
       !isProtectedFrameworkCallback(fn)
     ) {
       if (Number.isFinite(d) && d >= 800 && d <= 1250 && has5to30CountdownOnPage()) {
@@ -491,7 +639,6 @@
       window.__AEGIS_AUTO_SKIP__ &&
       !isHostTrusted(location.href) &&
       !isSameSafeEcosystem(curHost, curHost) &&
-      !legitCommunityHostRegex.test(curHost) &&
       !isProtectedFrameworkCallback(fn)
     ) {
       if (Number.isFinite(d) && d >= 5000 && d <= 30500 && has5to30CountdownOnPage()) {

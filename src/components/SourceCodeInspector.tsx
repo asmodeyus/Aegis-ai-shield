@@ -10,44 +10,45 @@ export interface ExtensionFileMeta {
 
 export const EXTENSION_FILES: ExtensionFileMeta[] = [
   {
-    name: 'popup.html',
-    path: '/extension-v2.1.6/popup.html',
-    summary:
-      'v2.2.2: Pengaturan di Tab Setting disusun rapi per kelompok (1. Pil & Dock Video, 2. HUD Peringatan Blokir, 3. Jendela Mini-Player PiP, 4. Proteksi & Kecepatan) dengan seluruh slider (Timer Dim/Countdown, Ukuran & Opasitas) ditempatkan di bagian bawah setiap kelompok.',
-    changedIn221: true,
-  },
-  {
-    name: 'popup.js',
-    path: '/extension-v2.1.6/popup.js',
-    summary:
-      'v2.2.2: Sinkronisasi real-time seluruh slider per kelompok (Timer Dim Pil Video, Timer Countdown HUD Blokir, Timer Redirect Auto-Revert, Ukuran Skala & Opasitas per kelompok).',
-    changedIn221: true,
-  },
-  {
     name: 'content.js',
     path: '/extension-v2.1.6/content.js',
     summary:
-      'v2.2.2: Penerapan timer, skala ukuran, dan opasitas terpisah per kelompok: videoPillOpacity & videoDockDimSec pada Pil Video, hudOpacity & hudDurationSec pada HUD Blokir, serta pipOpacity pada Mini-Player PiP.',
+      'v2.2.7: Perbaikan memory leak drag Pil Video via setPointerCapture (tanpa window listener), Toast Bypass Safelink (~800ms), smart fallback kuota runAiDomAudit(), & penghapusan regex domain komunitas hardcoded.',
     changedIn221: true,
   },
   {
     name: 'background.js',
     path: '/extension-v2.1.6/background.js',
     summary:
-      'v2.2.2: Inisialisasi default globalSettings lengkap dengan timer, skala ukuran, dan opasitas per kelompok.',
-    changedIn221: true,
-  },
-  {
-    name: 'manifest.json',
-    path: '/extension-v2.1.6/manifest.json',
-    summary: 'Pembaruan versi ekstensi menjadi 2.2.2 dengan key & permission Manifest V3 tetap utuh.',
+      'v2.2.7: Gemini API Key pindah ke HTTP Header x-goog-api-key + parser JSON anti-markdown, debounce 350ms DNR sync, auto-cleanup tabHistory (>2 jam/tab tutup), & seed default Whitelist komunitas.',
     changedIn221: true,
   },
   {
     name: 'main_world.js',
     path: '/extension-v2.1.6/main_world.js',
-    summary: 'Proteksi main-world intercept, anti-history trap, dan auto-skip countdown 5–30 detik.',
-    changedIn221: false,
+    summary:
+      'v2.2.7: Penghapusan nukeTimers() agar buffer video HLS/DASH & sesi SPA tetap aman + penghapusan regex komunitas hardcoded (kini mengikuti daftar Trust di storage).',
+    changedIn221: true,
+  },
+  {
+    name: 'popup.html',
+    path: '/extension-v2.1.6/popup.html',
+    summary:
+      'v2.2.7: Sinkronisasi label versi v2.2.7 dengan 5 tab lengkap (Umum, Setting per kelompok, Log Diagnostik Copy-Paste, Block, & Trust).',
+    changedIn221: true,
+  },
+  {
+    name: 'popup.js',
+    path: '/extension-v2.1.6/popup.js',
+    summary:
+      'v2.2.7: Header log diagnostik v2.2.7, backup JSON v2.2.7, kontroler Tab Log copy-paste, & sinkronisasi real-time daftar Trust/Block.',
+    changedIn221: true,
+  },
+  {
+    name: 'manifest.json',
+    path: '/extension-v2.1.6/manifest.json',
+    summary: 'Pembaruan versi ekstensi menjadi 2.2.7 dengan seluruh permission Manifest V3 tetap utuh.',
+    changedIn221: true,
   },
 ];
 
