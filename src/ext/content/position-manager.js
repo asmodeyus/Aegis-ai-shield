@@ -90,3 +90,82 @@ export function saveHudPosition(key, coordObj) {
 export function getMiniPlayerSafeTop() {
   return 26;
 }
+
+/**
+ * Shared zero-leak pointer-capture drag handler for Top HUD, Video Dock Pill, and Mini PiP.
+ * @param {HTMLElement} handleEl
+ * @param {{
+ *   targetEl: HTMLElement,
+ *   margin?: number,
+ *   minTop?: number | null,
+ *   threshold?: number,
+ *   requireTrusted?: boolean,
+ *   allowSelector?: string,
+ *   getDims?: () => { width: number, height: number } | null,
+ *   onStart?: (e: PointerEvent, initLeft: number, initTop: number) => boolean | void,
+ *   onMove?: (clamped: { left: number, top: number }) => void,
+ *   onEnd?: (moved: boolean, e: PointerEvent) => void
+ * }} opts
+ */
+export function attachPointerDrag(handleEl, opts) {
+  let dragging = false;
+  let moved = false;
+  let startX = 0;
+  let startY = 0;
+  let initLeft = 0;
+  let initTop = 0;
+  const thr = opts.threshold || 0;
+
+  handleEl.addEventListener("pointerdown", (e) => {
+    if (opts.requireTrusted && !e.isTrusted) return;
+    const tgt = /** @type {HTMLElement} */ (e.target);
+    const allowed = opts.allowSelector && tgt.closest(opts.allowSelector);
+    if (!allowed && tgt.closest("button")) return;
+    const rect = opts.targetEl.getBoundingClientRect();
+    initLeft = rect.left;
+    initTop = rect.top;
+    if (opts.onStart && opts.onStart(e, initLeft, initTop) === false) return;
+    dragging = true;
+    moved = thr === 0;
+    startX = e.clientX;
+    startY = e.clientY;
+    safeTry("drag.capture", () => handleEl.setPointerCapture(e.pointerId));
+  });
+
+  handleEl.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    if (!moved && Math.hypot(dx, dy) >= thr) moved = true;
+    if (!moved) return;
+    const dims = opts.getDims ? opts.getDims() : opts.targetEl.getBoundingClientRect();
+    if (!dims) {
+      dragging = false;
+      return;
+    }
+    const clamped = clampHudPosition(
+      initLeft + dx,
+      initTop + dy,
+      dims.width,
+      dims.height,
+      opts.margin ?? 4,
+      opts.minTop ?? null
+    );
+    opts.targetEl.style.left = `${clamped.left}px`;
+    opts.targetEl.style.top = `${clamped.top}px`;
+    if (opts.onMove) opts.onMove(clamped);
+  });
+
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    safeTry("drag.release", () => {
+      if (handleEl.hasPointerCapture(e.pointerId)) handleEl.releasePointerCapture(e.pointerId);
+    });
+    if (opts.onEnd) opts.onEnd(moved, e);
+  };
+
+  handleEl.addEventListener("pointerup", endDrag);
+  handleEl.addEventListener("pointercancel", endDrag);
+}
+

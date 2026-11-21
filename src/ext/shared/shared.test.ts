@@ -64,6 +64,7 @@ import {
   pruneDomCandidatesForAudit,
   validateAndFallbackAiAudit,
 } from './gemini-audit.js';
+import { isVideoEmbedIframeCandidate, isVideoStreamUrl } from './video-detect.js';
 
 test('v3.2.1 constants: P5/P7 privacy-first & store-compliant defaults (empty whitelist, opt-in Gemini/autoClick/autoSkip, session key)', () => {
   assert.equal(AEGIS_VERSION, '3.2.1');
@@ -629,7 +630,36 @@ test('P8 migration & restore hardening: filters unknown keys, validates types/en
   assert.equal(onlyKnown.hudPosition, 'bottom-center');
 });
 
-test('P4 manifest & popup.html compliance: no tabs permission, minimum_chrome_version 111, multi-size icons, no _aistudio-iframe, dev vs store key split', () => {
+test('Update migration preserves existing persistent geminiApiKey & settings from pre-v3.2.1 installs', () => {
+  const legacyWithKey = {
+    geminiApiKey: 'AIzaSyLegacyExistingUserKey1234567890',
+    strictCrossOrigin: true,
+    autoSkipCountdown: true,
+    deniedDomains: ['ads.example.com'],
+    trustedDomains: ['safe.example.org'],
+    globalSettings: {
+      hudDurationSec: 6.0,
+      shortlinkAutoClick: true,
+    },
+    hudPositions: {
+      videoDock: { left: 20, top: 400, anchorSide: 'left' },
+    },
+    aegisStats: { blocked: 99, bypassed: 15, allowed: 40 },
+  };
+  const migrated = migrateExtensionStorage(legacyWithKey);
+  assert.equal(migrated.globalSettings.sessionOnlyApiKey, false);
+  assert.equal(migrated.globalSettings.geminiAuditEnabled, true);
+  assert.equal(migrated.globalSettings.protectionMode, 'strict');
+  assert.equal(migrated.globalSettings.autoSkipCountdown, true);
+  assert.equal(migrated.globalSettings.shortlinkAutoClick, true);
+  assert.equal(migrated.globalSettings.hudDurationSec, 6.0);
+  assert.deepEqual(migrated.deniedDomains, ['ads.example.com']);
+  assert.deepEqual(migrated.trustedDomains, ['safe.example.org']);
+  assert.equal(migrated.hudPositions.videoDock.left, 20);
+  assert.deepEqual(migrated.aegisStats, { blocked: 99, bypassed: 15, allowed: 40 });
+});
+
+test('P4 manifest & popup.html compliance: no tabs permission, minimum_chrome_version 111, multi-size icons, no _aistudio-iframe, persistent key on update build vs keyless Store build', () => {
   const root = path.resolve(process.cwd());
   const baseManifest = JSON.parse(fs.readFileSync(path.join(root, 'src/ext/manifest.base.json'), 'utf8'));
   const devKeyOverlay = JSON.parse(fs.readFileSync(path.join(root, 'src/ext/manifest.dev-key.json'), 'utf8'));
@@ -645,7 +675,7 @@ test('P4 manifest & popup.html compliance: no tabs permission, minimum_chrome_ve
   assert.deepEqual(Object.keys(baseManifest.action.default_icon).sort(), ['128', '16', '32', '48']);
   assert.ok(typeof devKeyOverlay.key === 'string' && devKeyOverlay.key.length > 100);
   assert.equal(builtManifest.version, '3.2.1');
-  assert.equal('key' in builtManifest, false);
+  assert.equal(builtManifest.key, devKeyOverlay.key);
   assert.doesNotMatch(popupHtml, /_aistudio-iframe/i);
   for (const iconFile of ['icon-16.png', 'icon-32.png', 'icon-48.png', 'icon.png']) {
     assert.equal(fs.existsSync(path.join(root, 'public/extension-v2.1.6', iconFile)), true, `Missing ${iconFile}`);
@@ -830,3 +860,96 @@ test('debug: redactSensitiveText & FP report strip API keys, Bearer tokens, JWTs
   assert.doesNotMatch(report, /TOPSECRET999/);
   assert.doesNotMatch(report, /AIzaSyRealLookingSecretKey/);
 });
+
+test('video-detect: detects playmogo/embed iframes in video wrappers while rejecting ad banners, hidden frames, & CAPTCHA iframes', () => {
+  // User-reported real player embed inside #playerWrapper.video-wrapper
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://playmogo.com/e/mwzrxgipspf3',
+      width: 640,
+      height: 360,
+      visible: true,
+      allowfullscreen: true,
+      allow: 'autoplay; encrypted-media',
+      parentSig: 'playerWrapper video-wrapper',
+    }),
+    true
+  );
+
+  // Unknown third-party embed host inside explicit video-wrapper with allowfullscreen
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://stream-host.example.org/watch/9921',
+      width: 640,
+      height: 360,
+      visible: true,
+      allow: 'autoplay; fullscreen',
+      parentSig: 'video-wrapper',
+    }),
+    true
+  );
+
+  // Known embed patterns (YouTube, Dood)
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+      width: 560,
+      height: 315,
+      visible: true,
+    }),
+    true
+  );
+
+  // Ad banner iframe from user's exact HTML (#adBannerFrame inside .ad-banner-frame-wrap) MUST be rejected
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://ad-serving.example.net/banner/300x250',
+      width: 300,
+      height: 250,
+      visible: true,
+      id: 'adBannerFrame',
+      parentSig: 'ad-banner-frame-wrap',
+    }),
+    false
+  );
+
+  // Reject hidden, tiny, blacklisted, hard-malicious, or CAPTCHA frames
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://playmogo.com/e/mwzrxgipspf3',
+      width: 0,
+      height: 0,
+      visible: false,
+      allowfullscreen: true,
+    }),
+    false
+  );
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://playmogo.com/e/mwzrxgipspf3',
+      width: 640,
+      height: 360,
+      visible: true,
+      isDenied: true,
+    }),
+    false
+  );
+  assert.equal(
+    isVideoEmbedIframeCandidate({
+      src: 'https://challenges.cloudflare.com/turnstile/v0/api.js',
+      width: 300,
+      height: 65,
+      visible: true,
+      isCaptcha: true,
+    }),
+    false
+  );
+
+  // Stream URL checks
+  assert.equal(isVideoStreamUrl('https://cdn.example.net/master.m3u8?token=1'), true);
+  assert.equal(isVideoStreamUrl('https://cdn.example.net/video.mp4'), true);
+  assert.equal(isVideoStreamUrl('https://cdn.example.net/segment/chunk-123', true), true);
+  assert.equal(isVideoStreamUrl('blob:https://playmogo.com/1234-5678', true), false);
+  assert.equal(isVideoStreamUrl('https://cdn.example.net/poster.jpg', true), false);
+});
+

@@ -170,38 +170,32 @@ export function initMainWorldHandshake() {
   });
 }
 
-export function syncMainWorldRules() {
+function emitMainWorld(scope, eventName, detail = {}) {
   initMainWorldHandshake();
   if (!runtimeState.handshakeCompleted) return;
-  safeTry("content.syncMainWorldRules", () => {
+  safeTry(scope, () => {
     window.dispatchEvent(
-      new CustomEvent(BRIDGE_EVENTS.SYNC_RULES, {
-        detail: {
-          token: INBOUND_BRIDGE_TOKEN,
-          trusted: runtimeState.trustedDomains,
-          denied: runtimeState.deniedDomains,
-          protectionMode: runtimeState.globalSettings.protectionMode || "balanced",
-          strictCrossOrigin:
-            runtimeState.globalSettings.protectionMode === "strict" ||
-            runtimeState.strictCrossOrigin,
-          autoSkipCountdown: runtimeState.autoSkipCountdown === true,
-          tempAllowActive: isTempAllowActiveHere(),
-          globalSettings: runtimeState.globalSettings
-        }
-      })
+      new CustomEvent(eventName, { detail: { token: INBOUND_BRIDGE_TOKEN, ...detail } })
     );
   });
 }
 
+export function syncMainWorldRules() {
+  emitMainWorld("content.syncRules", BRIDGE_EVENTS.SYNC_RULES, {
+    trusted: runtimeState.trustedDomains,
+    denied: runtimeState.deniedDomains,
+    protectionMode: runtimeState.globalSettings.protectionMode || "balanced",
+    strictCrossOrigin:
+      runtimeState.globalSettings.protectionMode === "strict" || runtimeState.strictCrossOrigin,
+    autoSkipCountdown: runtimeState.autoSkipCountdown === true,
+    tempAllowActive: isTempAllowActiveHere(),
+    globalSettings: runtimeState.globalSettings
+  });
+}
+
 export function signalCaptchaToMainWorld(detected = true) {
-  initMainWorldHandshake();
-  if (!runtimeState.handshakeCompleted) return;
-  safeTry("content.signalCaptcha", () => {
-    window.dispatchEvent(
-      new CustomEvent(BRIDGE_EVENTS.CAPTCHA_SIGNAL, {
-        detail: { token: INBOUND_BRIDGE_TOKEN, detected: Boolean(detected) }
-      })
-    );
+  emitMainWorld("content.signalCaptcha", BRIDGE_EVENTS.CAPTCHA_SIGNAL, {
+    detected: Boolean(detected)
   });
 }
 
@@ -212,7 +206,7 @@ export function triggerLocalCaptchaKillSwitch() {
   signalCaptchaToMainWorld(true);
   if (changed) {
     for (const cb of captchaStateListeners) {
-      safeTry("content.captchaKillSwitchCb", () => cb(true));
+      safeTry("content.captchaKillCb", () => cb(true));
     }
   }
 }
@@ -227,47 +221,21 @@ export function clearLocalCaptchaKillSwitch() {
 }
 
 export function signalShortlinkCtaToMainWorld() {
-  if (runtimeState.captchaDetected) return;
-  initMainWorldHandshake();
-  if (!runtimeState.handshakeCompleted) return;
-  safeTry("content.signalShortlinkCta", () => {
-    window.dispatchEvent(
-      new CustomEvent(BRIDGE_EVENTS.SHORTLINK_CTA_CLICK, {
-        detail: { token: INBOUND_BRIDGE_TOKEN }
-      })
-    );
-  });
+  if (!runtimeState.captchaDetected) {
+    emitMainWorld("content.cta", BRIDGE_EVENTS.SHORTLINK_CTA_CLICK);
+  }
 }
 
-export function addDomainToBlacklist(urlStr, callback) {
+function updateDomainRuleList(urlStr, isAllow, callback) {
   const dom = normalizeDomainEntry(urlStr);
   if (!dom) return;
-  if (!runtimeState.deniedDomains.includes(dom)) {
-    runtimeState.deniedDomains = [...runtimeState.deniedDomains, dom];
+  const addKey = isAllow ? "trustedDomains" : "deniedDomains";
+  const remKey = isAllow ? "deniedDomains" : "trustedDomains";
+  if (!runtimeState[addKey].includes(dom)) {
+    runtimeState[addKey] = [...runtimeState[addKey], dom];
   }
-  runtimeState.trustedDomains = runtimeState.trustedDomains.filter((d) => d !== dom);
-  safeTry("content.addBlacklist", () => {
-    chrome.storage.local.set(
-      {
-        deniedDomains: runtimeState.deniedDomains,
-        trustedDomains: runtimeState.trustedDomains
-      },
-      () => {
-        syncMainWorldRules();
-        if (typeof callback === "function") callback(dom);
-      }
-    );
-  });
-}
-
-export function addDomainToWhitelist(urlStr, callback) {
-  const dom = normalizeDomainEntry(urlStr);
-  if (!dom) return;
-  if (!runtimeState.trustedDomains.includes(dom)) {
-    runtimeState.trustedDomains = [...runtimeState.trustedDomains, dom];
-  }
-  runtimeState.deniedDomains = runtimeState.deniedDomains.filter((d) => d !== dom);
-  safeTry("content.addWhitelist", () => {
+  runtimeState[remKey] = runtimeState[remKey].filter((d) => d !== dom);
+  safeTry(isAllow ? "content.addWhitelist" : "content.addBlacklist", () => {
     chrome.storage.local.set(
       {
         trustedDomains: runtimeState.trustedDomains,
@@ -279,6 +247,14 @@ export function addDomainToWhitelist(urlStr, callback) {
       }
     );
   });
+}
+
+export function addDomainToBlacklist(urlStr, callback) {
+  updateDomainRuleList(urlStr, false, callback);
+}
+
+export function addDomainToWhitelist(urlStr, callback) {
+  updateDomainRuleList(urlStr, true, callback);
 }
 
 export function purgeBlacklistedOrTrustedPrompts() {
@@ -303,40 +279,30 @@ export function initStorageSync() {
   /** @type {Set<string>} */
   const liveChangedKeys = new Set();
 
-  safeTry("content.registerStorageChanged", () => {
-    chrome.storage.onChanged.addListener((changes, areaName) => {
-      if (areaName !== "local") return;
-      let changed = false;
-      if (changes.trustedDomains) {
-        liveChangedKeys.add("trustedDomains");
-        runtimeState.trustedDomains = Array.isArray(changes.trustedDomains.newValue)
-          ? changes.trustedDomains.newValue
-          : [];
-        changed = true;
-      }
-      if (changes.deniedDomains) {
-        liveChangedKeys.add("deniedDomains");
-        runtimeState.deniedDomains = Array.isArray(changes.deniedDomains.newValue)
-          ? changes.deniedDomains.newValue
-          : [];
-        changed = true;
-      }
-      if (changes.strictCrossOrigin) {
-        liveChangedKeys.add("strictCrossOrigin");
-        runtimeState.strictCrossOrigin = Boolean(changes.strictCrossOrigin.newValue);
-        changed = true;
-      }
-      if (changes.autoSkipCountdown) {
-        liveChangedKeys.add("autoSkipCountdown");
-        runtimeState.autoSkipCountdown = changes.autoSkipCountdown.newValue === true;
-        changed = true;
-      }
-      if (changes.globalSettings) {
-        liveChangedKeys.add("globalSettings");
-        runtimeState.globalSettings = {
-          ...DEFAULT_GLOBAL_SETTINGS,
-          ...(changes.globalSettings.newValue || {})
-        };
+  const STORAGE_KEYS = [
+    "trustedDomains",
+    "deniedDomains",
+    "strictCrossOrigin",
+    "autoSkipCountdown",
+    "globalSettings",
+    "hudPositions",
+    "tempAllowMap"
+  ];
+
+  const applyStoragePatch = (src, isLive) => {
+    let changed = false;
+    const setKey = (k, apply) => {
+      if (isLive) liveChangedKeys.add(k);
+      else if (liveChangedKeys.has(k)) return;
+      apply(src[k]);
+      changed = true;
+    };
+    if ("trustedDomains" in src) setKey("trustedDomains", (v) => { runtimeState.trustedDomains = Array.isArray(v) ? v : []; });
+    if ("deniedDomains" in src) setKey("deniedDomains", (v) => { runtimeState.deniedDomains = Array.isArray(v) ? v : []; });
+    if ("strictCrossOrigin" in src) setKey("strictCrossOrigin", (v) => { runtimeState.strictCrossOrigin = Boolean(v); });
+    if ("globalSettings" in src) {
+      setKey("globalSettings", (v) => {
+        runtimeState.globalSettings = { ...DEFAULT_GLOBAL_SETTINGS, ...(v && typeof v === "object" ? v : {}) };
         if (typeof runtimeState.globalSettings.autoSkipCountdown === "boolean") {
           runtimeState.autoSkipCountdown = runtimeState.globalSettings.autoSkipCountdown;
         }
@@ -344,22 +310,32 @@ export function initStorageSync() {
         if (runtimeState.globalSettings.captchaKillSwitchEnabled === false && runtimeState.captchaDetected) {
           clearLocalCaptchaKillSwitch();
         }
-        changed = true;
+      });
+    }
+    if ("autoSkipCountdown" in src) {
+      setKey("autoSkipCountdown", (v) => {
+        runtimeState.autoSkipCountdown = typeof v === "boolean" ? v : runtimeState.globalSettings.autoSkipCountdown === true;
+      });
+    }
+    if ("hudPositions" in src) {
+      setKey("hudPositions", (v) => {
+        runtimeState.hudPositions = { ...DEFAULT_HUD_POSITIONS, ...(v && typeof v === "object" ? v : {}) };
+      });
+    }
+    if ("tempAllowMap" in src) {
+      setKey("tempAllowMap", (v) => { runtimeState.tempAllowMap = pruneExpiredTempAllows(v || {}); });
+    }
+    return changed;
+  };
+
+  safeTry("content.regOnChanged", () => {
+    chrome.storage.onChanged.addListener((changes, areaName) => {
+      if (areaName !== "local") return;
+      const patch = {};
+      for (const k of STORAGE_KEYS) {
+        if (changes[k]) patch[k] = changes[k].newValue;
       }
-      if (changes.hudPositions) {
-        liveChangedKeys.add("hudPositions");
-        runtimeState.hudPositions = {
-          ...DEFAULT_HUD_POSITIONS,
-          ...(changes.hudPositions.newValue || {})
-        };
-        changed = true;
-      }
-      if (changes.tempAllowMap) {
-        liveChangedKeys.add("tempAllowMap");
-        runtimeState.tempAllowMap = pruneExpiredTempAllows(changes.tempAllowMap.newValue || {});
-        changed = true;
-      }
-      if (changed) {
+      if (applyStoragePatch(patch, true)) {
         purgeBlacklistedOrTrustedPrompts();
         syncMainWorldRules();
         notifyRuntimeStateChange();
@@ -367,7 +343,7 @@ export function initStorageSync() {
     });
   });
 
-  safeTry("content.registerRuntimeMessage", () => {
+  safeTry("content.regMsg", () => {
     chrome.runtime.onMessage.addListener((msg) => {
       if (!msg || typeof msg.type !== "string") return;
       if (msg.type === "CAPTCHA_KILL_SWITCH_TAB") {
@@ -380,68 +356,17 @@ export function initStorageSync() {
 
   const readyPromise = new Promise((resolve) => {
     safeTry(
-      "content.loadInitialStorage",
+      "content.loadStorage",
       () => {
         // P5: Explicitly NEVER request geminiApiKey from storage in content script
-        chrome.storage.local.get(
-          [
-            "trustedDomains",
-            "deniedDomains",
-            "strictCrossOrigin",
-            "autoSkipCountdown",
-            "globalSettings",
-            "hudPositions",
-            "tempAllowMap"
-          ],
-          (res) => {
-            if (!liveChangedKeys.has("trustedDomains")) {
-              runtimeState.trustedDomains = Array.isArray(res.trustedDomains)
-                ? res.trustedDomains
-                : [];
-            }
-            if (!liveChangedKeys.has("deniedDomains")) {
-              runtimeState.deniedDomains = Array.isArray(res.deniedDomains)
-                ? res.deniedDomains
-                : [];
-            }
-            if (!liveChangedKeys.has("strictCrossOrigin")) {
-              runtimeState.strictCrossOrigin = Boolean(res.strictCrossOrigin);
-            }
-            if (!liveChangedKeys.has("globalSettings")) {
-              runtimeState.globalSettings = {
-                ...DEFAULT_GLOBAL_SETTINGS,
-                ...(res.globalSettings && typeof res.globalSettings === "object"
-                  ? res.globalSettings
-                  : {})
-              };
-            }
-            if (!liveChangedKeys.has("autoSkipCountdown")) {
-              runtimeState.autoSkipCountdown =
-                typeof res.autoSkipCountdown === "boolean"
-                  ? res.autoSkipCountdown
-                  : runtimeState.globalSettings.autoSkipCountdown === true;
-            }
-            if (!liveChangedKeys.has("hudPositions")) {
-              runtimeState.hudPositions = {
-                ...DEFAULT_HUD_POSITIONS,
-                ...(res.hudPositions && typeof res.hudPositions === "object"
-                  ? res.hudPositions
-                  : {})
-              };
-            }
-            if (!liveChangedKeys.has("tempAllowMap")) {
-              runtimeState.tempAllowMap = pruneExpiredTempAllows(res.tempAllowMap || {});
-            }
-            setDebugEnabled(Boolean(runtimeState.globalSettings.debugInternalErrors));
-            purgeBlacklistedOrTrustedPrompts();
-            syncMainWorldRules();
-            if (runtimeState.captchaDetected) {
-              signalCaptchaToMainWorld(true);
-            }
-            notifyRuntimeStateChange();
-            resolve();
-          }
-        );
+        chrome.storage.local.get(STORAGE_KEYS, (res) => {
+          applyStoragePatch(res || {}, false);
+          if (runtimeState.captchaDetected) signalCaptchaToMainWorld(true);
+          purgeBlacklistedOrTrustedPrompts();
+          syncMainWorldRules();
+          notifyRuntimeStateChange();
+          resolve();
+        });
       },
       undefined
     );

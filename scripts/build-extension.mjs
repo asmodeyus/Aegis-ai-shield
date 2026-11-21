@@ -11,7 +11,7 @@ const manifestDevKeyPath = path.join(rootDir, "src", "ext", "manifest.dev-key.js
 
 const VERSION = "3.2.1";
 const targetArg = process.argv.find((arg) => arg.startsWith("--target="));
-const buildTarget = targetArg ? targetArg.split("=")[1] : "store"; // "store" | "dev"
+const buildTarget = targetArg ? targetArg.split("=")[1] : "dev"; // "dev" (default, preserves key/ID) | "store"
 
 const zipStoreOutPath = path.join(rootDir, "public", `aegis-ai-shield-v${VERSION}-store.zip`);
 const zipPrimaryOutPath = path.join(rootDir, "public", `aegis-ai-shield-v${VERSION}.zip`);
@@ -267,7 +267,7 @@ async function run() {
   ]);
 
   fs.writeFileSync(zipStoreOutPath, storeZipBytes);
-  fs.writeFileSync(zipPrimaryOutPath, storeZipBytes);
+  fs.writeFileSync(zipPrimaryOutPath, devZipBytes);
   fs.writeFileSync(zipDevOutPath, devZipBytes);
 
   console.log(

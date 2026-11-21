@@ -545,6 +545,13 @@ async function loadState() {
     typeof data.strictCrossOrigin === "boolean" ? data.strictCrossOrigin : undefined,
     typeof data.autoSkipCountdown === "boolean" ? data.autoSkipCountdown : undefined
   );
+  const rawGlobal =
+    data.globalSettings && typeof data.globalSettings === "object" ? data.globalSettings : {};
+  const hasLocalKey = typeof data.geminiApiKey === "string" && data.geminiApiKey.trim().length > 0;
+  if (hasLocalKey) {
+    if (typeof rawGlobal.sessionOnlyApiKey !== "boolean") g.sessionOnlyApiKey = false;
+    if (typeof rawGlobal.geminiAuditEnabled !== "boolean") g.geminiAuditEnabled = true;
+  }
 
   const resolvedKey = g.sessionOnlyApiKey ? sessionKey : sessionKey || data.geminiApiKey || "";
   apiKeyEl.value = resolvedKey;

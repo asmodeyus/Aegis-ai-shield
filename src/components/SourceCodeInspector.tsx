@@ -13,14 +13,14 @@ export const EXTENSION_FILES: ExtensionFileMeta[] = [
     name: 'content.js',
     path: '/extension-v2.1.6/content.js',
     summary:
-      'v3.2.1 (74.7 KB minified < 75 KB): Re-validasi untrusted bridge, closed Shadow DOM HUD/Video Dock, ev.isTrusted + 2-langkah Trust, rate-limit UI, video-tap gesture guard, & Gemini/auto-click opt-in.',
+      'v3.2.1 (74.8 KB minified < 75 KB): Re-validasi untrusted bridge, closed Shadow DOM HUD/Video Dock, deteksi embed iframe video, ev.isTrusted + 2-langkah Trust, rate-limit UI, & video-tap shield.',
     changedIn221: true,
   },
   {
     name: 'background.js',
     path: '/extension-v2.1.6/background.js',
     summary:
-      'v3.2.1 (52.4 KB minified): OAuth precedence (P2), filter judol presisi (P1), opt-in Gemini gate (P5), perbaikan forceRevertTab anti-lempar-balik video tap, & sanitasi migrasi storage (P8).',
+      'v3.2.1 (53.3 KB minified): OAuth precedence (P2), filter judol presisi (P1), opt-in Gemini gate (P5), relay video iframe, & migrasi storage termasuk geminiApiKey lama (P8).',
     changedIn221: true,
   },
   {
@@ -41,14 +41,14 @@ export const EXTENSION_FILES: ExtensionFileMeta[] = [
     name: 'popup.js',
     path: '/extension-v2.1.6/popup.js',
     summary:
-      'v3.2.1 (38.2 KB minified): Kontrol opt-in Gemini/Auto-Skip/Auto-Klik, default sessionOnlyApiKey=true, sanitasi & limitasi restore backup JSON (P8), & Laporan FP tersensor.',
+      'v3.2.1 (38.2 KB minified): Kontrol opt-in Gemini/Auto-Skip/Auto-Klik, pelestarian geminiApiKey lama saat update, sanitasi & limitasi restore backup JSON (P8), & Laporan FP tersensor.',
     changedIn221: true,
   },
   {
     name: 'manifest.json',
     path: '/extension-v2.1.6/manifest.json',
     summary:
-      'v3.2.1 (Store-ready): Tanpa izin tabs, tanpa dev key, minimum_chrome_version 111, multi-size icons (16/32/48/128px), & CSP extension_pages ketat.',
+      'v3.2.1 (Update-Safe): Menyertakan "key" tetap agar ID ekstensi & seluruh settingan/storage lama terbawa saat update (varian -store.zip tanpa "key" tetap tersedia).',
     changedIn221: true,
   },
 ];

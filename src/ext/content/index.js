@@ -39,11 +39,14 @@ import {
 import {
   applySavedMiniPipPosition,
   cleanupVideoDockLifecycle,
+  enqueuePendingConfirmedVideo,
   ensureLazyAutoSkipRunning,
+  findPrimaryVideoElement,
   registerDetectedVideo,
   renderFloatingVideoDock,
   scanDomForVideos,
   stopLazyAutoSkip,
+  toggleNativeBrowserPiP,
   updateFloatingVideoDockPosition
 } from "./video-dock.js";
 
@@ -138,9 +141,11 @@ function buildTrustedHudMessage(reason, kind) {
     if (!isValidOutboundMainEvent(ev)) return;
     const d = /** @type {CustomEvent} */ (ev).detail;
     if (!d || typeof d.url !== "string" || !d.url || d.url.length > 2048) return;
-    // Never blindly trust confirmed=true from MAIN world unless a real <video> exists in the DOM
-    const allowConfirmed = Boolean(d.confirmed) && Boolean(document.querySelector("video"));
-    registerDetectedVideo(d.url, allowConfirmed);
+    if (d.confirmed) {
+      enqueuePendingConfirmedVideo(d.url);
+    } else {
+      registerDetectedVideo(d.url, false);
+    }
   });
 
   // P3: Rate-limit untrusted MAIN world log events
@@ -202,9 +207,9 @@ function buildTrustedHudMessage(reason, kind) {
   function runUnifiedDomSweep() {
     if (document.hidden || runtimeState.captchaDetected) return;
     if (checkAndBroadcastCaptchaStatus()) return;
+    scanDomForVideos();
     if (window !== window.top) return;
     neutralizeMaliciousMetaRefreshAndIframes();
-    scanDomForVideos();
     neutralizeEmptyTrapOverlays();
     if (!tryEarlyDirectShortlinkBypass()) {
       runShortlinkDebloatedBypassStep();
@@ -235,6 +240,14 @@ function buildTrustedHudMessage(reason, kind) {
     if (document.hidden || runtimeState.captchaDetected) return;
     let hasRelevantElement = false;
     for (const m of mutations) {
+      if (m.type === "attributes") {
+        const tgt = /** @type {HTMLElement} */ (m.target);
+        if (tgt && tgt.nodeType === 1 && RELEVANT_MUTATION_TAGS.has(tgt.tagName)) {
+          hasRelevantElement = true;
+          break;
+        }
+        continue;
+      }
       for (const node of m.addedNodes) {
         if (node.nodeType === 1) {
           const el = /** @type {HTMLElement} */ (node);
@@ -262,7 +275,12 @@ function buildTrustedHudMessage(reason, kind) {
   function connectUnifiedObserver() {
     if (observerConnected || document.hidden || runtimeState.captchaDetected) return;
     if (document.documentElement) {
-      unifiedObserver.observe(document.documentElement, { childList: true, subtree: true });
+      unifiedObserver.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["src", "data-src"]
+      });
       observerConnected = true;
     }
   }
@@ -334,6 +352,33 @@ function buildTrustedHudMessage(reason, kind) {
       updateFloatingVideoDockPosition();
       applySavedMiniPipPosition();
     }, 120);
+  });
+
+  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
+    if (!msg || typeof msg !== "object") return;
+    if (msg.type === "TOP_FRAME_VIDEO_DETECTED" && window === window.top && typeof msg.url === "string") {
+      registerDetectedVideo(
+        msg.url,
+        Boolean(msg.confirmed),
+        typeof msg.frameId === "number" ? msg.frameId : null
+      );
+      sendResponse({ ok: true });
+      return;
+    }
+    if (msg.type === "EXEC_VIDEO_CONTROL") {
+      const v = findPrimaryVideoElement();
+      if (msg.action === "togglePlay" && v) {
+        if (v.paused) v.play().catch(() => {});
+        else v.pause();
+        sendResponse({ ok: true, paused: v.paused });
+        return;
+      }
+      if (msg.action === "nativePip") {
+        toggleNativeBrowserPiP().then((ok) => sendResponse({ ok }));
+        return true;
+      }
+      sendResponse({ ok: false });
+    }
   });
 
   window.addEventListener("pagehide", () => {

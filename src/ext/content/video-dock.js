@@ -5,13 +5,14 @@
  * alongside draggable Mini PiP, tracks dynamic <video> lifecycles via WeakSet, and cleans up on pagehide.
  */
 import {
-  NON_VIDEO_ASSET_REGEX,
-  TIMINGS,
-  VIDEO_EXT_REGEX,
-  VIDEO_STREAM_HINT_REGEX
+  TIMINGS
 } from "../shared/constants.js";
+import { isCaptchaChallengeUrl } from "../shared/captcha-guard.js";
 import { safeTry } from "../shared/debug.js";
+import { isHardMaliciousUrl } from "../shared/url-classifier.js";
+import { isVideoEmbedIframeCandidate, isVideoStreamUrl } from "../shared/video-detect.js";
 import {
+  attachPointerDrag,
   clampHudPosition,
   createSavedHudCoord,
   getEffectiveVideoDockDir,
@@ -19,7 +20,12 @@ import {
   resolveSavedHudCoord,
   saveHudPosition
 } from "./position-manager.js";
-import { isTempAllowActiveHere, isUrlInTrustedList, runtimeState } from "./state.js";
+import {
+  isTempAllowActiveHere,
+  isUrlInDeniedList,
+  isUrlInTrustedList,
+  runtimeState
+} from "./state.js";
 
 const VIDEO_DOCK_ID = "aegis-video-bottom-dock";
 const MINI_PIP_BAR_ID = "aegis-mini-pip-drag-bar";
@@ -37,21 +43,52 @@ const closedVideoDockRoots = new WeakMap();
 // P3: Per-minute & per-page video dock rate limit against untrusted MAIN world spam
 /** @type {number[]} */
 let videoAddMinuteTimestamps = [];
+/** @type {string[]} */
+const pendingConfirmedVideos = [];
+const relayedIframeVideos = new Set();
+/** @type {Map<string, number>} */
+const videoFrameMap = new Map();
+/** @type {Map<string, HTMLIFrameElement>} */
+const embedIframeMap = new Map();
 
 export function isVideoUrl(urlStr, isConfirmedMime = false) {
-  if (!urlStr) return false;
-  const s = String(urlStr).trim();
-  if (s.startsWith("data:") || s.startsWith("blob:") || s.startsWith("javascript:")) return false;
-  if (NON_VIDEO_ASSET_REGEX.test(s)) return false;
-  return Boolean(isConfirmedMime || VIDEO_EXT_REGEX.test(s) || VIDEO_STREAM_HINT_REGEX.test(s));
+  return isVideoStreamUrl(urlStr, isConfirmedMime);
 }
 
-export function registerDetectedVideo(rawUrl, isConfirmedMime = false) {
+export function enqueuePendingConfirmedVideo(rawUrl) {
+  if (!rawUrl) return;
+  if (document.querySelector("video")) {
+    registerDetectedVideo(rawUrl, true);
+    return;
+  }
+  const abs = safeTry("videoDock.pendingUrl", () => new URL(String(rawUrl), location.href).href, "");
+  if (!abs || !abs.startsWith("http")) return;
+  if (!pendingConfirmedVideos.includes(abs)) {
+    if (pendingConfirmedVideos.length >= 6) pendingConfirmedVideos.shift();
+    pendingConfirmedVideos.push(abs);
+  }
+}
+
+export function registerDetectedVideo(rawUrl, isConfirmedMime = false, sourceFrameId = null) {
   safeTry("videoDock.registerVideo", () => {
     if (!rawUrl) return;
     if (runtimeState.detectedVideos.length >= TIMINGS.VIDEO_DOCK_MAX_ITEMS_PER_PAGE) return;
     const abs = new URL(String(rawUrl), location.href).href;
     if (!abs.startsWith("http") || !isVideoUrl(abs, isConfirmedMime)) return;
+    if (typeof sourceFrameId === "number" && sourceFrameId > 0) {
+      videoFrameMap.set(abs, sourceFrameId);
+    }
+    if (window !== window.top && !relayedIframeVideos.has(abs)) {
+      relayedIframeVideos.add(abs);
+      safeTry("videoDock.relayIframeVideo", () => {
+        chrome.runtime.sendMessage({
+          type: "IFRAME_VIDEO_DETECTED",
+          url: abs,
+          confirmed: Boolean(isConfirmedMime),
+          frameUrl: location.href
+        });
+      });
+    }
     if (!runtimeState.detectedVideos.includes(abs)) {
       const now = Date.now();
       videoAddMinuteTimestamps = videoAddMinuteTimestamps.filter((ts) => now - ts < 60000);
@@ -64,6 +101,8 @@ export function registerDetectedVideo(rawUrl, isConfirmedMime = false) {
       }
       renderFloatingVideoDock();
       ensureLazyAutoSkipRunning();
+    } else if (window === window.top) {
+      renderFloatingVideoDock();
     }
   });
 }
@@ -103,9 +142,27 @@ export function findPrimaryVideoElement() {
   return best;
 }
 
+export function findPrimaryEmbedIframe() {
+  for (const url of runtimeState.detectedVideos) {
+    const f = embedIframeMap.get(url);
+    if (f && f.isConnected) return f;
+  }
+  for (const f of embedIframeMap.values()) {
+    if (f && f.isConnected) return f;
+  }
+  return null;
+}
+
+function getActiveVideoFrameId() {
+  for (const url of runtimeState.detectedVideos) {
+    const fid = videoFrameMap.get(url);
+    if (typeof fid === "number" && fid > 0) return fid;
+  }
+  return null;
+}
+
 export function scanDomForVideos() {
   safeTry("videoDock.scanDom", () => {
-    // Auto-cleanup Mini PiP if SPA dynamically removed/replaced the active <video> element
     if (runtimeState.miniPlayerActive && runtimeState.activeMiniVideoEl && !runtimeState.activeMiniVideoEl.isConnected) {
       disableMiniPlayer();
     }
@@ -113,20 +170,62 @@ export function scanDomForVideos() {
     const videos = document.querySelectorAll("video, video source");
     if (videos.length > 0) {
       ensureLazyAutoSkipRunning();
+      while (pendingConfirmedVideos.length > 0) {
+        registerDetectedVideo(pendingConfirmedVideos.shift(), true);
+      }
     }
     videos.forEach((node) => {
       if (node.tagName === "VIDEO") {
         attachPassiveVideoSync(/** @type {HTMLVideoElement} */ (node));
       }
+      const mediaNode = /** @type {HTMLVideoElement} */ (node);
       const src =
-        /** @type {HTMLVideoElement} */ (node).currentSrc ||
+        mediaNode.currentSrc ||
+        mediaNode.src ||
         node.getAttribute("src") ||
         node.getAttribute("data-src");
       if (src) registerDetectedVideo(src, false);
     });
+
     if (document.querySelector("video") && runtimeState.detectedVideos.length === 0) {
-      runtimeState.detectedVideos.push(location.href);
-      renderFloatingVideoDock();
+      registerDetectedVideo(location.href, true);
+    }
+
+    if (window === window.top) {
+      const iframes = document.querySelectorAll("iframe[src]");
+      const cap = Math.min(iframes.length, 20);
+      for (let i = 0; i < cap; i++) {
+        const iframe = /** @type {HTMLIFrameElement} */ (iframes[i]);
+        const rawSrc = iframe.getAttribute("src") || "";
+        const absSrc = safeTry("videoDock.iframeSrc", () => new URL(rawSrc, location.href).href, "");
+        if (!absSrc) continue;
+        const rect = iframe.getBoundingClientRect();
+        const st = window.getComputedStyle(iframe);
+        let parentSig = "";
+        let p = iframe.parentElement;
+        for (let d = 0; p && d < 3; d++) {
+          parentSig += ` ${p.id || ""} ${typeof p.className === "string" ? p.className : ""}`;
+          p = p.parentElement;
+        }
+        const ok = isVideoEmbedIframeCandidate({
+          src: absSrc,
+          width: rect.width,
+          height: rect.height,
+          visible: Boolean(st && st.display !== "none" && st.visibility !== "hidden" && rect.width > 0 && rect.height > 0),
+          allowfullscreen: iframe.hasAttribute("allowfullscreen"),
+          allow: iframe.getAttribute("allow") || "",
+          id: iframe.id || "",
+          className: typeof iframe.className === "string" ? iframe.className : "",
+          parentSig,
+          isDenied: isUrlInDeniedList(absSrc),
+          isHardMalicious: isHardMaliciousUrl(absSrc, runtimeState.deniedDomains),
+          isCaptcha: isCaptchaChallengeUrl(absSrc)
+        });
+        if (ok) {
+          embedIframeMap.set(absSrc, iframe);
+          registerDetectedVideo(absSrc, true);
+        }
+      }
     }
   });
 }
@@ -221,17 +320,8 @@ function ensureMiniPlayerStyle() {
   if (document.getElementById(MINI_PIP_STYLE_ID)) return;
   const st = document.createElement("style");
   st.id = MINI_PIP_STYLE_ID;
-  st.textContent = `
-    video.__aegis_mini_pip__ {
-      position: fixed !important;
-      z-index: 2147483645 !important;
-      border-radius: 0 0 10px 10px !important;
-      box-shadow: 0 14px 36px rgba(0,0,0,0.65) !important;
-      border: 1px solid rgba(52,211,153,0.45) !important;
-      background: #000 !important;
-      object-fit: contain !important;
-    }
-  `;
+  st.textContent =
+    "video.__aegis_mini_pip__,iframe.__aegis_mini_pip__{position:fixed!important;z-index:2147483645!important;border-radius:0 0 10px 10px!important;box-shadow:0 14px 36px rgba(0,0,0,.65)!important;border:1px solid rgba(52,211,153,.45)!important;background:#000!important;object-fit:contain!important;}";
   (document.head || document.documentElement).appendChild(st);
 }
 
@@ -324,23 +414,32 @@ function renderMiniPlayerDragBar(videoEl) {
   const bar = document.createElement("div");
   bar.id = MINI_PIP_BAR_ID;
   bar.style.cssText =
-    "position:fixed;z-index:2147483646;height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:rgba(15,23,42,0.96);border:1px solid rgba(52,211,153,0.45);border-bottom:none;border-radius:10px 10px 0 0;color:#e2e8f0;font:700 10.5px system-ui,sans-serif;cursor:grab;user-select:none;touch-action:none;";
+    "position:fixed;z-index:2147483646;height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:rgba(15,23,42,.96);border:1px solid rgba(52,211,153,.45);border-bottom:none;border-radius:10px 10px 0 0;color:#e2e8f0;font:700 10.5px system-ui,sans-serif;cursor:grab;user-select:none;touch-action:none";
 
   const titleSpan = document.createElement("span");
   titleSpan.textContent = "⠿ Mini PiP";
 
   const controlsWrap = document.createElement("div");
-  controlsWrap.style.cssText = "display:flex;align-items:center;gap:4px;";
+  controlsWrap.style.cssText = "display:flex;align-items:center;gap:4px";
 
-  if (document.pictureInPictureEnabled && !videoEl.disablePictureInPicture) {
+  const isVideoEl = videoEl.tagName === "VIDEO";
+  if (
+    (isVideoEl && document.pictureInPictureEnabled && !videoEl.disablePictureInPicture) ||
+    (!isVideoEl && getActiveVideoFrameId())
+  ) {
     const nativeBtn = document.createElement("button");
     nativeBtn.type = "button";
     nativeBtn.textContent = "↗ Native";
-    nativeBtn.title = "Pindah ke Native Browser PiP (tetap tampil saat pindah tab)";
+    nativeBtn.title = "Native Browser PiP";
     nativeBtn.style.cssText =
-      "background:#0f766e;color:#ecfeff;border:none;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:700;cursor:pointer;";
+      "background:#0f766e;color:#ecfeff;border:none;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:700;cursor:pointer";
     nativeBtn.addEventListener("click", () => {
-      toggleNativeBrowserPiP();
+      if (isVideoEl) {
+        toggleNativeBrowserPiP();
+      } else {
+        const fid = getActiveVideoFrameId();
+        if (fid) chrome.runtime.sendMessage({ type: "RELAY_VIDEO_CONTROL", action: "nativePip", frameId: fid });
+      }
     });
     controlsWrap.appendChild(nativeBtn);
   }
@@ -350,7 +449,7 @@ function renderMiniPlayerDragBar(videoEl) {
   closeBtn.textContent = "✕";
   closeBtn.title = "Tutup Mini PiP";
   closeBtn.style.cssText =
-    "background:#1e293b;color:#f87171;border:none;border-radius:4px;padding:1px 6px;font-weight:700;cursor:pointer;";
+    "background:#1e293b;color:#f87171;border:none;border-radius:4px;padding:1px 6px;font-weight:700;cursor:pointer";
   closeBtn.addEventListener("click", disableMiniPlayer);
   controlsWrap.appendChild(closeBtn);
 
@@ -358,83 +457,59 @@ function renderMiniPlayerDragBar(videoEl) {
   bar.appendChild(controlsWrap);
   (document.documentElement || document.body).appendChild(bar);
 
-  let dragging = false;
-  let startX = 0;
-  let startY = 0;
-  let initLeft = 0;
-  let initTop = 0;
-
-  bar.addEventListener("pointerdown", (e) => {
-    if (/** @type {HTMLElement} */ (e.target).closest("button")) return;
-    dragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    const rect = videoEl.getBoundingClientRect();
-    initLeft = rect.left;
-    initTop = rect.top;
-    safeTry("videoDock.pipCapture", () => bar.setPointerCapture(e.pointerId));
-  });
-
-  bar.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    if (!videoEl.isConnected) {
-      dragging = false;
-      disableMiniPlayer();
-      return;
+  attachPointerDrag(bar, {
+    targetEl: videoEl,
+    margin: 8,
+    minTop: getMiniPlayerSafeTop(),
+    getDims: () => {
+      if (!videoEl.isConnected) {
+        disableMiniPlayer();
+        return null;
+      }
+      return getMiniPipDims();
+    },
+    onMove: (clamped) => {
+      bar.style.left = `${clamped.left}px`;
+      bar.style.top = `${Math.max(2, clamped.top - 24)}px`;
+    },
+    onEnd: () => {
+      if (!videoEl.isConnected) {
+        disableMiniPlayer();
+        return;
+      }
+      const dims = getMiniPipDims();
+      const rect = videoEl.getBoundingClientRect();
+      saveHudPosition(
+        "miniPip",
+        createSavedHudCoord(rect.left, rect.top, dims.width, dims.height, 8, getMiniPlayerSafeTop())
+      );
     }
-    const dims = getMiniPipDims();
-    const clamped = clampHudPosition(
-      initLeft + (e.clientX - startX),
-      initTop + (e.clientY - startY),
-      dims.width,
-      dims.height,
-      8,
-      getMiniPlayerSafeTop()
-    );
-    videoEl.style.left = `${clamped.left}px`;
-    videoEl.style.top = `${clamped.top}px`;
-    bar.style.left = `${clamped.left}px`;
-    bar.style.top = `${Math.max(2, clamped.top - 24)}px`;
   });
-
-  const endDrag = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    safeTry("videoDock.pipRelease", () => {
-      if (bar.hasPointerCapture(e.pointerId)) bar.releasePointerCapture(e.pointerId);
-    });
-    if (!videoEl.isConnected) {
-      disableMiniPlayer();
-      return;
-    }
-    const dims = getMiniPipDims();
-    const rect = videoEl.getBoundingClientRect();
-    saveHudPosition(
-      "miniPip",
-      createSavedHudCoord(rect.left, rect.top, dims.width, dims.height, 8, getMiniPlayerSafeTop())
-    );
-  };
-
-  bar.addEventListener("pointerup", endDrag);
-  bar.addEventListener("pointercancel", endDrag);
 }
 
 export async function toggleSmartMinimizeOrPiP(preferNative = false) {
   const v = findPrimaryVideoElement();
-  if (!v) return;
+  const frameId = getActiveVideoFrameId();
   if (preferNative) {
-    const ok = await toggleNativeBrowserPiP();
-    if (ok) return;
+    if (v) {
+      const ok = await toggleNativeBrowserPiP();
+      if (ok) return;
+    } else if (frameId) {
+      chrome.runtime.sendMessage({ type: "RELAY_VIDEO_CONTROL", action: "nativePip", frameId });
+      return;
+    }
   }
+  const target = v || findPrimaryEmbedIframe();
+  if (!target) return;
   if (runtimeState.miniPlayerActive) {
     disableMiniPlayer();
     return;
   }
   ensureMiniPlayerStyle();
-  runtimeState.activeMiniVideoEl = v;
+  runtimeState.activeMiniVideoEl = /** @type {any} */ (target);
   runtimeState.miniPlayerActive = true;
-  v.classList.add("__aegis_mini_pip__");
-  renderMiniPlayerDragBar(v);
+  target.classList.add("__aegis_mini_pip__");
+  renderMiniPlayerDragBar(target);
   applySavedMiniPipPosition();
 }
 
@@ -495,63 +570,32 @@ export function updateFloatingVideoDockPosition() {
 }
 
 function attachVideoDockDrag(handleEl, hostEl) {
-  let dragging = false;
-  let moved = false;
-  let startX = 0;
-  let startY = 0;
-  let initLeft = 0;
-  let initTop = 0;
   let downOnBadge = false;
-
-  handleEl.addEventListener("pointerdown", (e) => {
-    const target = /** @type {HTMLElement} */ (e.target);
-    downOnBadge = Boolean(target.closest("#dimCompactBadge"));
-    if (!downOnBadge && target.closest("button")) return;
-    dragging = true;
-    moved = false;
-    startX = e.clientX;
-    startY = e.clientY;
-    const rect = hostEl.getBoundingClientRect();
-    initLeft = rect.left;
-    initTop = rect.top;
-    safeTry("videoDock.setPointerCapture", () => handleEl.setPointerCapture(e.pointerId));
-  });
-
-  handleEl.addEventListener("pointermove", (e) => {
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    if (!moved && Math.hypot(dx, dy) >= 5) moved = true;
-    if (!moved) return;
-    const rect = hostEl.getBoundingClientRect();
-    const clamped = clampHudPosition(initLeft + dx, initTop + dy, rect.width, rect.height, 4);
-    hostEl.style.left = `${clamped.left}px`;
-    hostEl.style.right = "auto";
-    hostEl.style.top = `${clamped.top}px`;
-    hostEl.style.bottom = "auto";
-  });
-
-  const endDrag = (e) => {
-    if (!dragging) return;
-    dragging = false;
-    safeTry("videoDock.releasePointerCapture", () => {
-      if (handleEl.hasPointerCapture(e.pointerId)) handleEl.releasePointerCapture(e.pointerId);
-    });
-    if (moved) {
-      const rect = hostEl.getBoundingClientRect();
-      const saved = createSavedHudCoord(rect.left, rect.top, rect.width, rect.height, 4);
-      saveHudPosition("videoDock", saved);
-      updateFloatingVideoDockPosition();
-    } else if (downOnBadge) {
-      runtimeState.videoDrawerOpen = false;
-      runtimeState.videoDockDimmed = !runtimeState.videoDockDimmed;
-      renderFloatingVideoDock();
-      if (!runtimeState.videoDockDimmed) scheduleVideoDockDim();
+  attachPointerDrag(handleEl, {
+    targetEl: hostEl,
+    margin: 4,
+    threshold: 5,
+    allowSelector: "#dimCompactBadge",
+    onStart: (e) => {
+      downOnBadge = Boolean(/** @type {HTMLElement} */ (e.target).closest("#dimCompactBadge"));
+    },
+    onMove: () => {
+      hostEl.style.right = "auto";
+      hostEl.style.bottom = "auto";
+    },
+    onEnd: (moved) => {
+      if (moved) {
+        const rect = hostEl.getBoundingClientRect();
+        saveHudPosition("videoDock", createSavedHudCoord(rect.left, rect.top, rect.width, rect.height, 4));
+        updateFloatingVideoDockPosition();
+      } else if (downOnBadge) {
+        runtimeState.videoDrawerOpen = false;
+        runtimeState.videoDockDimmed = !runtimeState.videoDockDimmed;
+        renderFloatingVideoDock();
+        if (!runtimeState.videoDockDimmed) scheduleVideoDockDim();
+      }
     }
-  };
-
-  handleEl.addEventListener("pointerup", endDrag);
-  handleEl.addEventListener("pointercancel", endDrag);
+  });
 }
 
 export function renderFloatingVideoDock() {
@@ -584,28 +628,7 @@ export function renderFloatingVideoDock() {
     closedVideoDockRoots.set(hostEl, shadow);
   }
 
-  // Static style + structural template ONLY (zero untrusted URL/text interpolation -> immune to XSS)
-  shadow.innerHTML = `
-    <style>
-      * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-      .wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-      .drawer { width: 290px; background: rgba(15,23,42,0.96); border: 1px solid rgba(52,211,153,0.45); border-radius: 12px; padding: 8px; box-shadow: 0 12px 32px rgba(0,0,0,0.55); color: #f8fafc; }
-      .drawer-title { font-size: 10.5px; font-weight: 800; color: #34d399; margin-bottom: 6px; }
-      .stream-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 6px; border-radius: 6px; background: #020617; border: 1px solid #1e293b; margin-bottom: 4px; font-size: 10px; }
-      .stream-lbl { font-family: ui-monospace, monospace; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .s-btn { background: #10b981; color: #022c22; border: none; border-radius: 5px; padding: 2px 7px; font-size: 9.5px; font-weight: 800; cursor: pointer; flex-shrink: 0; }
-      .pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 6px; border-radius: 999px; background: rgba(15,23,42,0.95); border: 1px solid rgba(52,211,153,0.48); box-shadow: 0 10px 28px rgba(0,0,0,0.5); cursor: grab; user-select: none; touch-action: none; }
-      .pill:active { cursor: grabbing; }
-      .badge { border: none; background: rgba(16,185,129,0.2); color: #6ee7b7; border-radius: 999px; padding: 4px 9px; font-size: 11px; font-weight: 800; cursor: pointer; white-space: nowrap; }
-      .pill-btn { width: 28px; height: 28px; border-radius: 999px; border: none; background: transparent; color: #e2e8f0; font-size: 12px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-      .pill-btn:hover { background: rgba(255,255,255,0.12); }
-    </style>
-    <div class="wrap" id="dockWrap">
-      <div class="pill" id="pillHandle" title="Geser untuk pindah · Tekan 🎬 untuk buka/lipat">
-        <button class="badge" id="dimCompactBadge"></button>
-      </div>
-    </div>
-  `;
+  shadow.innerHTML = `<style>*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}.wrap{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.drawer{width:290px;background:rgba(15,23,42,.96);border:1px solid rgba(52,211,153,.45);border-radius:12px;padding:8px;box-shadow:0 12px 32px rgba(0,0,0,.55);color:#f8fafc}.drawer-title{font-size:10.5px;font-weight:800;color:#34d399;margin-bottom:6px}.stream-row{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;border-radius:6px;background:#020617;border:1px solid #1e293b;margin-bottom:4px;font-size:10px}.stream-lbl{font-family:ui-monospace,monospace;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s-btn{background:#10b981;color:#022c22;border:none;border-radius:5px;padding:2px 7px;font-size:9.5px;font-weight:800;cursor:pointer;flex-shrink:0}.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:999px;background:rgba(15,23,42,.95);border:1px solid rgba(52,211,153,.48);box-shadow:0 10px 28px rgba(0,0,0,.5);cursor:grab;user-select:none;touch-action:none}.pill:active{cursor:grabbing}.badge{border:none;background:rgba(16,185,129,.2);color:#6ee7b7;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}.pill-btn{width:28px;height:28px;border-radius:999px;border:none;background:transparent;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.pill-btn:hover{background:rgba(255,255,255,.12)}</style><div class="wrap" id="dockWrap"><div class="pill" id="pillHandle" title="Geser untuk pindah · Tekan 🎬 untuk buka/lipat"><button class="badge" id="dimCompactBadge"></button></div></div>`;
 
   const wrap = shadow.getElementById("dockWrap");
   const pillHandle = shadow.getElementById("pillHandle");
@@ -614,7 +637,6 @@ export function renderFloatingVideoDock() {
 
   compactBadge.textContent = `🎬(${count})`;
 
-  // Safe DOM construction for stream list drawer (prevents HTML/attribute injection from crafted video URLs)
   if (runtimeState.videoDrawerOpen) {
     const drawer = document.createElement("div");
     drawer.className = "drawer";
@@ -653,7 +675,6 @@ export function renderFloatingVideoDock() {
   }
 
   /**
-   * Helper to safely create pill action buttons
    * @param {string} id
    * @param {string} text
    * @param {string} title
@@ -678,6 +699,16 @@ export function renderFloatingVideoDock() {
           if (v.paused) v.play().catch(() => {});
           else v.pause();
           renderFloatingVideoDock();
+        } else {
+          const fid = getActiveVideoFrameId();
+          if (fid) {
+            chrome.runtime.sendMessage({ type: "RELAY_VIDEO_CONTROL", action: "togglePlay", frameId: fid }, (res) => {
+              const btn = shadow.getElementById("vpPlay");
+              if (btn && res && typeof res.paused === "boolean") {
+                btn.textContent = res.paused ? "▶" : "❚❚";
+              }
+            });
+          }
         }
         scheduleVideoDockDim();
       });
@@ -703,7 +734,7 @@ export function renderFloatingVideoDock() {
     }
     if (g.videoPillShowFullscreen !== false) {
       addPillBtn("vpFs", "⛶", "Layar Penuh", () => {
-        const v = findPrimaryVideoElement();
+        const v = findPrimaryVideoElement() || findPrimaryEmbedIframe();
         if (v && v.requestFullscreen) v.requestFullscreen().catch(() => {});
         scheduleVideoDockDim();
       });

@@ -1406,6 +1406,57 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   }
 
+  if (
+    request.type === "IFRAME_VIDEO_DETECTED" &&
+    sender.tab &&
+    typeof sender.tab.id === "number" &&
+    typeof request.url === "string"
+  ) {
+    Promise.all([ensureWorkerStateHydrated(), getDomainRules()]).then(([, rules]) => {
+      if (
+        !isSafeHttpUrl(request.url) ||
+        isDomainInList(request.url, rules.denied) ||
+        isHardMaliciousUrl(request.url, rules.denied)
+      ) {
+        sendResponse({ ok: false });
+        return;
+      }
+      chrome.tabs
+        .sendMessage(
+          sender.tab.id,
+          {
+            type: "TOP_FRAME_VIDEO_DETECTED",
+            url: request.url,
+            confirmed: Boolean(request.confirmed),
+            frameId: typeof sender.frameId === "number" ? sender.frameId : null,
+            frameUrl: typeof request.frameUrl === "string" ? request.frameUrl : ""
+          },
+          { frameId: 0 }
+        )
+        .catch(() => {});
+      sendResponse({ ok: true });
+    });
+    return true;
+  }
+
+  if (
+    request.type === "RELAY_VIDEO_CONTROL" &&
+    sender.tab &&
+    typeof sender.tab.id === "number" &&
+    typeof request.frameId === "number" &&
+    request.frameId > 0
+  ) {
+    chrome.tabs
+      .sendMessage(
+        sender.tab.id,
+        { type: "EXEC_VIDEO_CONTROL", action: String(request.action || "") },
+        { frameId: request.frameId }
+      )
+      .then((res) => sendResponse(res || { ok: false }))
+      .catch(() => sendResponse({ ok: false }));
+    return true;
+  }
+
   if (request.type === "ANALYZE_CANDIDATES" && request.payload && typeof request.payload === "object") {
     analyzeWithGemini(request.payload)
       .then((result) => sendResponse({ success: true, data: result }))
@@ -1700,6 +1751,7 @@ chrome.runtime.onInstalled.addListener(async () => {
   enforceTrustedSessionAccess();
   const existing = await chrome.storage.local.get([
     "schemaVersion",
+    "geminiApiKey",
     "deniedDomains",
     "trustedDomains",
     "strictCrossOrigin",

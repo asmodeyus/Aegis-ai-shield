@@ -7,7 +7,7 @@
     "dev": "vite --port=3000 --host=0.0.0.0",
     "build": "vite build",
     "build:icons": "node scripts/generate-icons.mjs",
-    "build:ext": "node scripts/build-extension.mjs --target=store",
+    "build:ext": "node scripts/build-extension.mjs --target=dev",
     "build:ext:store": "node scripts/build-extension.mjs --target=store",
     "build:ext:dev": "node scripts/build-extension.mjs --target=dev",
     "preview": "vite preview",

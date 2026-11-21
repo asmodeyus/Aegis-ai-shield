@@ -132,7 +132,7 @@ export default function App() {
   const [localStats, setLocalStats] = useState({ blocked: 12, bypassed: 5, allowed: 18 });
   const [tempAllowMinutesLeft, setTempAllowMinutesLeft] = useState<number | null>(null);
   const [zipStatus, setZipStatus] = useState<string>(
-    'Paket aegis-ai-shield-v3.2.1-store.zip siap diunduh (10 berkas terbundel & diminifikasi esbuild · content.js 74.7 KB).'
+    'Paket update aegis-ai-shield-v3.2.1.zip siap diunduh (dengan Key ID tetap agar pengaturan lama terbawa · content.js 74.8 KB).'
   );
   const [isBuildingZip, setIsBuildingZip] = useState(false);
 
@@ -227,23 +227,23 @@ export default function App() {
 
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'aegis-ai-shield-v3.2.1-store.zip';
+      a.download = 'aegis-ai-shield-v3.2.1.zip';
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 3000);
 
       setZipStatus(
-        `Berhasil mengunduh aegis-ai-shield-v3.2.1-store.zip (${(zipBytes.length / 1024).toFixed(1)} KB · 10 berkas · siap Store).`
+        `Berhasil mengunduh aegis-ai-shield-v3.2.1.zip (${(zipBytes.length / 1024).toFixed(1)} KB · 10 berkas · Key ID tetap terbawa).`
       );
     } catch {
       const a = document.createElement('a');
-      a.href = '/aegis-ai-shield-v3.2.1-store.zip';
-      a.download = 'aegis-ai-shield-v3.2.1-store.zip';
+      a.href = '/aegis-ai-shield-v3.2.1.zip';
+      a.download = 'aegis-ai-shield-v3.2.1.zip';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setZipStatus('Mengunduh paket aegis-ai-shield-v3.2.1-store.zip...');
+      setZipStatus('Mengunduh paket update aegis-ai-shield-v3.2.1.zip (dengan Key ID tetap)...');
     } finally {
       setIsBuildingZip(false);
     }
@@ -316,9 +316,9 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
               <span className="text-emerald-400 font-semibold">Rilis Perbaikan &amp; Store Hardening v3.2.1</span>
               <span aria-hidden="true">·</span>
-              <span>content.js 74.7 KB (&lt; 75 KB Minified)</span>
+              <span>content.js 74.8 KB (&lt; 75 KB Minified)</span>
               <span aria-hidden="true">·</span>
-              <span>Video-Tap Shield · OAuth Safe · P1–P8</span>
+              <span>Update-Safe Key · Embed Video Pil · P1–P8</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight text-balance">
@@ -330,7 +330,7 @@ export default function App() {
               <strong className="text-emerald-300">P1–P8</strong> sekaligus menutup celah{' '}
               <strong className="text-sky-300">video-tap hijack</strong> (Lemur Android / Chromium Balanced):
               pemisahan regex judol presisi, alur login OAuth aman, validasi ulang isolated world + closed Shadow DOM &amp; 2-langkah Trust,
-              penghapusan izin <code>tabs</code>, ikon 16/32/48px, Gemini &amp; auto-click opt-in, optimasi timer hook, dan sanitasi restore backup.
+              penghapusan izin <code>tabs</code>, ikon 16/32/48px, Gemini &amp; auto-click opt-in, deteksi iframe embed video, dan preservasi Key ID saat update.
             </p>
 
             <div className="pt-1 flex items-center gap-2 text-xs text-emerald-300">
@@ -346,15 +346,15 @@ export default function App() {
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-sm transition-colors whitespace-nowrap cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              Unduh ZIP Store v3.2.1
+              Unduh ZIP Update v3.2.1 (dengan Key)
             </button>
 
             <a
-              href="/aegis-ai-shield-v3.2.1-dev.zip"
-              download="aegis-ai-shield-v3.2.1-dev.zip"
+              href="/aegis-ai-shield-v3.2.1-store.zip"
+              download="aegis-ai-shield-v3.2.1-store.zip"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-colors whitespace-nowrap text-center"
             >
-              Unduh ZIP Dev (dengan key)
+              Unduh ZIP Store (tanpa Key)
             </a>
           </div>
         </section>
@@ -532,12 +532,12 @@ export default function App() {
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Periksa hasil bundel produksi setiap berkas di dalam paket{' '}
-                <code className="text-emerald-400">aegis-ai-shield-v3.2.1-store.zip</code>.
+                <code className="text-emerald-400">aegis-ai-shield-v3.2.1.zip</code>.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>esbuild Minified · content.js 74.7 KB · MV3 Siap Store</span>
+              <span>esbuild Minified · content.js 74.8 KB · Key ID Stabil</span>
             </div>
           </div>
 

@@ -205,11 +205,28 @@ export function migrateExtensionStorage(existing = {}) {
   });
 
   // 2. Strictly filter & validate globalSettings (P8)
+  const rawGlobal =
+    src.globalSettings && typeof src.globalSettings === "object" && !Array.isArray(src.globalSettings)
+      ? /** @type {Record<string, any>} */ (src.globalSettings)
+      : {};
+  const hasExistingPersistentApiKey =
+    typeof src.geminiApiKey === "string" && src.geminiApiKey.trim().length > 0;
+
   const globalSettings = sanitizeGlobalSettings(
     src.globalSettings,
     typeof src.strictCrossOrigin === "boolean" ? src.strictCrossOrigin : undefined,
     typeof src.autoSkipCountdown === "boolean" ? src.autoSkipCountdown : undefined
   );
+
+  // Carry over legacy persistent Gemini API key usage from v2.x-v3.2.0 updates instead of hiding/wiping it
+  if (hasExistingPersistentApiKey) {
+    if (typeof rawGlobal.sessionOnlyApiKey !== "boolean") {
+      globalSettings.sessionOnlyApiKey = false;
+    }
+    if (typeof rawGlobal.geminiAuditEnabled !== "boolean") {
+      globalSettings.geminiAuditEnabled = true;
+    }
+  }
 
   const strictCrossOrigin = globalSettings.protectionMode === "strict";
   const autoSkipCountdown = Boolean(globalSettings.autoSkipCountdown);
