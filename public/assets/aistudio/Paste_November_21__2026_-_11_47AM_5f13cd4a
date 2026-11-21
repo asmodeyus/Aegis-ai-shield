@@ -1,0 +1,1108 @@
+mari diskusi sebelum update berikutnya 
+kenapa pada web ini video tidak terdeteksi pil?
+<div class="main-container">
+  <div id="viewList" class="hidden">
+    <h2 style="font-size: 1.1rem; margin-bottom: 16px; color: #111;">Pilih Video</h2>
+    <div class="video-grid-container" id="videoGrid">
+        <div class="video-box" onclick="openVideoPlayer('9HSneMaCkKVi2M56TIVc')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fh5erwqhqptxaxwqo.jpg" alt="" onerror="this.style.display='none'">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('d6Nr6O8H4FMMxd43I4Go')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Feqdsmd31y2q1rzvq.jpg" alt="" onerror="this.style.display='none'">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('IyxSNF3jk1YgXFINuk6x')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fiilqtjxe8mjvjmh6.jpg" alt="" onerror="this.style.display='none'">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('maRYuwjKHNICeKiSNU1k')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2F3xzfwfvn6h00527n.jpg" alt="" onerror="this.style.display='none'">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('3moFg63SVdFSooOaVmZy')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fkrg85ms7at2o2vkp.jpg" alt="" onerror="tryThumb(this, 's39g0wznkzxl', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('8kmqT7jVBOcCGcIRGU3a')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fnmt4314bappo4man.jpg" alt="" onerror="tryThumb(this, 'ek87qrd5jb8x', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('1HfUzCCaVz8aJhdZ2W4W')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2F3x5akx0ie3azgta2.jpg" alt="" onerror="tryThumb(this, 'jc588v1cqhlj', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('zBTGK28r0bpg3ijrHVE7')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fkrg85ms7at2o2vkp.jpg" alt="" onerror="tryThumb(this, 'tv2o7nt2zfed', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('xsa0viy1cQlHRboy1C5M')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fgswm4p6vnjtd1kuo.jpg" alt="" onerror="tryThumb(this, 'tv2o7nt2zfed', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('CPP6S6G0kYJ69SZbL2y8')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsnaps%2Fki9sw2b7yaqv66kc.jpg" alt="" onerror="tryThumb(this, 'qpn9srbhzp0w', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('nTt9mETqfkioC0pGS97u')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fki9sw2b7yaqv66kc.jpg" alt="" onerror="tryThumb(this, 'qpn9srbhzp0w', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('pDMOmbPjHJF7WdcFC2c8')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fa29rjxr2tpz07ncj.jpg" alt="" onerror="tryThumb(this, 'drqw0r0v61a9', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Cosplayer</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('HP95y55uHlKqxRYjz9MI')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fugx54iq8e323bwb1.jpg" alt="" onerror="tryThumb(this, 'zhd03yzq1xda', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Cosplayer</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('2SRAdwEfSzpgTs5qSAp3')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F6xrytxxw32xz9ylv.jpg" alt="" onerror="tryThumb(this, '59w95wu8hpcq', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Cosplayer</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Uk39rLB8DQ3ZUaBFLttI')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fm0oy08s05qzqgj7p.jpg" alt="" onerror="tryThumb(this, '9nsg6cjhf8xt', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Cosplayer</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('CI27rCLmGVpCSbwi59Ni')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('8UTwra9mN18qy73h04mG')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fi7nt9kjm7l5m2y32.jpg" alt="" onerror="tryThumb(this, 'cg2vuhro2rqu', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Cosplayer</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Wd4LVB6cGu2A1h0iH4Wq')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F5kx71ji4c9m52w2b.jpg" alt="" onerror="tryThumb(this, 'ye9s7apnz3gd', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Cosplayer</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('vzxvknfDilZmW4Kuw1CI')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('X98yYOncLXx7lqxkOrSc')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ykZKqYSGhrF9r3SWNEgw')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ft9981nfsjhye9f5z.jpg" alt="" onerror="tryThumb(this, '3wmr7fg4udvi', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Colmek vcs</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('6HUOIT65XRcXAqbcwBMH')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fbh6rwxaqy7rp5m6m.jpg" alt="" onerror="tryThumb(this, '9yu59z9d7e4w', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Colmek vcs</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('kdS7SLJIijdYuShI9NuC')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('t4GIY4AVTHCLkBwuMA33')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Flpwb8vo0lvpp830q.jpg" alt="" onerror="tryThumb(this, 'bvm6tsy9hqt0', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Abg sma</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('zIP5Mu0mtgvQut0b7ETj')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F6jq966bz8qhxvbsx.jpg" alt="" onerror="tryThumb(this, 'rdipsyxr98lk', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Abg sma</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Uteuxecghfrd7EnrweTg')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Frax94fw33qmi1wtf.jpg" alt="" onerror="tryThumb(this, 'f7018mf1v2om', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Abg sma</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('dsPiOVDPVoioZeKKYt7w')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F3xteanu75kyhxjts.jpg" alt="" onerror="tryThumb(this, 'kqq9gnprur6i', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Abg sma</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('biHA2WYUZV2EuwQyUaGI')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ffbf9sz2o4ge93fjv.jpg" alt="" onerror="tryThumb(this, '2d4niy1oyue0', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('HN2nr7DGG0kYuYVVc85F')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('K1UlcbzjIAa0UZASfknc')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fqbs2hebo7xaxpk3w.jpg" alt="" onerror="tryThumb(this, 'e72cdkxn25mj', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('tHAMvCdqqnzgMs4ltgzZ')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ftg8wucptc4i48qrf.jpg" alt="" onerror="tryThumb(this, 'tn9mk0r26ghd', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('auRJt33oLsnN6ApSLlUL')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fxsp3q9t7nhfhu9dn.jpg" alt="" onerror="tryThumb(this, 'ebc4aigpn2vs', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('6eGqz01978DTmwdHvFdp')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fmxi0ohhxkr1hbtpa.jpg" alt="" onerror="tryThumb(this, 'eqtmbvg0g063', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('bv7DHLB0aFauSv5h5qvG')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fv3gn55a0a55f4t8d.jpg" alt="" onerror="tryThumb(this, 'krumer8t4s6o', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('FJn5aoKRUboquZ3AuVrI')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fcetuxsvtu1dh5awh.jpg" alt="" onerror="tryThumb(this, '7yevhlkgz5un', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('68EP5hyxlRLDarRqUtM0')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fv39neug0p57ybs1o.jpg" alt="" onerror="tryThumb(this, 'u79jortf2lhq', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('XaZp3YyjHlCDedWOuXua')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F9e1v2mn57i23rzw0.jpg" alt="" onerror="tryThumb(this, 'iyavohawv1x4', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('5SSZlFujCOnP5gmzOKTZ')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fol7882ikw5ne0sxo.jpg" alt="" onerror="tryThumb(this, '5ky33op9rw8e', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('v2ZLa4OZ8z487RGu1hNK')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fezo8xaq2on0zjpkr.jpg" alt="" onerror="tryThumb(this, 'cm63zoy9s8ul', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ip0CLHXyUXIryEpN6tqh')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fidodxdgxwbuhlsr5.jpg" alt="" onerror="tryThumb(this, 'wf6cr4p6jfg0', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('jQMQD7EyuRcVNqBNZ2da')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fd781a28l5k48dlp0.jpg" alt="" onerror="tryThumb(this, 'i998w9r48115', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ViogrKTrttMLCk9411qR')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fi1nkz0iv2zlst3g8.jpg" alt="" onerror="tryThumb(this, 'fqqd4h49imol', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('0OoDCc1k6lorUE1mHFl5')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fsv2cvon3miypw3oc.jpg" alt="" onerror="tryThumb(this, 't2ixuv5ugbiy', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('jqRRdwbUbw3YMZ59fFH2')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Flzel5gqfefjrnuje.jpg" alt="" onerror="tryThumb(this, 'xck6adfaxyc5', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('HMm6D5ayxkKBNwWlvvG0')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fkmmb1kd4qgzy34og.jpg" alt="" onerror="tryThumb(this, 'a3hb9orq6lio', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('XPCR6CBPjfZha5rFJ8UZ')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fpalai0i0bzwsmaq4.jpg" alt="" onerror="tryThumb(this, 'l1nis49efv8v', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('87tL8u3OnVpUAzLWDPOD')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('sAKdz2MIWVjAhxRJ2IWg')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fipr0vgtv7bs0xjk5.jpg" alt="" onerror="tryThumb(this, '81992njy15yx', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('NN5XrgG36S7WLtKDnPA4')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fxb8chsp56ijv4i8z.jpg" alt="" onerror="tryThumb(this, '7qwokf2mt3kc', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('NgKb1oBEPVi5SM5ZUGlo')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fpn8mvvmnejdapf84.jpg" alt="" onerror="tryThumb(this, '4ijsfnj51hhy', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('twSvXLIt4js6ymhqfQ4V')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ftex6kmf7fc59xek2.jpg" alt="" onerror="tryThumb(this, '12snh6vwgsff', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('w5Z6sejoKxkuPMOKJJGN')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fj0ezrwft40ihqg0r.jpg" alt="" onerror="tryThumb(this, 'xbzkzfgt6rnj', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('EoQS4KVRvAC7wWtW84Mb')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fxiv1ftpe0o6mer4f.jpg" alt="" onerror="tryThumb(this, 's2b3qbynxtj2', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('nWEe85ESY6bMfYTsXOOL')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F0gx3yqdz99u4tn9s.jpg" alt="" onerror="tryThumb(this, '0stth4apin66', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('YyOr0MZkNNOnXdE8B194')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F540epbjumflzkijb.jpg" alt="" onerror="tryThumb(this, '9w7s4wgacnf6', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('YNDJyjIApbr3UlhWeRfB')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fyodcja4wzdvyl3cl.jpg" alt="" onerror="tryThumb(this, 'dfw95qcq7tcg', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('rbpxy6XtwGis1xBEIUP7')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ffbf9sz2o4ge93fjv.jpg" alt="" onerror="tryThumb(this, '2d4niy1oyue0', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('vs7W678bXOnUGin3cFJi')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('PvTNBDb1F6HgjXcAmlKi')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('HVtysb9Yrn9S1HMOf1CW')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('gwBIOYWGev8MCpNz4PqQ')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fiuj8gossaw9tqj1r.jpg" alt="" onerror="tryThumb(this, 'qb5jc3ad9g0x', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('l4HLPkAeGQFgpGY1i4ig')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fiu95iwq7uix2jmis.jpg" alt="" onerror="tryThumb(this, '266u5wik9x9y', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('lXPFRhDAhe1oz8yrf8uA')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F9u9appmyx9llpvpw.jpg" alt="" onerror="tryThumb(this, 'nyuyfidirrht', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('MfSV9SlPfCYzUqm8scdM')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F3b79wpvi3nqzb9bq.jpg" alt="" onerror="tryThumb(this, 'r5evx4xlv9s4', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ZHFrD2MPQG3PFRHSZPJC')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F24lzh4u8dn5ziubs.jpg" alt="" onerror="tryThumb(this, '9gqtp8j96m82', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('6ww0PFsw3WXoeSC0PobL')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fjjhi337zgqpukl9x.jpg" alt="" onerror="tryThumb(this, 'iusdrm6p082c', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('8nXI9RpDL9tVDcewYbCO')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fim63f69oz4ucd8nl.jpg" alt="" onerror="tryThumb(this, 'b7z8jxo5zwby', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('vFT7Gf9RFtutq5yiGpWp')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fsz83ox7btoq2hgq5.jpg" alt="" onerror="tryThumb(this, '6qpret4es82x', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('B21wIneiwtGJ1Vhs5UsW')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F22iwem2goi0cqlei.jpg" alt="" onerror="tryThumb(this, 'x25cvqmxdlz0', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('09epTp0SlHr2NnH82LWW')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fm6pqxfujjjjsjp5j.jpg" alt="" onerror="tryThumb(this, '2zjvm1le7uab', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('HiHAJRieLZYYgYZMehWI')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fgat4lu4fy1i2o9fl.jpg" alt="" onerror="tryThumb(this, 'odnhh47lhyhg', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('7Yq0hcDrfyosJm8mBsHT')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fvfaqv3zurxjwfyak.jpg" alt="" onerror="tryThumb(this, 'qyj6m4vibsfd', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Y8zUtyy3ZrLDqfZDnFAB')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F6mhm5gm2rgivwpnj.jpg" alt="" onerror="tryThumb(this, 'xc9aj4ky47yt', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('oNWjc7BuEcVOD7iLVV9e')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fgfyf419qntvl6v36.jpg" alt="" onerror="tryThumb(this, 'qae36c9xmbg5', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('BzRJa1G9PRMo24ybsnjQ')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fo8g340il2ukr99zp.jpg" alt="" onerror="tryThumb(this, 'ozfpxe1r5avl', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('10zSP0PpmPXVvYcgJt7i')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fiuj8gossaw9tqj1r.jpg" alt="" onerror="tryThumb(this, 'qb5jc3ad9g0x', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('GkyvYLkmXpZg1fhnVppa')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F8bybcdi250dojlcd.jpg" alt="" onerror="tryThumb(this, 'aizw71jn51s5', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('TJBD85z0WoaxsRnhug8A')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F4h9d2kc3poad0frl.jpg" alt="" onerror="tryThumb(this, '0mqcnla22pis', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('QamkROkqHyBXFckADIiR')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F8qd0yqsvg1ekhhi9.jpg" alt="" onerror="tryThumb(this, 'dwl0dertsgha', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('mza5uYhFObxKRVtksg48')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fi95l1w9w6sv5sv0b.jpg" alt="" onerror="tryThumb(this, 'wcwp6o9t38lp', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('sfiDbyg2YIfArwpmv3LL')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F0w18bi87y2xpcjeg.jpg" alt="" onerror="tryThumb(this, 'maw07djd3s9p', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('BAcQuoAxvUEyLdCuMWT2')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fcxpben7s4ivb51qb.jpg" alt="" onerror="tryThumb(this, 'jsrhxsw5j3fk', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('JPVe80wYC5IS3Wx7yjwc')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fqptpyr3aog7qaqxz.jpg" alt="" onerror="tryThumb(this, '9gm4dm89x8mi', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Okg7goahjjcPUirnbmDh')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F0fab1390urog67j5.jpg" alt="" onerror="tryThumb(this, 'c863bh3ho49f', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('4OS937fyQNpJG7eS7vAX')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F0fab1390urog67j5.jpg" alt="" onerror="tryThumb(this, 'c863bh3ho49f', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('IHwBG4mORtOpbsPDztcs')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F23ow8pi91gfpl5s5.jpg" alt="" onerror="tryThumb(this, '7rd4zu7tkdkt', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('InJzRAsJbRO98hXAbOQN')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F2ggal33oz3l2iqdf.jpg" alt="" onerror="tryThumb(this, 'krmitp1as8dr', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('8s96EVyW31hET99HpxV3')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fjc6m2m75vwqi77qd.jpg" alt="" onerror="tryThumb(this, 'a6vyyezkq1t1', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('gioBtVZkbLkChzX0sT8D')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fkwly82togork703i.jpg" alt="" onerror="tryThumb(this, 'ssiytdgwl7si', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('iz3JEbE6awoZ0P1Lx9GX')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('LZJp2WIFSImOJ6lRyaLg')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F1wlatdv7c1hfku10.jpg" alt="" onerror="tryThumb(this, 'e9c2h1vmg1gw', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('MRcXb3Yv9xdm1GaHZDoE')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Z2XYPArm1XyB65YL9Tez')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ai4N658MvR8sohPiXctQ')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F4rowf5vehgd6vhs5.jpg" alt="" onerror="tryThumb(this, 'ttnjcggfdwbo', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupann</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('lqWVoipheDMnfOu8e10G')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F4rowf5vehgd6vhs5.jpg" alt="" onerror="tryThumb(this, 'n6c8orhgyt4z', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('9WMSQCDcWZxMZt8alF80')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2F4rowf5vehgd6vhs5.jpg" alt="" onerror="tryThumb(this, 'dyeq6qjchvyy', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('l7zWmSyNk7lsi6uytSsO')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ftegoh4woq8vr3uig.jpg" alt="" onerror="tryThumb(this, 'h1gjwp5e7w1i', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Fatiah</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('9fofN0vSJHDR8VVLF8d5')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Ftegoh4woq8vr3uig.jpg" alt="" onerror="tryThumb(this, 'h1gjwp5e7w1i', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('kZFvo0EzAfRBSGJgXjym')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fo95gyo58d4ixbqrv.jpg" alt="" onerror="tryThumb(this, 'zg4ptaw0bx94', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('RDEY0F1kUszizs6Hi2oI')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Faswpvrb9ivtv9fix.jpg" alt="" onerror="tryThumb(this, 'lyqy5cdni1mq', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('k65FAIeDVNFfirlZr3mc')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fdccr7d8gdirycyve.jpg" alt="" onerror="tryThumb(this, 'j5mygjgoqnmf', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('I2P3Ehi5ZhECY9xSEhdV')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Frb89ryja4pbobkzl.jpg" alt="" onerror="tryThumb(this, 'o4zienp63psn', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('WU6l8MQjFHwBAYh7LKQ2')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fkggz5j3zqbqt94wz.jpg" alt="" onerror="tryThumb(this, 'sqr3m0vkxqxj', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('tOFhpDlkJHOKxdBlYH5U')">
+          <span class="badge dood">DOOD</span>
+          <img src="https://wsrv.nl/?url=https%3A%2F%2Fimgds.net%2Fsplash%2Fcyyze5fvs0eby55m.jpg" alt="" onerror="tryThumb(this, '1o5xarir6lv6', 1)">
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Asupan</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Hgb9FPvTOao1YvyOZfzq')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('jqmqxIj38YjIucRTfle8')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('S7rYtWwFrmkAZKCneMAJ')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('2rAZOSsGfbDIi2EjLwcb')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('gfIhmh4zWCHDG6Zm0Qd0')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('xZF7RXfJIkdBVw3G1Zxe')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('RmwWqFHFzHgpXgbwfHwX')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('KGNzWIU1LIHVQSDayN3w')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('0JI62RPYogvrP7ydngJS')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 7</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('j9qcAP50lo4jS7GiGehc')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 6</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('zqNLOh6F7mWMJS8MYzPh')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 5</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('R8y31Nsg6l8cFiI9l5wP')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('YYk1PGz0ZNYG2Y0J34X8')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('sFX0oS7Zd5F8it3DObvx')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('imZDVTPNcm66Xh6HujEP')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('DJ9zq6CNkxXhjCgtcQHE')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('f2oKGsSHGt9W992p6D9H')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('0LGE0KeeGWuGUNHWwQNx')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('SyA8Ez617sd2kdlq855R')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('7hAY38UsQ8d4FHsPlmJk')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('lGAvdCTdUFWB7zafLZAz')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('OASYwmd1UWK0xoXNmw4B')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ECMFhyhcDkuGuJAlspAu')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('9KnNRDrMQaCAxblgzHbC')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('OJ1EWlOmyuiEQWpu0s3K')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ww4kAypVmLSockXnA5rW')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('esrQaa2eKbYqM9K5jx2l')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('ZwRPjVWIgpx5uBE8QCis')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('XBQWwtTqw9dOJTaOnPn3')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Qo2cCec5UgHH4Bsa0ECL')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Boc1l clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('43t72oUcnEC6GZMe76ss')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('cModXCY2J37sFdEEfu4E')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('CRfrQKfTu4WtzFeonInB')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('4E8CB2RjjQmM65GxnMpp')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('tPPrNc5fuLYemwI4s7IR')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('GzKNfZ9l3IjsRSOAuSMa')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('1cTkMK6WvSncPAPubwnZ')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('KioyU67QBBSypxzV5hOt')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('hjqEDFyek2Oe4xVNlbkw')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Loli</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('1fa1jWi32Uq0cOsoiRqO')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl update</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('64zRkgsff1q67yVurFr6')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Loli update</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('eCsQXZG8cdf2KSuSJsKK')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl langka</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('5cYarn4ACJrs94HnS5Wr')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl langka</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('POty5LU1VtZ6gTXcCFmU')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bcl langka</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('sUbmTsebPrcElmztRCRB')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocl lagi</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('TT5cwoZLxrisoAH6AZ93')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil clmk</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('PrAeh7RegIIyzqNcbmSF')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil clm</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('S6BDLKZDL6pZv3Hs0iuI')">
+          <span class="badge abyss">ABYSS</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Bocil smp</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('mqVoOkeNexgZO9YZW6WU')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('hDjQ4MscMsxtHkxOxYyq')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('T8La17GfMPnYQe5Fs0My')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('yYzVvFGdQ4JZfpolqONJ')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('DOESg2NcxwEPN2TWMqoi')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('nPlN4PCpZI7OYu4loNOz')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('jTaB8IJ21Y9jM0nWpQxd')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('DdQIAtn7vreXltgx24MO')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('hG5l2qYv3i2kYNGO3rlk')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('pMcmZeOoz0oQP0ip7pK8')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('hDafvq6zXWovxbz0nJ2B')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('VNZIcSIw64TTGUPiD9PY')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('SQSSt7nQPLFRJ1DSZNjC')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('4Mb9PDz3BnXde4sFCIpS')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('Lth7JVvMKx4K4JBcw7PY')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('HhqXn7RMng7Vl6uzTYrr')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('tOZvVxkIgbB25behIMG2')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('yiJN18AIOhRleaLNdVpT')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('JL9cNchuaWZlBi0qRVkv')"><div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#222; color:#555; font-size:2rem;">▶</div></div>
+      
+        <div class="video-box" onclick="openVideoPlayer('xDwvopC7zSL8a3fAaeYh')">
+          <span class="badge dood">DOOD</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 4</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('CdCk9f354qwfYT8omuC3')">
+          <span class="badge dood">DOOD</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 3</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('eSPtfGntySVnjwbYsQQY')">
+          <span class="badge dood">DOOD</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 2</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('eToIiX85bG0eQURSFdfb')">
+          <span class="badge dood">DOOD</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      
+        <div class="video-box" onclick="openVideoPlayer('m9EjwW3mahyJX3oOy1u2')">
+          <span class="badge dood">DOOD</span>
+          <div style="width:100%; height:100%; background:#222;"></div>
+          <div class="play-icon">▶</div>
+          <div class="title-overlay">Video 1</div>
+        </div>
+      </div>
+  </div>
+  <div id="viewPlayer" class="">
+    <button class="btn-back" onclick="goBackToList()">← Kembali ke Daftar Video</button>
+    <div class="video-wrapper" id="playerWrapper"><iframe src="https://playmogo.com/e/mwzrxgipspf3" scrolling="no" frameborder="0" allowfullscreen="true" allow="autoplay; encrypted-media"></iframe></div>
+    <div class="video-info">
+      <div class="meta">
+        <h2 id="videoTitle">Asupan</h2>
+        <div class="stats" id="videoStats">👁 407 views &nbsp;·&nbsp; 👍 -10 likes</div>
+      </div>
+    </div>
+    <div class="action-row">
+      <button class="like-btn" id="likeBtn" onclick="toggleLike()">👍 <span id="likeCount">-10</span> Like</button>
+      <button onclick="openShare()">🔗 Share</button>
+    </div>
+    <!-- Banner biomanos.org diisolasi dalam iframe (sandbox) -->
+    <div class="ad-banner-frame-wrap">
+      <iframe id="adBannerFrame" sandbox="allow-scripts allow-same-origin" scrolling="no" style="width:300px;height:250px;border:0;display:block;background:transparent;">
+      </iframe>
+    </div>
+    <div class="share-row" id="shareRow" style="display: flex;">
+      <input type="text" id="shareUrl" readonly="">
+      <button onclick="copyShare()">Salin Link</button>
+    </div>
+  </div>
+</div>

@@ -7,7 +7,7 @@ import {
   isDomainMatchedInList,
 } from './smartContentClassifier';
 
-export type AegisLogLevel = 'BLOCK' | 'ALLOW' | 'BYPASS' | 'WARN';
+export type AegisLogLevel = 'BLOCK' | 'ALLOW' | 'BYPASS' | 'WARN' | 'DEBUG';
 export type AegisLogSource = 'background' | 'content' | 'main_world';
 
 export interface AegisLogEntry {
@@ -383,7 +383,7 @@ export function detectShortlinkBypassAction(spec: ShortlinkStepDomSpec): Shortli
 export function formatAegisLogsForCopy(
   entries: AegisLogEntry[],
   filter: 'ALL' | AegisLogLevel = 'ALL',
-  version = '2.2.7'
+  version = '3.2.0'
 ): string {
   const filtered =
     filter === 'ALL' ? entries : entries.filter((item) => item.level === filter);

@@ -129,12 +129,12 @@ test('Formats AEGIS diagnostic logs cleanly for copy-paste with filter support (
     },
   ];
 
-  const allText = formatAegisLogsForCopy(logs, 'ALL', '2.2.7');
-  assert.match(allText, /AEGIS-AI SHIELD v2\.2\.7 DIAGNOSTIC LOG/);
+  const allText = formatAegisLogsForCopy(logs, 'ALL', '3.2.0');
+  assert.match(allText, /AEGIS-AI SHIELD v3\.2\.0 DIAGNOSTIC LOG/);
   assert.match(allText, /BLOCK_REDIRECT_REVERT/);
   assert.match(allText, /BYPASS_DECODED_URL/);
 
-  const blockOnly = formatAegisLogsForCopy(logs, 'BLOCK', '2.2.7');
+  const blockOnly = formatAegisLogsForCopy(logs, 'BLOCK', '3.2.0');
   assert.match(blockOnly, /Filter: BLOCK \| Total Tercatat: 1 entri/);
   assert.match(blockOnly, /BLOCK_REDIRECT_REVERT/);
   assert.doesNotMatch(blockOnly, /BYPASS_DECODED_URL/);

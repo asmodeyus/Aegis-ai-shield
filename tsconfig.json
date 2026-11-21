@@ -24,5 +24,11 @@
     "allowImportingTsExtensions": true,
     "noEmit": true
   },
-  "exclude": ["dist"]
+  "exclude": [
+    "dist",
+    "src/ext/background",
+    "src/ext/content",
+    "src/ext/main_world",
+    "src/ext/popup"
+  ]
 }

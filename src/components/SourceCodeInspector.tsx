@@ -13,41 +13,42 @@ export const EXTENSION_FILES: ExtensionFileMeta[] = [
     name: 'content.js',
     path: '/extension-v2.1.6/content.js',
     summary:
-      'v2.2.7: Perbaikan memory leak drag Pil Video via setPointerCapture (tanpa window listener), Toast Bypass Safelink (~800ms), smart fallback kuota runAiDomAudit(), & penghapusan regex domain komunitas hardcoded.',
+      'v3.2.1 (74.7 KB minified < 75 KB): Re-validasi untrusted bridge, closed Shadow DOM HUD/Video Dock, ev.isTrusted + 2-langkah Trust, rate-limit UI, video-tap gesture guard, & Gemini/auto-click opt-in.',
     changedIn221: true,
   },
   {
     name: 'background.js',
     path: '/extension-v2.1.6/background.js',
     summary:
-      'v2.2.7: Gemini API Key pindah ke HTTP Header x-goog-api-key + parser JSON anti-markdown, debounce 350ms DNR sync, auto-cleanup tabHistory (>2 jam/tab tutup), & seed default Whitelist komunitas.',
+      'v3.2.1 (52.4 KB minified): OAuth precedence (P2), filter judol presisi (P1), opt-in Gemini gate (P5), perbaikan forceRevertTab anti-lempar-balik video tap, & sanitasi migrasi storage (P8).',
     changedIn221: true,
   },
   {
     name: 'main_world.js',
     path: '/extension-v2.1.6/main_world.js',
     summary:
-      'v2.2.7: Penghapusan nukeTimers() agar buffer video HLS/DASH & sesi SPA tetap aman + penghapusan regex komunitas hardcoded (kini mengikuti daftar Trust di storage).',
+      'v3.2.1 (31.6 KB minified): Video-tap hijack shield (Navigation API + fallback native video), P6 timer hook cache 500ms + regex batas kata, P1/P2 unified classifier, & CAPTCHA restore.',
     changedIn221: true,
   },
   {
     name: 'popup.html',
     path: '/extension-v2.1.6/popup.html',
     summary:
-      'v2.2.7: Sinkronisasi label versi v2.2.7 dengan 5 tab lengkap (Umum, Setting per kelompok, Log Diagnostik Copy-Paste, Block, & Trust).',
+      'v3.2.1: Toggle opt-in Gemini + disclosure data Google, peringatan persistent API key, konfirmasi inline Auto-Skip & Auto-Klik, copy anti-spoof jujur, & bebas _aistudio-iframe.js.',
     changedIn221: true,
   },
   {
     name: 'popup.js',
     path: '/extension-v2.1.6/popup.js',
     summary:
-      'v2.2.7: Header log diagnostik v2.2.7, backup JSON v2.2.7, kontroler Tab Log copy-paste, & sinkronisasi real-time daftar Trust/Block.',
+      'v3.2.1 (38.2 KB minified): Kontrol opt-in Gemini/Auto-Skip/Auto-Klik, default sessionOnlyApiKey=true, sanitasi & limitasi restore backup JSON (P8), & Laporan FP tersensor.',
     changedIn221: true,
   },
   {
     name: 'manifest.json',
     path: '/extension-v2.1.6/manifest.json',
-    summary: 'Pembaruan versi ekstensi menjadi 2.2.7 dengan seluruh permission Manifest V3 tetap utuh.',
+    summary:
+      'v3.2.1 (Store-ready): Tanpa izin tabs, tanpa dev key, minimum_chrome_version 111, multi-size icons (16/32/48/128px), & CSP extension_pages ketat.',
     changedIn221: true,
   },
 ];

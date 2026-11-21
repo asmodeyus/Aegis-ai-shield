@@ -1,36 +1,322 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AEGIS-AI Shield v2.2.7</title>
+  <title>AEGIS-AI Shield v3.2.1</title>
   <style>
+    :root {
+      --bg: #0f172a;
+      --bg-deep: #020617;
+      --surface: #131d31;
+      --surface-2: #1e293b;
+      --border: #26354d;
+      --border-2: #334155;
+      --text: #f8fafc;
+      --text-2: #e2e8f0;
+      --muted: #94a3b8;
+      --muted-2: #64748b;
+      --accent: #34d399;
+      --accent-strong: #10b981;
+      --accent-ink: #022c22;
+      --sky: #38bdf8;
+      --amber: #fcd34d;
+      --danger: #ef4444;
+      --danger-soft: #fca5a5;
+    }
+
+    html[data-theme="light"] {
+      --bg: #f8fafc;
+      --bg-deep: #f1f5f9;
+      --surface: #ffffff;
+      --surface-2: #f1f5f9;
+      --border: #cbd5e1;
+      --border-2: #cbd5e1;
+      --text: #0f172a;
+      --text-2: #1e293b;
+      --muted: #475569;
+      --muted-2: #64748b;
+      --accent: #059669;
+      --accent-strong: #059669;
+      --accent-ink: #ffffff;
+      --sky: #0284c7;
+      --amber: #b45309;
+      --danger: #dc2626;
+      --danger-soft: #dc2626;
+    }
+
     * { box-sizing: border-box; }
-    body { width: 356px; padding: 12px; font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: #f8fafc; margin: 0; }
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    h3 { margin: 0; font-size: 14px; color: #34d399; }
-    .ver { font-size: 10px; background: rgba(16, 185, 129, 0.16); color: #34d399; padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(16, 185, 129, 0.45); font-weight: 700; }
-    .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; background: #020617; padding: 3px; border-radius: 8px; border: 1px solid #1e293b; margin-bottom: 10px; }
-    .tab-btn { background: transparent; color: #94a3b8; border: none; border-radius: 6px; padding: 6px 2px; font-size: 10px; font-weight: 700; cursor: pointer; white-space: nowrap; }
-    .tab-btn.active { background: #1e293b; color: #f8fafc; box-shadow: 0 1px 3px rgba(0,0,0,0.4); }
-    .tab-btn.active[data-tab="global"] { color: #38bdf8; border-bottom: 2px solid #38bdf8; }
-    .tab-btn.active[data-tab="logs"] { color: #fcd34d; border-bottom: 2px solid #f59e0b; }
-    .tab-btn.active[data-tab="blacklist"] { color: #fca5a5; border-bottom: 2px solid #ef4444; }
-    .tab-btn.active[data-tab="whitelist"] { color: #6ee7b7; border-bottom: 2px solid #10b981; }
+    body {
+      width: 368px;
+      padding: 11px;
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px; gap: 6px; }
+    .header-left { display: flex; align-items: center; gap: 6px; }
+    h3 { margin: 0; font-size: 14px; color: var(--accent); letter-spacing: -0.01em; }
+    .ver {
+      font-size: 10px;
+      background: rgba(16, 185, 129, 0.14);
+      color: var(--accent);
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      font-weight: 700;
+    }
+    .theme-btn {
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      padding: 3px 7px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .theme-btn:hover { border-color: var(--accent); }
+
+    /* Quick Safe Mode / Temporary Allow Bar */
+    .safe-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 8px;
+      margin-bottom: 7px;
+      font-size: 10px;
+    }
+    .safe-bar.active {
+      border-color: rgba(245, 158, 11, 0.65);
+      background: rgba(245, 158, 11, 0.12);
+    }
+    .safe-info { min-width: 0; flex: 1; }
+    .safe-host {
+      font-family: ui-monospace, monospace;
+      font-weight: 700;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-size: 10.5px;
+    }
+    .safe-sub { color: var(--muted); font-size: 9.5px; margin-top: 1px; }
+    .safe-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .safe-btn {
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border-2);
+      border-radius: 5px;
+      padding: 4px 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .safe-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .safe-btn.resume {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: #f59e0b;
+      color: var(--amber);
+    }
+
+    /* Local Zero-Telemetry Stats Strip */
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 5px 8px;
+      margin-bottom: 8px;
+      font-size: 10px;
+      gap: 6px;
+    }
+    .stats-items { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .stat-block { color: var(--danger-soft); }
+    .stat-bypass { color: var(--amber); }
+    .stat-allow { color: var(--accent); }
+    .stat-reset {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      font-size: 10px;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .stat-reset:hover { color: var(--text); background: var(--surface-2); }
+
+    .tabs {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 2px;
+      background: var(--bg-deep);
+      padding: 3px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      margin-bottom: 9px;
+    }
+    .tab-btn {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .tab-btn.active { background: var(--surface-2); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+    .tab-btn.active[data-tab="global"] { color: var(--sky); border-bottom: 2px solid var(--sky); }
+    .tab-btn.active[data-tab="logs"] { color: var(--amber); border-bottom: 2px solid #f59e0b; }
+    .tab-btn.active[data-tab="blacklist"] { color: var(--danger-soft); border-bottom: 2px solid var(--danger); }
+    .tab-btn.active[data-tab="whitelist"] { color: var(--accent); border-bottom: 2px solid var(--accent-strong); }
+
     .panel { display: none; }
     .panel.active { display: block; }
-    .log-filters { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; margin-bottom: 7px; }
-    .log-filter-btn { background: #1e293b; color: #94a3b8; border: 1px solid #334155; border-radius: 5px; padding: 5px 4px; font-size: 10px; font-weight: 700; cursor: pointer; }
-    .log-filter-btn.active { background: #0f172a; color: #fcd34d; border-color: #f59e0b; }
-    .log-textarea { width: 100%; height: 220px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 9.5px; line-height: 1.45; background: #020617; color: #cbd5e1; border: 1px solid #334155; border-radius: 7px; padding: 7px; resize: vertical; white-space: pre; overflow: auto; }
-    .log-actions { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 5px; margin-top: 7px; }
-    p.desc { font-size: 11px; color: #94a3b8; margin: 0 0 8px; line-height: 1.4; }
-    .global-scroll { max-height: 380px; overflow-y: auto; padding-right: 3px; }
+    p.desc { font-size: 10.5px; color: var(--muted); margin: 0 0 8px; line-height: 1.4; }
+    .global-scroll { max-height: 360px; overflow-y: auto; padding-right: 3px; }
 
-    /* Clean Per-Group Card Layout */
+    /* Mode Selector */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 7px; }
+    .mode-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      padding: 7px 8px;
+      cursor: pointer;
+      text-align: left;
+      color: var(--text);
+    }
+    .mode-card.active {
+      border-color: var(--accent-strong);
+      background: rgba(16, 185, 129, 0.14);
+    }
+    .mode-title { font-size: 10.5px; font-weight: 800; color: var(--text); display: block; }
+    .mode-sub { font-size: 9.5px; color: var(--muted); display: block; margin-top: 2px; line-height: 1.3; }
+
+    .privacy-note {
+      font-size: 9.5px;
+      color: var(--muted);
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin: 4px 0 8px;
+      line-height: 1.38;
+    }
+    .warn-box {
+      display: none;
+      font-size: 9.5px;
+      color: var(--amber);
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin: 0 0 7px;
+      line-height: 1.38;
+    }
+    .warn-box.open { display: block; }
+    .optin-confirm {
+      display: none;
+      background: rgba(245, 158, 11, 0.11);
+      border: 1px solid rgba(245, 158, 11, 0.55);
+      border-radius: 6px;
+      padding: 7px 8px;
+      margin: -2px 0 7px;
+      font-size: 9.5px;
+      color: var(--text-2);
+      line-height: 1.38;
+    }
+    .optin-confirm.open { display: block; }
+    .optin-confirm-actions {
+      display: flex;
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .optin-confirm-actions button {
+      flex: 1;
+      padding: 4px 6px;
+      border-radius: 5px;
+      font-size: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .optin-accept {
+      background: rgba(245, 158, 11, 0.22);
+      color: var(--amber);
+      border: 1px solid #f59e0b;
+    }
+    .optin-cancel {
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border-2);
+    }
+
+    /* Mini Guide Accordion */
+    details.mini-guide {
+      margin-top: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      padding: 6px 8px;
+      font-size: 10px;
+      color: var(--muted);
+    }
+    details.mini-guide summary {
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--sky);
+      font-size: 10.5px;
+    }
+    details.mini-guide ul { margin: 6px 0 2px; padding-left: 15px; line-height: 1.45; }
+    details.mini-guide li { margin-bottom: 3px; }
+
+    /* Log Controls */
+    .log-filters { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; margin-bottom: 6px; }
+    .log-filter-btn {
+      background: var(--surface-2);
+      color: var(--muted);
+      border: 1px solid var(--border-2);
+      border-radius: 5px;
+      padding: 5px 2px;
+      font-size: 9.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .log-filter-btn.active { background: var(--bg-deep); color: var(--amber); border-color: #f59e0b; }
+    .log-textarea {
+      width: 100%;
+      height: 205px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 9.5px;
+      line-height: 1.45;
+      background: var(--bg-deep);
+      color: var(--text-2);
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      padding: 7px;
+      resize: vertical;
+      white-space: pre;
+      overflow: auto;
+    }
+    .log-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; }
+    .log-actions-sub { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px; }
+
+    /* Per-Group Cards */
     .group-card {
-      background: #131d31;
-      border: 1px solid #26354d;
+      background: var(--surface);
+      border: 1px solid var(--border);
       border-radius: 10px;
       padding: 9px 10px;
       margin-bottom: 9px;
@@ -41,94 +327,256 @@
       justify-content: space-between;
       padding-bottom: 6px;
       margin-bottom: 7px;
-      border-bottom: 1px solid #1e293b;
+      border-bottom: 1px solid var(--border);
     }
     .group-title {
       font-size: 11px;
       font-weight: 800;
       letter-spacing: 0.03em;
-      color: #38bdf8;
+      color: var(--sky);
       text-transform: uppercase;
     }
     .group-pos-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: #0b1120;
-      border: 1px solid #1e293b;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
       border-radius: 6px;
       padding: 5px 8px;
       margin-bottom: 6px;
       font-size: 10px;
     }
-    .group-pos-label { color: #94a3b8; font-weight: 600; }
+    .group-pos-label { color: var(--muted); font-weight: 600; }
     .group-pos-right { display: flex; align-items: center; gap: 6px; }
-    .hud-pos-coord { color: #34d399; font-family: ui-monospace, monospace; font-size: 9.5px; font-weight: 700; }
-    .hud-pos-reset { background: #1e293b; color: #93c5fd; border: 1px solid #334155; border-radius: 4px; padding: 2px 6px; font-size: 9.5px; font-weight: 700; cursor: pointer; }
-    .hud-pos-reset:hover { background: #334155; color: #fff; }
+    .hud-pos-coord { color: var(--accent); font-family: ui-monospace, monospace; font-size: 9.5px; font-weight: 700; }
+    .hud-pos-reset {
+      background: var(--surface-2);
+      color: var(--sky);
+      border: 1px solid var(--border-2);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 9.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .hud-pos-reset:hover { border-color: var(--sky); }
 
-    .toggle-row { display: flex; align-items: center; justify-content: space-between; background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; font-size: 11px; cursor: pointer; gap: 8px; }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: 6px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      font-size: 11px;
+      cursor: pointer;
+      gap: 8px;
+    }
     .toggle-row:last-child { margin-bottom: 0; }
-    .toggle-row span { color: #e2e8f0; font-weight: 500; }
+    .toggle-row span { color: var(--text-2); font-weight: 500; }
     .toggle-row input[type="checkbox"] { accent-color: #10b981; margin: 0; cursor: pointer; }
 
-    .setting-card { background: #1e293b; border: 1px solid #334155; border-radius: 7px; padding: 6px 8px; margin-bottom: 6px; }
-    .setting-card:last-child { margin-bottom: 0; }
-    .setting-head { display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; color: #e2e8f0; margin-bottom: 3px; font-weight: 600; gap: 6px; }
-    .setting-val { color: #34d399; font-family: ui-monospace, monospace; font-size: 10.5px; font-weight: 700; }
-    .setting-sub { font-size: 9.5px; color: #94a3b8; margin-top: 2px; line-height: 1.35; }
-    .sliders-footer {
-      margin-top: 7px;
-      padding-top: 7px;
-      border-top: 1px dashed #26354d;
+    .setting-card {
+      background: var(--surface-2);
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
     }
+    .setting-card:last-child { margin-bottom: 0; }
+    .setting-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10.5px;
+      color: var(--text-2);
+      margin-bottom: 3px;
+      font-weight: 600;
+      gap: 6px;
+    }
+    .setting-val { color: var(--accent); font-family: ui-monospace, monospace; font-size: 10.5px; font-weight: 700; }
+    .sliders-footer { margin-top: 7px; padding-top: 7px; border-top: 1px dashed var(--border); }
     .sliders-label {
       font-size: 9.5px;
       font-weight: 700;
-      color: #94a3b8;
+      color: var(--muted);
       text-transform: uppercase;
       letter-spacing: 0.04em;
       margin-bottom: 5px;
     }
     input[type="range"] { width: 100%; accent-color: #10b981; cursor: pointer; margin: 2px 0; }
-    select { background: #0f172a; color: #f8fafc; border: 1px solid #334155; border-radius: 5px; padding: 3px 6px; font-size: 10.5px; outline: none; }
-    select:focus { border-color: #10b981; }
+    select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border-2);
+      border-radius: 5px;
+      padding: 3px 6px;
+      font-size: 10.5px;
+      outline: none;
+    }
+    select:focus { border-color: var(--accent-strong); }
 
     .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-top: 5px; }
-    .menu-check { display: flex; align-items: center; justify-content: space-between; background: #0b1120; border: 1px solid #1e293b; border-radius: 5px; padding: 5px 7px; font-size: 10px; color: #e2e8f0; cursor: pointer; }
+    .menu-check {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 5px 7px;
+      font-size: 10px;
+      color: var(--text-2);
+      cursor: pointer;
+    }
     .menu-check input { accent-color: #10b981; margin: 0; cursor: pointer; }
 
-    input[type="password"], input[type="text"], textarea { width: 100%; padding: 7px 9px; border-radius: 6px; border: 1px solid #334155; background: #1e293b; color: #fff; font-size: 11.5px; outline: none; font-family: inherit; }
-    input[type="text"]:focus, input[type="password"]:focus, textarea:focus { border-color: #10b981; }
-    textarea { font-family: ui-monospace, monospace; font-size: 10px; resize: vertical; min-height: 68px; background: #020617; }
+    input[type="password"], input[type="text"], textarea {
+      width: 100%;
+      padding: 7px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--surface-2);
+      color: var(--text);
+      font-size: 11.5px;
+      outline: none;
+      font-family: inherit;
+    }
+    input[type="text"]:focus, input[type="password"]:focus, textarea:focus { border-color: var(--accent-strong); }
+    textarea { font-family: ui-monospace, monospace; font-size: 10px; resize: vertical; min-height: 68px; background: var(--bg-deep); }
     .input-row { display: flex; gap: 5px; margin-bottom: 6px; }
     .input-row input { flex: 1; min-width: 0; }
     .btn-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px; }
-    .btn { padding: 7px 10px; background: #10b981; color: #022c22; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; font-size: 11.5px; }
+    .btn {
+      padding: 7px 10px;
+      background: var(--accent-strong);
+      color: var(--accent-ink);
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 11px;
+    }
     .btn-full { width: 100%; margin-bottom: 6px; }
-    .btn-danger { background: #ef4444; color: #fff; }
-    .btn-sec { width: 100%; background: #1e293b; color: #cbd5e1; border: 1px solid #334155; font-weight: 600; margin-bottom: 8px; font-size: 11px; padding: 6px; border-radius: 6px; cursor: pointer; }
-    .btn-sec:hover { background: #334155; }
-    .btn-mini { background: #1e293b; color: #93c5fd; border: 1px solid #334155; font-weight: 600; font-size: 10.5px; padding: 6px; border-radius: 6px; cursor: pointer; text-align: center; }
-    .btn-mini:hover { background: #334155; color: #fff; }
-    .domain-list { max-height: 150px; overflow-y: auto; background: #020617; border: 1px solid #1e293b; border-radius: 6px; padding: 4px; }
-    .domain-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 7px; border-bottom: 1px solid #1e293b; font-size: 11px; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-sec {
+      width: 100%;
+      background: var(--surface-2);
+      color: var(--text-2);
+      border: 1px solid var(--border-2);
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 10.5px;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-sec:hover { border-color: var(--accent); }
+    .btn-mini {
+      background: var(--surface-2);
+      color: var(--sky);
+      border: 1px solid var(--border-2);
+      font-weight: 600;
+      font-size: 10px;
+      padding: 6px;
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .btn-mini:hover { border-color: var(--sky); }
+
+    .dnr-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 5px 8px;
+      margin-bottom: 6px;
+      color: var(--muted);
+    }
+    .dnr-pill strong { color: var(--accent); font-family: ui-monospace, monospace; }
+
+    .domain-list {
+      max-height: 140px;
+      overflow-y: auto;
+      background: var(--bg-deep);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 4px;
+    }
+    .domain-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 7px;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+    }
     .domain-item:last-child { border-bottom: none; }
-    .domain-name { color: #e2e8f0; word-break: break-all; font-family: ui-monospace, monospace; }
-    .del-btn { background: #334155; color: #f87171; border: none; border-radius: 4px; padding: 2px 6px; font-size: 11px; font-weight: 700; cursor: pointer; margin-left: 6px; }
-    .del-btn:hover { background: #ef4444; color: #fff; }
-    .empty-msg { padding: 14px 8px; text-align: center; color: #64748b; font-size: 11px; }
-    .backup-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid #1e293b; }
-    .backup-title { font-size: 10.5px; color: #94a3b8; margin-bottom: 5px; font-weight: 600; }
-    .transfer-drawer { display: none; margin-top: 6px; background: #020617; border: 1px solid #334155; border-radius: 7px; padding: 7px; }
+    .domain-name { color: var(--text-2); word-break: break-all; font-family: ui-monospace, monospace; }
+    .del-btn {
+      background: var(--surface-2);
+      color: var(--danger-soft);
+      border: 1px solid var(--border-2);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: 10.5px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: 6px;
+    }
+    .del-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+    .empty-msg { padding: 14px 8px; text-align: center; color: var(--muted-2); font-size: 11px; }
+    .backup-box { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+    .backup-title { font-size: 10.5px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
+    .transfer-drawer {
+      display: none;
+      margin-top: 6px;
+      background: var(--bg-deep);
+      border: 1px solid var(--border-2);
+      border-radius: 7px;
+      padding: 7px;
+    }
     .transfer-drawer.open { display: block; }
-    #status { margin-top: 8px; font-size: 11px; color: #38bdf8; text-align: center; min-height: 15px; }
+    #status { margin-top: 7px; font-size: 10.5px; color: var(--sky); text-align: center; min-height: 15px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h3>⚡ AEGIS-AI Shield</h3>
-    <span class="ver">v2.2.7</span>
+    <div class="header-left">
+      <h3>⚡ AEGIS-AI Shield</h3>
+      <span class="ver">v3.2.1</span>
+    </div>
+    <button class="theme-btn" id="themeToggleBtn" title="Ganti Tema Gelap / Terang">☀️ Terang</button>
+  </div>
+
+  <!-- QUICK SAFE MODE / TEMPORARY ALLOW BAR -->
+  <div class="safe-bar" id="safeModeBar">
+    <div class="safe-info">
+      <div class="safe-host" id="activeHostLabel">Memuat situs aktif...</div>
+      <div class="safe-sub" id="safeModeStatusText">Proteksi aktif (Safe Mode nonaktif)</div>
+    </div>
+    <div class="safe-actions">
+      <button class="safe-btn" id="tempAllow15Btn" title="Jeda proteksi agresif situs ini selama 15 menit">⏸ 15m</button>
+      <button class="safe-btn" id="tempAllow60Btn" title="Jeda proteksi agresif situs ini selama 1 jam">1 Jam</button>
+      <button class="safe-btn resume" id="tempAllowClearBtn" style="display:none;" title="Aktifkan kembali proteksi sekarang">▶ Aktifkan</button>
+    </div>
+  </div>
+
+  <!-- LOCAL STATS STRIP (NO DEVELOPER TELEMETRY) -->
+  <div class="stats-strip" title="Penghitung lokal di browser Anda (tanpa telemetri ke pengembang; fitur Gemini bersifat opt-in)">
+    <div class="stats-items">
+      <span class="stat-block">🚫 <span id="statBlocked">0</span></span>
+      <span class="stat-bypass">⚡ <span id="statBypassed">0</span></span>
+      <span class="stat-allow">✅ <span id="statAllowed">0</span></span>
+    </div>
+    <button class="stat-reset" id="resetStatsBtn" title="Reset counter statistik lokal">↺ Reset</button>
   </div>
 
   <div class="tabs">
@@ -141,20 +589,57 @@
 
   <!-- TAB 1: UMUM -->
   <div class="panel active" id="panel-general">
-    <p class="desc">Blokir redirect judol, Shopee/affiliate & popunder (DNR) + Bypass Shortlink Debloated (decode Base64/Safelink/AdLinkFly), Log Diagnostik copy-paste, CTA HTTP 302 grace & blokir senyap Blacklist.</p>
+    <p class="desc">AEGIS-AI Shield v3.2.1: Anti-redirect &amp; video-tap hijack, validasi ulang di isolated world (closed Shadow DOM &amp; isTrusted), filter judol presisi, ramah OAuth, wildcard Blacklist/DNR, &amp; CAPTCHA guard.</p>
+
+    <div class="mode-grid" role="group" aria-label="Mode Proteksi">
+      <button type="button" class="mode-card active" id="modeBalancedBtn" data-mode="balanced">
+        <span class="mode-title">⚖️ Balanced</span>
+        <span class="mode-sub">Rekomendasi. Blokir judol/iklan, ramah OAuth &amp; SPA.</span>
+      </button>
+      <button type="button" class="mode-card" id="modeStrictBtn" data-mode="strict">
+        <span class="mode-title">🔒 Strict</span>
+        <span class="mode-sub">Tahan semua lintas-domain non-whitelist.</span>
+      </button>
+    </div>
+
     <label class="toggle-row">
-      <span>Strict Lintas-Domain (Tahan Semua)</span>
-      <input type="checkbox" id="strictCrossToggle" checked />
+      <span>Auto-Skip Countdown Video/Shortlink (Opt-In, hemat CPU)</span>
+      <input type="checkbox" id="autoSkipToggle" />
     </label>
+    <div class="optin-confirm" id="autoSkipConfirmBox">
+      <div><strong>⚠️ Konfirmasi Opt-In Percepatan Timer:</strong> Mempercepat timer dapat mengganggu skrip situs legal, pemutar media, atau pemeriksaan anti-bot tertentu. Aktifkan hanya jika Anda memahami risikonya.</div>
+      <div class="optin-confirm-actions">
+        <button type="button" class="optin-accept" id="autoSkipConfirmAccept">✓ Ya, Aktifkan</button>
+        <button type="button" class="optin-cancel" id="autoSkipConfirmCancel">Batal</button>
+      </div>
+    </div>
+
     <label class="toggle-row">
-      <span>Auto-Skip Countdown Video (5–30d)</span>
-      <input type="checkbox" id="autoSkipToggle" checked />
+      <span>🤖 Aktifkan Audit Tombol via Gemini API (Opsional / Opt-In)</span>
+      <input type="checkbox" id="geminiAuditEnabledToggle" />
     </label>
-    <input type="password" id="apiKey" placeholder="Gemini API Key (AIza...)" style="margin-bottom: 8px;" />
+
+    <input type="password" id="apiKey" placeholder="Gemini API Key (AIza...) — opsional" style="margin-bottom: 5px;" />
+
+    <label class="toggle-row">
+      <span>🔒 Simpan API Key Sesi Ini Saja (chrome.storage.session)</span>
+      <input type="checkbox" id="sessionOnlyKeyToggle" checked />
+    </label>
+    <div class="warn-box" id="persistentKeyWarning">
+      ⚠️ <strong>Peringatan Penyimpanan Permanen:</strong> API Key akan disimpan di <code>chrome.storage.local</code> tanpa enkripsi pada profil browser ini. Gunakan mode <em>Sesi Ini Saja</em> di perangkat bersama.
+    </div>
+    <div class="privacy-note">
+      🛡️ <strong>Privasi &amp; Transparansi Data:</strong> Tidak ada telemetri ke pengembang. Saat <em>Audit Gemini</em> diaktifkan, data terbatas dikirim langsung ke Google API: <strong>judul halaman</strong>, <strong>origin + path</strong> (tanpa query/token), dan <strong>teks/href/class tombol kandidat</strong>. API Key hanya diakses di service worker (tidak pernah di content script/halaman).
+    </div>
+    <div class="dnr-pill" id="aiStatusPill" style="margin-bottom:7px;">
+      <span>Status AI Audit:</span>
+      <strong id="aiStatusBadge">Nonaktif (Opt-In · Fallback Lokal)</strong>
+    </div>
+
     <button class="btn btn-full" id="saveBtn">Simpan Konfigurasi</button>
 
     <div class="backup-box">
-      <div class="backup-title">Cadangan & Transfer Data (Tanpa Tutup Popup)</div>
+      <div class="backup-title">Cadangan &amp; Transfer Data JSON v3.2.1</div>
       <div class="btn-pair">
         <button class="btn-mini" id="copyBackupBtn">📋 Salin Backup</button>
         <button class="btn-mini" id="toggleRestoreBtn">📥 Tempel Backup</button>
@@ -166,21 +651,29 @@
           <button class="btn-mini" id="closeRestoreBtn">Tutup</button>
         </div>
       </div>
-      <button class="btn-mini" id="clearAiCacheBtn" style="width:100%; margin-top:6px; color:#fbbf24;">🧹 Bersihkan Cache AI (<span id="aiCacheCount">0</span>)</button>
+      <button class="btn-mini" id="clearAiCacheBtn" style="width:100%; margin-top:6px; color:var(--amber);">🧹 Bersihkan Cache AI (<span id="aiCacheCount">0</span>)</button>
     </div>
+
+    <details class="mini-guide">
+      <summary>📘 Panduan Singkat: Grace Period, Safe Mode &amp; Opt-In</summary>
+      <ul>
+        <li><strong>Mode Balanced vs Strict:</strong> <em>Balanced</em> memblokir judol/iklan/video-tap hijack tanpa mengganggu OAuth/SPA. <em>Strict</em> menahan seluruh lintas domain non-whitelist.</li>
+        <li><strong>Safe Mode (15m / 1 Jam):</strong> Jeda proteksi agresif sementara untuk situs aktif. Domain Blacklist tetap diblokir.</li>
+        <li><strong>HUD Aman 2-Langkah:</strong> <em>↗ Buka Sekali</em> adalah aksi utama; <em>✓ Trust</em> memerlukan konfirmasi kedua dengan domain penuh.</li>
+        <li><strong>Fitur Agresif Opt-In:</strong> Auto-Skip Countdown, Auto-Klik Shortlink, dan Audit Gemini nonaktif secara default dan hanya berjalan jika Anda aktifkan.</li>
+      </ul>
+    </details>
   </div>
 
-  <!-- TAB 2: SETTING (PER KELOMPOK + SLIDER TIMER/UKURAN/OPASITAS DI BAWAH) -->
+  <!-- TAB 2: SETTING (PER KELOMPOK + SLIDER DI BAWAH) -->
   <div class="panel" id="panel-global">
     <div class="global-scroll">
 
-      <!-- ================================================================= -->
-      <!-- KELOMPOK 1: 🎬 PIL & DOCK VIDEO                                   -->
-      <!-- ================================================================= -->
+      <!-- KELOMPOK 1: PIL & DOCK VIDEO -->
       <div class="group-card">
         <div class="group-header">
           <span class="group-title">🎬 1. Pil & Dock Kontrol Video</span>
-          <button class="hud-pos-reset" data-reset-hud="videoDock" title="Reset posisi Pil Video ke Auto-Anchor">↺ Reset Posisi</button>
+          <button class="hud-pos-reset" data-reset-hud="videoDock">↺ Reset Posisi</button>
         </div>
 
         <label class="toggle-row">
@@ -207,70 +700,38 @@
         </div>
 
         <div class="setting-card">
-          <div class="setting-head">
-            <span>Tombol yang Tampil di Menu Pil Video</span>
-          </div>
+          <div class="setting-head"><span>Tombol di Menu Pil Video</span></div>
           <div class="menu-grid">
-            <label class="menu-check">
-              <span>▶ Putar / Jeda</span>
-              <input type="checkbox" id="vpShowPlayPause" checked />
-            </label>
-            <label class="menu-check">
-              <span>☰ Daftar Stream</span>
-              <input type="checkbox" id="vpShowList" checked />
-            </label>
-            <label class="menu-check">
-              <span>⬇ Unduh / Buka</span>
-              <input type="checkbox" id="vpShowDownload" checked />
-            </label>
-            <label class="menu-check">
-              <span>⧉ Mini PiP</span>
-              <input type="checkbox" id="vpShowPip" checked />
-            </label>
-            <label class="menu-check" style="grid-column: span 2;">
-              <span>⛶ Layar Penuh (Fullscreen)</span>
-              <input type="checkbox" id="vpShowFullscreen" checked />
-            </label>
+            <label class="menu-check"><span>▶ Putar / Jeda</span><input type="checkbox" id="vpShowPlayPause" checked /></label>
+            <label class="menu-check"><span>☰ Daftar Stream</span><input type="checkbox" id="vpShowList" checked /></label>
+            <label class="menu-check"><span>⬇ Unduh / Buka</span><input type="checkbox" id="vpShowDownload" checked /></label>
+            <label class="menu-check"><span>⧉ Mini PiP</span><input type="checkbox" id="vpShowPip" checked /></label>
+            <label class="menu-check" style="grid-column: span 2;"><span>⛶ Layar Penuh (Fullscreen)</span><input type="checkbox" id="vpShowFullscreen" checked /></label>
           </div>
         </div>
 
-        <!-- SLIDER KELOMPOK 1 DI BAGIAN BAWAH (TIMER DIM, UKURAN, OPASITAS) -->
         <div class="sliders-footer">
           <div class="sliders-label">Slider Timer, Ukuran & Opasitas Pil Video</div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>⏱️ Timer Dim / Auto-Lipat ke 🎬(N)</span>
-              <span class="setting-val" id="videoDockDimVal">2.5 detik</span>
-            </div>
+            <div class="setting-head"><span>⏱️ Timer Dim / Auto-Lipat ke 🎬(N)</span><span class="setting-val" id="videoDockDimVal">2.5 detik</span></div>
             <input type="range" id="videoDockDimRange" min="0" max="10" step="0.5" value="2.5" />
           </div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>📐 Ukuran Pil Video</span>
-              <span class="setting-val" id="videoPillScaleVal">100% (1.00×)</span>
-            </div>
+            <div class="setting-head"><span>📐 Ukuran Pil Video</span><span class="setting-val" id="videoPillScaleVal">100% (1.00×)</span></div>
             <input type="range" id="videoPillScaleRange" min="0.75" max="1.35" step="0.05" value="1.00" />
           </div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>👁️ Opasitas / Transparansi Pil Video</span>
-              <span class="setting-val" id="videoPillOpacityVal">95% (0.95)</span>
-            </div>
+            <div class="setting-head"><span>👁️ Opasitas / Transparansi Pil Video</span><span class="setting-val" id="videoPillOpacityVal">95% (0.95)</span></div>
             <input type="range" id="videoPillOpacityRange" min="0.5" max="1.0" step="0.05" value="0.95" />
           </div>
         </div>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- KELOMPOK 2: 🛡️ HUD PERINGATAN BLOKIR                              -->
-      <!-- ================================================================= -->
+      <!-- KELOMPOK 2: HUD PERINGATAN BLOKIR -->
       <div class="group-card">
         <div class="group-header">
           <span class="group-title">🛡️ 2. HUD Peringatan Blokir</span>
-          <button class="hud-pos-reset" data-reset-hud="topHud" title="Reset posisi HUD Blokir ke Preset">↺ Reset Posisi</button>
+          <button class="hud-pos-reset" data-reset-hud="topHud">↺ Reset Posisi</button>
         </div>
 
         <label class="toggle-row">
@@ -298,70 +759,38 @@
         </div>
 
         <div class="setting-card">
-          <div class="setting-head">
-            <span>Tombol yang Tampil di Menu HUD Blokir</span>
-          </div>
+          <div class="setting-head"><span>Tombol di Menu HUD Blokir</span></div>
           <div class="menu-grid">
-            <label class="menu-check">
-              <span>✓ Trust (Whitelist)</span>
-              <input type="checkbox" id="hudShowTrust" checked />
-            </label>
-            <label class="menu-check">
-              <span>⊞ Tab Grup</span>
-              <input type="checkbox" id="hudShowGroup" checked />
-            </label>
-            <label class="menu-check">
-              <span>↗ Buka Sekali</span>
-              <input type="checkbox" id="hudShowOpen" checked />
-            </label>
-            <label class="menu-check">
-              <span>🚫 Blokir Permanen</span>
-              <input type="checkbox" id="hudShowBlock" checked />
-            </label>
-            <label class="menu-check" style="grid-column: span 2;">
-              <span>🔗 Baris Detail URL Target</span>
-              <input type="checkbox" id="hudShowUrlDetail" checked />
-            </label>
+            <label class="menu-check"><span>↗ Buka Sekali (Utama)</span><input type="checkbox" id="hudShowOpen" checked /></label>
+            <label class="menu-check"><span>⊞ Tab Grup</span><input type="checkbox" id="hudShowGroup" checked /></label>
+            <label class="menu-check"><span>✓ Trust (2-Langkah)</span><input type="checkbox" id="hudShowTrust" checked /></label>
+            <label class="menu-check"><span>🚫 Blokir Permanen</span><input type="checkbox" id="hudShowBlock" checked /></label>
+            <label class="menu-check" style="grid-column: span 2;"><span>🔗 Baris Detail URL Target</span><input type="checkbox" id="hudShowUrlDetail" checked /></label>
           </div>
         </div>
 
-        <!-- SLIDER KELOMPOK 2 DI BAGIAN BAWAH (TIMER COUNTDOWN, UKURAN, OPASITAS) -->
         <div class="sliders-footer">
           <div class="sliders-label">Slider Timer Countdown, Ukuran & Opasitas HUD Blokir</div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>⏱️ Timer Countdown HUD Blokir Tampil</span>
-              <span class="setting-val" id="hudDurationVal">4.5 detik</span>
-            </div>
+            <div class="setting-head"><span>⏱️ Timer Countdown HUD Blokir Tampil</span><span class="setting-val" id="hudDurationVal">4.5 detik</span></div>
             <input type="range" id="hudDurationRange" min="0" max="15" step="0.5" value="4.5" />
           </div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>📐 Ukuran HUD Blokir</span>
-              <span class="setting-val" id="hudScaleVal">100% (1.00×)</span>
-            </div>
+            <div class="setting-head"><span>📐 Ukuran HUD Blokir</span><span class="setting-val" id="hudScaleVal">100% (1.00×)</span></div>
             <input type="range" id="hudScaleRange" min="0.75" max="1.30" step="0.05" value="1.00" />
           </div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>👁️ Opasitas / Transparansi HUD Blokir</span>
-              <span class="setting-val" id="hudOpacityVal">95% (0.95)</span>
-            </div>
+            <div class="setting-head"><span>👁️ Opasitas / Transparansi HUD Blokir</span><span class="setting-val" id="hudOpacityVal">95% (0.95)</span></div>
             <input type="range" id="hudOpacityRange" min="0.5" max="1.0" step="0.05" value="0.95" />
           </div>
         </div>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- KELOMPOK 3: 📺 MINI-PLAYER PiP                                    -->
-      <!-- ================================================================= -->
+      <!-- KELOMPOK 3: MINI-PLAYER PiP -->
       <div class="group-card">
         <div class="group-header">
           <span class="group-title">📺 3. Jendela Mini-Player PiP</span>
-          <button class="hud-pos-reset" data-reset-hud="miniPip" title="Reset posisi Mini PiP ke Kanan Bawah">↺ Reset Posisi</button>
+          <button class="hud-pos-reset" data-reset-hud="miniPip">↺ Reset Posisi</button>
         </div>
 
         <div class="group-pos-bar">
@@ -382,27 +811,20 @@
           </div>
         </div>
 
-        <!-- SLIDER KELOMPOK 3 DI BAGIAN BAWAH (OPASITAS MINI PiP) -->
         <div class="sliders-footer">
           <div class="sliders-label">Slider Opasitas Mini-Player PiP</div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>👁️ Opasitas / Transparansi Mini PiP</span>
-              <span class="setting-val" id="pipOpacityVal">95% (0.95)</span>
-            </div>
+            <div class="setting-head"><span>👁️ Opasitas / Transparansi Mini PiP</span><span class="setting-val" id="pipOpacityVal">95% (0.95)</span></div>
             <input type="range" id="pipOpacityRange" min="0.5" max="1.0" step="0.05" value="0.95" />
           </div>
         </div>
       </div>
 
-      <!-- ================================================================= -->
-      <!-- KELOMPOK 4: ⚡ PROTEKSI & KECEPATAN                               -->
-      <!-- ================================================================= -->
+      <!-- KELOMPOK 4: PROTEKSI & KECEPATAN -->
       <div class="group-card">
         <div class="group-header">
           <span class="group-title">⚡ 4. Proteksi & Kecepatan</span>
-          <button class="hud-pos-reset" id="resetAllHudPosBtn" title="Reset semua posisi geser HUD sekaligus">↺ Reset Semua Posisi</button>
+          <button class="hud-pos-reset" id="resetAllHudPosBtn">↺ Reset Semua Posisi</button>
         </div>
 
         <div class="setting-card">
@@ -422,13 +844,25 @@
         </label>
 
         <label class="toggle-row">
-          <span>Auto-Klik & Submit Langkah Shortlink (Aman CAPTCHA)</span>
-          <input type="checkbox" id="shortlinkAutoClickToggle" checked />
+          <span>Auto-Klik &amp; Submit Langkah Shortlink (Opt-In, Aman CAPTCHA)</span>
+          <input type="checkbox" id="shortlinkAutoClickToggle" />
         </label>
+        <div class="optin-confirm" id="shortlinkAutoClickConfirmBox">
+          <div><strong>⚠️ Konfirmasi Opt-In Auto-Klik:</strong> Auto-klik dapat menekan tombol secara otomatis pada halaman shortlink dan berisiko memicu false-click atau melanggar ketentuan situs tertentu.</div>
+          <div class="optin-confirm-actions">
+            <button type="button" class="optin-accept" id="shortlinkAutoClickAccept">✓ Ya, Aktifkan</button>
+            <button type="button" class="optin-cancel" id="shortlinkAutoClickCancel">Batal</button>
+          </div>
+        </div>
 
         <label class="toggle-row">
           <span>📋 Catat Log Diagnostik Navigasi (Tab Log)</span>
           <input type="checkbox" id="loggingEnabledToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>🐞 Catat Error Internal (Level DEBUG di Tab Log)</span>
+          <input type="checkbox" id="debugInternalErrorsToggle" />
         </label>
 
         <label class="toggle-row">
@@ -437,29 +871,29 @@
         </label>
 
         <label class="toggle-row">
-          <span>Hapus Overlay Transparan Jebakan</span>
+          <span>Hapus Overlay Transparan Jebakan (Aman Modal/Dialog)</span>
           <input type="checkbox" id="removeOverlayToggle" checked />
         </label>
 
         <label class="toggle-row">
-          <span>Anti-History Trap (Tombol Back)</span>
+          <span>🛡️ CAPTCHA Guard &amp; Kill-Switch Otomatis (Pulih saat selesai)</span>
+          <input type="checkbox" id="captchaKillSwitchToggle" checked />
+        </label>
+
+        <label class="toggle-row">
+          <span>Anti-History Trap (pushState, replaceState &amp; Tombol Back)</span>
           <input type="checkbox" id="antiHistoryToggle" checked />
         </label>
 
         <label class="toggle-row">
-          <span>Blokir Jaringan DNR (Blacklist)</span>
+          <span>Blokir Jaringan DNR Terkonsolidasi (150 domain/rule + wildcard)</span>
           <input type="checkbox" id="dnrEnabledToggle" checked />
         </label>
 
-        <!-- SLIDER KELOMPOK 4 DI BAGIAN BAWAH (TIMER REDIRECT AUTO-REVERT) -->
         <div class="sliders-footer">
           <div class="sliders-label">Slider Timer Proteksi Redirect</div>
-
           <div class="setting-card">
-            <div class="setting-head">
-              <span>⏱️ Timer Batas Redirect Auto-Revert</span>
-              <span class="setting-val" id="redirectWindowVal">3.5 detik</span>
-            </div>
+            <div class="setting-head"><span>⏱️ Timer Batas Redirect Auto-Revert</span><span class="setting-val" id="redirectWindowVal">3.5 detik</span></div>
             <input type="range" id="redirectWindowRange" min="1" max="10" step="0.5" value="3.5" />
           </div>
         </div>
@@ -469,47 +903,77 @@
 
     <div class="btn-pair" style="margin-top: 8px;">
       <button class="btn" id="saveGlobalBtn">💾 Simpan Setting</button>
-      <button class="btn-mini" id="resetGlobalBtn" style="color:#fca5a5;">↺ Reset Default</button>
+      <button class="btn-mini" id="resetGlobalBtn" style="color:var(--danger-soft);">↺ Reset Default</button>
     </div>
   </div>
 
-  <!-- TAB 3: LOG DIAGNOSTIK (COPY-PASTE) -->
+  <!-- TAB 3: LOG DIAGNOSTIK (COPY-PASTE + SANITIZED FALSE POSITIVE REPORT) -->
   <div class="panel" id="panel-logs">
-    <p class="desc">Salin log ini untuk melihat penyebab pasti mengapa halaman gagal lanjut ke link tujuan (transitionType, qualifiers, alasan blokir, atau aksi bypass).</p>
+    <p class="desc">Salin log diagnostik untuk melacak penyebab gagal redirect, atau salin <strong>Laporan FP Tersensor</strong> yang otomatis menghapus token & API key.</p>
     <div class="log-filters">
       <button class="log-filter-btn active" data-log-filter="ALL">Semua</button>
-      <button class="log-filter-btn" data-log-filter="BLOCK">🚫 Blokir</button>
-      <button class="log-filter-btn" data-log-filter="BYPASS">⚡ Bypass</button>
+      <button class="log-filter-btn" data-log-filter="BLOCK">🚫 Blok</button>
+      <button class="log-filter-btn" data-log-filter="BYPASS">⚡ Byp</button>
       <button class="log-filter-btn" data-log-filter="ALLOW">✅ Lolos</button>
+      <button class="log-filter-btn" data-log-filter="DEBUG">🐞 Dbg</button>
     </div>
-    <textarea id="logOutputArea" class="log-textarea" readonly placeholder="Memuat log diagnostik AEGIS-AI..."></textarea>
+    <textarea id="logOutputArea" class="log-textarea" readonly placeholder="Memuat log diagnostik AEGIS-AI v3.2.1 (otomatis menyensor token/API key)..."></textarea>
     <div class="log-actions">
-      <button class="btn" id="copyLogBtn" style="padding:6px 8px; font-size:11px;">📋 Salin Log</button>
+      <button class="btn" id="copyLogBtn" style="padding:6px 8px; font-size:10.5px;">📋 Salin Log</button>
+      <button class="btn-mini" id="copyFpReportBtn" style="color:var(--accent);">🛡️ Laporan FP (Aman)</button>
+    </div>
+    <div class="log-actions-sub">
       <button class="btn-mini" id="refreshLogBtn">🔄 Refresh</button>
-      <button class="btn-mini" id="clearLogBtn" style="color:#fca5a5;">🧹 Hapus</button>
+      <button class="btn-mini" id="clearLogBtn" style="color:var(--danger-soft);">🧹 Hapus Log</button>
     </div>
   </div>
 
-  <!-- TAB 4: BLACKLIST -->
+  <!-- TAB 4: BLACKLIST + DNR CONSOLIDATION + HOSTLIST .TXT -->
   <div class="panel" id="panel-blacklist">
-    <p class="desc">Domain di Blacklist diblokir total di level jaringan (DNR) tanpa membuka koneksi sama sekali.</p>
+    <p class="desc">Domain Blacklist (mendukung wildcard <code>*.ads.com</code> / <code>*slot*.xyz</code>) diblokir total di level jaringan tanpa memunculkan HUD.</p>
+    <div class="dnr-pill" id="dnrStatsPill">
+      <span>Status DNR Terkonsolidasi:</span>
+      <strong id="dnrStatsVal">0 domain · 0/5000 rule</strong>
+    </div>
     <div class="input-row">
-      <input type="text" id="blacklistInput" placeholder="contoh: hai8g.com atau https://..." />
+      <input type="text" id="blacklistInput" placeholder="contoh: hai8g.com, *.ads.xyz, atau https://..." />
       <button class="btn btn-danger" id="addBlacklistBtn">+ Blokir</button>
     </div>
     <button class="btn-sec" id="blockCurrentSiteBtn">🚫 Blokir Domain Tab Aktif Saat Ini</button>
     <div class="domain-list" id="blacklistContainer"></div>
+    <div class="btn-pair">
+      <button class="btn-mini" id="exportBlacklistTxtBtn">📤 Salin Hostlist .txt</button>
+      <button class="btn-mini" id="toggleImportBlacklistBtn">📥 Import Hostlist .txt</button>
+    </div>
+    <div class="transfer-drawer" id="importBlacklistDrawer">
+      <textarea id="blacklistTxtArea" placeholder="Tempel daftar domain (1 per baris, format hosts / ||domain^ didukung)..."></textarea>
+      <div class="btn-pair">
+        <button class="btn" id="applyImportBlacklistBtn" style="padding:5px 8px; font-size:10.5px;">✓ Import ke Blacklist</button>
+        <button class="btn-mini" id="closeImportBlacklistBtn">Tutup</button>
+      </div>
+    </div>
   </div>
 
-  <!-- TAB 4: WHITELIST -->
+  <!-- TAB 5: WHITELIST + HOSTLIST .TXT -->
   <div class="panel" id="panel-whitelist">
-    <p class="desc">Domain di Whitelist diizinkan bebas tanpa ditahan oleh mode Strict Lintas-Domain.</p>
+    <p class="desc">Domain di Whitelist diizinkan bebas tanpa ditahan oleh mode Balanced maupun Strict.</p>
     <div class="input-row">
-      <input type="text" id="whitelistInput" placeholder="contoh: google.com atau https://..." />
+      <input type="text" id="whitelistInput" placeholder="contoh: google.com, *.github.io, atau https://..." />
       <button class="btn" id="addWhitelistBtn">+ Izinkan</button>
     </div>
     <button class="btn-sec" id="trustCurrentSiteBtn">✅ Percayai Domain Tab Aktif Saat Ini</button>
     <div class="domain-list" id="whitelistContainer"></div>
+    <div class="btn-pair">
+      <button class="btn-mini" id="exportWhitelistTxtBtn">📤 Salin Hostlist .txt</button>
+      <button class="btn-mini" id="toggleImportWhitelistBtn">📥 Import Hostlist .txt</button>
+    </div>
+    <div class="transfer-drawer" id="importWhitelistDrawer">
+      <textarea id="whitelistTxtArea" placeholder="Tempel daftar domain whitelist (1 per baris)..."></textarea>
+      <div class="btn-pair">
+        <button class="btn" id="applyImportWhitelistBtn" style="padding:5px 8px; font-size:10.5px;">✓ Import ke Whitelist</button>
+        <button class="btn-mini" id="closeImportWhitelistBtn">Tutup</button>
+      </div>
+    </div>
   </div>
 
   <div id="status"></div>

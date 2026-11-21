@@ -23,6 +23,10 @@ import {
 } from '../utils/shortlinkBypassEngine';
 
 export interface GlobalSettingsState {
+  protectionMode?: 'balanced' | 'strict';
+  popupTheme?: 'dark' | 'light';
+  sessionOnlyApiKey?: boolean;
+  debugInternalErrors?: boolean;
   hudEnabled: boolean;
   hudDurationSec: number;
   hudPosition: 'top-center' | 'top-left' | 'top-right' | 'bottom-center';
@@ -74,6 +78,7 @@ interface InteractiveHudSandboxProps {
   onUpdateGlobalSettings: (next: GlobalSettingsState) => void;
   trustedDomains?: string[];
   deniedDomains?: string[];
+  tempAllowMinutesLeft?: number | null;
   onTrustDomain: (domain: string) => void;
   onBlockDomain: (domain: string) => void;
   onAppendLog?: (entry: Omit<AegisLogEntry, 'id' | 'ts'>) => void;
@@ -114,6 +119,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
   onUpdateGlobalSettings,
   trustedDomains = [],
   deniedDomains = [],
+  tempAllowMinutesLeft = null,
   onTrustDomain,
   onBlockDomain,
   onAppendLog,
@@ -132,7 +138,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
   const [bypassToast, setBypassToast] = useState<{ host: string; method: string } | null>(null);
   const bypassToastTimerRef = useRef<number | null>(null);
   const [activeActionLog, setActiveActionLog] = useState<string>(
-    'v2.2.7: Drag Pil Video anti-leak (setPointerCapture), Toast Bypass Safelink, default Whitelist komunitas, & Log Diagnostik aktif. Klik skenario uji di bawah.'
+    'v3.2.1 Modular: Mode Balanced/Strict, Safe Mode 15m/1j, CAPTCHA Kill-Switch, Toast Bypass Safelink, & DNR batch 150 domain/rule aktif.'
   );
 
   useEffect(() => {
@@ -634,7 +640,11 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
           <div className="flex items-center gap-2 text-xs text-slate-500 font-mono">
             <span>https://www.semprot.com/threads/ponakan-pemuas-nafsu.1545645/page-512</span>
             <span>·</span>
-            <span className="text-emerald-400">AEGIS Shield v2.2.7 Active</span>
+            <span className={tempAllowMinutesLeft ? 'text-amber-300 font-bold' : 'text-emerald-400'}>
+              {tempAllowMinutesLeft
+                ? `⏸ Safe Mode (${tempAllowMinutesLeft}m)`
+                : `AEGIS v3.2.1 (${globalSettings.protectionMode === 'strict' ? 'Strict' : 'Balanced'})`}
+            </span>
           </div>
 
           {/* Simulated Primary Video Player Box */}
@@ -656,7 +666,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                 {isVideoPlaying ? '❚❚' : '▶'}
               </button>
               <p className="text-xs text-slate-400 mt-1">
-                Auto-Skip Countdown 5–30d Aktif ({globalSettings.adSkipSpeed === 'instant' ? 'Instan' : `${globalSettings.adSkipSpeed}×`})
+                Lazy Auto-Skip Countdown Aktif ({globalSettings.adSkipSpeed === 'instant' ? 'Instan' : `${globalSettings.adSkipSpeed}×`})
               </p>
             </div>
 
@@ -665,17 +675,17 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
             </div>
           </div>
 
-          {/* Simulated Shortlink Bypass Debloated, 302 CTA, First-Page Entry & Silent Blacklist Test Bench (v2.2.7) */}
+          {/* Simulated Shortlink Bypass Debloated, 302 CTA, First-Page Entry & Silent Blacklist Test Bench (v3.2.1) */}
           <div
             data-testid="smart-ugc-test-bench"
             className="w-full max-w-[535px] rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 space-y-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-sky-300">
-                🧠 Uji Logika v2.2.7: Toast Bypass Shortlink, Log Diagnostik & AI UGC
+                🧠 Uji Logika v3.2.1: Toast Bypass Shortlink, Log Diagnostik & AI UGC
               </span>
               <span className="text-[10px] font-mono text-emerald-400">
-                v2.2.7 Ready
+                v3.2.1 Modular
               </span>
             </div>
 
@@ -968,7 +978,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                       detail: `Bypass Shortlink Debloated mengekstrak URL tujuan langsung dengan Toast 800ms (${extracted.method})`,
                     });
                     setActiveActionLog(
-                      `⚡ [Bypass Toast v2.2.7] Double-Base64 Safelink didekode (${extracted.method}) → Toast tampil ~800ms sebelum lompat ke ${extracted.decodedUrl} & dicatat ke Tab 📋 Log!`
+                      `⚡ [Bypass Toast v3.2.1] Double-Base64 Safelink didekode (${extracted.method}) → Toast tampil ~800ms sebelum lompat ke ${extracted.decodedUrl} & dicatat ke Tab 📋 Log!`
                     );
                   }
                 }}

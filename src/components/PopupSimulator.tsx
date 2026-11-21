@@ -5,6 +5,9 @@ import {
   AegisLogLevel,
   formatAegisLogsForCopy,
 } from '../utils/shortlinkBypassEngine';
+import { buildSanitizedFalsePositiveReport } from '../ext/shared/debug.js';
+import { exportHostlistText, parseHostlistText } from '../ext/shared/domain-utils.js';
+import { buildConsolidatedDnrRules } from '../ext/shared/dnr-builder.js';
 import { GlobalSettingsState } from './InteractiveHudSandbox';
 
 interface PopupSimulatorProps {
@@ -20,8 +23,14 @@ interface PopupSimulatorProps {
   onRemoveTrusted: (domain: string) => void;
   onAddDenied: (domain: string) => void;
   onRemoveDenied: (domain: string) => void;
+  onBulkAddDenied?: (domains: string[]) => void;
+  onBulkAddTrusted?: (domains: string[]) => void;
   diagnosticLogs: AegisLogEntry[];
   onClearLogs: () => void;
+  localStats?: { blocked: number; bypassed: number; allowed: number };
+  onResetStats?: () => void;
+  tempAllowMinutesLeft?: number | null;
+  onSetTempAllow?: (minutes: number | null) => void;
 }
 
 export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
@@ -37,19 +46,32 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
   onRemoveTrusted,
   onAddDenied,
   onRemoveDenied,
+  onBulkAddDenied,
+  onBulkAddTrusted,
   diagnosticLogs,
   onClearLogs,
+  localStats = { blocked: 0, bypassed: 0, allowed: 0 },
+  onResetStats,
+  tempAllowMinutesLeft = null,
+  onSetTempAllow,
 }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'global' | 'logs' | 'blacklist' | 'whitelist'>('global');
+  const [activeTab, setActiveTab] = useState<'general' | 'global' | 'logs' | 'blacklist' | 'whitelist'>('general');
   const [logFilter, setLogFilter] = useState<'ALL' | AegisLogLevel>('ALL');
-  const [strictCross, setStrictCross] = useState(true);
   const [autoSkip, setAutoSkip] = useState(true);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [blacklistInput, setBlacklistInput] = useState('');
   const [whitelistInput, setWhitelistInput] = useState('');
   const [backupDrawerOpen, setBackupDrawerOpen] = useState(false);
   const [backupText, setBackupText] = useState('');
+  const [blImportOpen, setBlImportOpen] = useState(false);
+  const [blImportText, setBlImportText] = useState('');
+  const [wlImportOpen, setWlImportOpen] = useState(false);
+  const [wlImportText, setWlImportText] = useState('');
+  const [fpPreview, setFpPreview] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState('');
+
+  const isLight = globalSettings.popupTheme === 'light';
+  const protectionMode = globalSettings.protectionMode === 'strict' ? 'strict' : 'balanced';
 
   const showStatus = (msg: string) => {
     setStatusMsg(msg);
@@ -67,8 +89,8 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
   const handleCopyBackup = () => {
     const payload = {
       app: 'AEGIS-AI Shield',
-      version: '2.2.7',
-      strictCrossOrigin: strictCross,
+      version: '3.2.1',
+      strictCrossOrigin: protectionMode === 'strict',
       autoSkipCountdown: autoSkip,
       globalSettings,
       hudPositions,
@@ -80,22 +102,43 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
     setBackupDrawerOpen(true);
     try {
       navigator.clipboard.writeText(jsonStr);
-      showStatus('Backup JSON v2.2.7 (Bypass Debloated + Log + Setting) tersalin!');
+      showStatus('Backup JSON v3.2.1 (API Key tidak ikut) tersalin!');
     } catch {
-      showStatus('JSON Backup ditampilkan di bawah.');
+      showStatus('JSON Backup v3.2.1 ditampilkan di bawah.');
     }
   };
 
-  const formattedLogText = formatAegisLogsForCopy(diagnosticLogs, logFilter, '2.2.7');
+  const formattedLogText = formatAegisLogsForCopy(diagnosticLogs, logFilter, '3.2.1');
 
   const handleCopyLogs = async () => {
+    setFpPreview(null);
     try {
       await navigator.clipboard.writeText(formattedLogText);
-      showStatus('Log diagnostik v2.2.7 tersalin ke Clipboard!');
+      showStatus('Log diagnostik v3.2.1 tersalin ke Clipboard!');
     } catch {
       showStatus('Silakan pilih teks di kotak log lalu salin (Ctrl+C).');
     }
   };
+
+  const handleCopyFpReport = async () => {
+    const report = buildSanitizedFalsePositiveReport({
+      version: '3.2.1',
+      activeUrl: 'https://www.semprot.com/threads/demo?token=secret12345',
+      protectionMode,
+      tempAllowActive: Boolean(tempAllowMinutesLeft),
+      logs: diagnosticLogs,
+      stats: localStats,
+    });
+    setFpPreview(report);
+    try {
+      await navigator.clipboard.writeText(report);
+      showStatus('🛡️ Laporan False Positive (tersensor) tersalin!');
+    } catch {
+      showStatus('🛡️ Laporan FP tersensor ditampilkan di kotak log.');
+    }
+  };
+
+  const dnrBuilt = buildConsolidatedDnrRules(deniedDomains, 5000, 150);
 
   const safeVideoPillScale = Math.max(
     0.75,
@@ -128,22 +171,167 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
   );
 
   return (
-    <div className="w-full bg-[#0f172a] border border-slate-800 rounded-xl p-4 text-slate-50 shadow-xl">
-      {/* Popup Header */}
-      <div className="flex items-center justify-between mb-2.5">
-        <h3 className="m-0 text-sm font-bold text-emerald-400">⚡ AEGIS-AI Shield</h3>
-        <span className="text-[11px] font-mono font-bold text-emerald-300">v2.2.7</span>
+    <div
+      data-testid="popup-simulator-root"
+      data-theme={isLight ? 'light' : 'dark'}
+      className={`w-full rounded-xl p-4 shadow-xl border transition-colors ${
+        isLight
+          ? 'bg-slate-50 border-slate-300 text-slate-900'
+          : 'bg-[#0f172a] border-slate-800 text-slate-50'
+      }`}
+    >
+      {/* Popup Header + Theme Toggle */}
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <div className="flex items-center gap-2">
+          <h3 className={`m-0 text-sm font-bold ${isLight ? 'text-emerald-700' : 'text-emerald-400'}`}>
+            ⚡ AEGIS-AI Shield
+          </h3>
+          <span
+            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+              isLight
+                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
+            }`}
+          >
+            v3.2.1
+          </span>
+        </div>
+        <button
+          type="button"
+          data-testid="popup-theme-toggle"
+          onClick={() => {
+            const nextTheme = isLight ? 'dark' : 'light';
+            onUpdateGlobalSettings({ ...globalSettings, popupTheme: nextTheme });
+            showStatus(nextTheme === 'light' ? 'Tema Popup: Terang ☀️' : 'Tema Popup: Gelap 🌙');
+          }}
+          className={`px-2 py-0.5 rounded-md text-[10px] font-bold border cursor-pointer ${
+            isLight
+              ? 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
+              : 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700'
+          }`}
+        >
+          {isLight ? '🌙 Gelap' : '☀️ Terang'}
+        </button>
+      </div>
+
+      {/* Quick Safe Mode / Temporary Allow Bar */}
+      <div
+        data-testid="popup-safe-mode-bar"
+        className={`flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 mb-2 border text-[10px] ${
+          tempAllowMinutesLeft
+            ? 'bg-amber-500/15 border-amber-500/60'
+            : isLight
+            ? 'bg-white border-slate-300'
+            : 'bg-slate-900/90 border-slate-800'
+        }`}
+      >
+        <div className="min-w-0">
+          <div className="font-mono font-bold truncate">semprot.com</div>
+          <div className={`text-[9.5px] ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+            {tempAllowMinutesLeft
+              ? `⏸ Safe Mode aktif (${tempAllowMinutesLeft}m · Blacklist tetap blokir)`
+              : protectionMode === 'strict'
+              ? '🔒 Mode Strict aktif'
+              : '⚖️ Mode Balanced aktif'}
+          </div>
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          {!tempAllowMinutesLeft ? (
+            <>
+              <button
+                type="button"
+                data-testid="popup-temp-allow-15"
+                onClick={() => {
+                  onSetTempAllow?.(15);
+                  showStatus('⏸ Safe Mode aktif 15 menit untuk semprot.com');
+                }}
+                className={`px-1.5 py-1 rounded border text-[9.5px] font-bold cursor-pointer ${
+                  isLight
+                    ? 'bg-slate-100 border-slate-300 text-slate-800 hover:border-emerald-600'
+                    : 'bg-slate-800 border-slate-700 text-slate-200 hover:border-emerald-400'
+                }`}
+              >
+                ⏸ 15m
+              </button>
+              <button
+                type="button"
+                data-testid="popup-temp-allow-60"
+                onClick={() => {
+                  onSetTempAllow?.(60);
+                  showStatus('⏸ Safe Mode aktif 1 jam untuk semprot.com');
+                }}
+                className={`px-1.5 py-1 rounded border text-[9.5px] font-bold cursor-pointer ${
+                  isLight
+                    ? 'bg-slate-100 border-slate-300 text-slate-800 hover:border-emerald-600'
+                    : 'bg-slate-800 border-slate-700 text-slate-200 hover:border-emerald-400'
+                }`}
+              >
+                1 Jam
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              data-testid="popup-temp-allow-clear"
+              onClick={() => {
+                onSetTempAllow?.(null);
+                showStatus('🛡️ Proteksi diaktifkan kembali untuk semprot.com');
+              }}
+              className="px-2 py-1 rounded border border-amber-500 bg-amber-500/20 text-amber-400 text-[9.5px] font-bold cursor-pointer"
+            >
+              ▶ Aktifkan
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Local Zero-Telemetry Stats Strip */}
+      <div
+        data-testid="popup-stats-strip"
+        className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 mb-2.5 border text-[10px] ${
+          isLight ? 'bg-slate-100 border-slate-300' : 'bg-slate-950 border-slate-800'
+        }`}
+      >
+        <div className="flex items-center gap-3 font-bold tabular-nums">
+          <span className="text-rose-400" data-testid="stat-blocked">
+            🚫 {localStats.blocked}
+          </span>
+          <span className="text-amber-400" data-testid="stat-bypassed">
+            ⚡ {localStats.bypassed}
+          </span>
+          <span className="text-emerald-400" data-testid="stat-allowed">
+            ✅ {localStats.allowed}
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            onResetStats?.();
+            showStatus('↺ Statistik lokal direset');
+          }}
+          className="text-[9.5px] text-slate-400 hover:text-sky-400 cursor-pointer"
+        >
+          ↺ Reset
+        </button>
       </div>
 
       {/* 5 Navigation Tabs */}
-      <div className="grid grid-cols-5 gap-0.5 bg-slate-950 p-1 rounded-lg border border-slate-800 mb-3">
+      <div
+        className={`grid grid-cols-5 gap-0.5 p-1 rounded-lg border mb-3 ${
+          isLight ? 'bg-slate-200 border-slate-300' : 'bg-slate-950 border-slate-800'
+        }`}
+      >
         <button
           type="button"
           data-testid="popup-tab-general"
           onClick={() => setActiveTab('general')}
           className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'general'
-              ? 'bg-slate-800 text-white'
+              ? isLight
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'bg-slate-800 text-white'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-900'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -155,7 +343,11 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           onClick={() => setActiveTab('global')}
           className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'global'
-              ? 'bg-slate-800 text-sky-400 border-b-2 border-sky-400'
+              ? isLight
+                ? 'bg-white text-sky-700 border-b-2 border-sky-600'
+                : 'bg-slate-800 text-sky-400 border-b-2 border-sky-400'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-900'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -167,7 +359,11 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           onClick={() => setActiveTab('logs')}
           className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'logs'
-              ? 'bg-slate-800 text-amber-300 border-b-2 border-amber-400'
+              ? isLight
+                ? 'bg-white text-amber-700 border-b-2 border-amber-500'
+                : 'bg-slate-800 text-amber-300 border-b-2 border-amber-400'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-900'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -179,7 +375,11 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           onClick={() => setActiveTab('blacklist')}
           className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'blacklist'
-              ? 'bg-slate-800 text-rose-300 border-b-2 border-rose-500'
+              ? isLight
+                ? 'bg-white text-rose-700 border-b-2 border-rose-500'
+                : 'bg-slate-800 text-rose-300 border-b-2 border-rose-500'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-900'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -191,7 +391,11 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           onClick={() => setActiveTab('whitelist')}
           className={`py-1.5 px-0.5 rounded-md text-[9.5px] font-bold transition-colors whitespace-nowrap cursor-pointer ${
             activeTab === 'whitelist'
-              ? 'bg-slate-800 text-emerald-300 border-b-2 border-emerald-500'
+              ? isLight
+                ? 'bg-white text-emerald-700 border-b-2 border-emerald-600'
+                : 'bg-slate-800 text-emerald-300 border-b-2 border-emerald-500'
+              : isLight
+              ? 'text-slate-600 hover:text-slate-900'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -202,34 +406,63 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
       {/* TAB 1: UMUM */}
       {activeTab === 'general' && (
         <div className="space-y-2 text-xs">
-          <p className="text-[11px] text-slate-400 leading-relaxed">
-            Blokir redirect judol, Shopee/affiliate & ad-rotator di level jaringan (DNR) + pengaturan HUD tersusun rapi per kelompok dengan slider timer, ukuran & opasitas di bagian bawah setiap kelompok.
-          </p>
-
-          <label className="flex items-center justify-between bg-slate-800/90 border border-slate-700 rounded-md px-2.5 py-2 text-[11px] cursor-pointer">
-            <span>Strict Lintas-Domain (Tahan Semua)</span>
-            <input
-              type="checkbox"
-              checked={strictCross}
-              onChange={(e) => {
-                setStrictCross(e.target.checked);
-                showStatus(
-                  e.target.checked ? 'Strict Lintas-Domain: AKTIF' : 'Strict Lintas-Domain: NONAKTIF'
-                );
+          {/* Balanced vs Strict Selector */}
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              data-testid="popup-mode-balanced"
+              onClick={() => {
+                onUpdateGlobalSettings({ ...globalSettings, protectionMode: 'balanced' });
+                showStatus('⚖️ Mode Balanced aktif (ramah OAuth & SPA)');
               }}
-              className="accent-emerald-500"
-            />
-          </label>
+              className={`p-2 rounded-lg border text-left cursor-pointer transition-colors ${
+                protectionMode === 'balanced'
+                  ? 'border-emerald-500 bg-emerald-500/15'
+                  : isLight
+                  ? 'border-slate-300 bg-white'
+                  : 'border-slate-700 bg-slate-800/80'
+              }`}
+            >
+              <div className="text-[10.5px] font-extrabold">⚖️ Balanced</div>
+              <div className={`text-[9.5px] mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                Rekomendasi. Ramah SPA/OAuth.
+              </div>
+            </button>
+            <button
+              type="button"
+              data-testid="popup-mode-strict"
+              onClick={() => {
+                onUpdateGlobalSettings({ ...globalSettings, protectionMode: 'strict' });
+                showStatus('🔒 Mode Strict aktif (tahan semua lintas-domain)');
+              }}
+              className={`p-2 rounded-lg border text-left cursor-pointer transition-colors ${
+                protectionMode === 'strict'
+                  ? 'border-emerald-500 bg-emerald-500/15'
+                  : isLight
+                  ? 'border-slate-300 bg-white'
+                  : 'border-slate-700 bg-slate-800/80'
+              }`}
+            >
+              <div className="text-[10.5px] font-extrabold">🔒 Strict</div>
+              <div className={`text-[9.5px] mt-0.5 ${isLight ? 'text-slate-600' : 'text-slate-400'}`}>
+                Tahan semua non-whitelist.
+              </div>
+            </button>
+          </div>
 
-          <label className="flex items-center justify-between bg-slate-800/90 border border-slate-700 rounded-md px-2.5 py-2 text-[11px] cursor-pointer">
-            <span>Auto-Skip Countdown Video (5–30d)</span>
+          <label
+            className={`flex items-center justify-between border rounded-md px-2.5 py-2 text-[11px] cursor-pointer ${
+              isLight ? 'bg-white border-slate-300' : 'bg-slate-800/90 border-slate-700'
+            }`}
+          >
+            <span>Auto-Skip Countdown Video (Lazy)</span>
             <input
               type="checkbox"
               checked={autoSkip}
               onChange={(e) => {
                 setAutoSkip(e.target.checked);
                 showStatus(
-                  e.target.checked ? 'Auto-Skip Countdown: AKTIF' : 'Auto-Skip Countdown: NONAKTIF'
+                  e.target.checked ? 'Lazy Auto-Skip: AKTIF' : 'Lazy Auto-Skip: NONAKTIF'
                 );
               }}
               className="accent-emerald-500"
@@ -240,34 +473,71 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
             type="password"
             value={apiKeyInput}
             onChange={(e) => setApiKeyInput(e.target.value)}
-            placeholder="Opsional: Gemini API Key Lokal"
-            className="w-full px-2.5 py-1.5 rounded-md border border-slate-700 bg-slate-800 text-white text-[11.5px] outline-none focus:border-emerald-500"
+            placeholder="Opsional: Gemini API Key (AIza...)"
+            className={`w-full px-2.5 py-1.5 rounded-md border text-[11.5px] outline-none focus:border-emerald-500 ${
+              isLight
+                ? 'border-slate-300 bg-white text-slate-900'
+                : 'border-slate-700 bg-slate-800 text-white'
+            }`}
           />
+
+          <label
+            className={`flex items-center justify-between border rounded-md px-2.5 py-1.5 text-[10.5px] cursor-pointer ${
+              isLight ? 'bg-white border-slate-300' : 'bg-slate-800/90 border-slate-700'
+            }`}
+          >
+            <span>🔒 Simpan Key Sesi Ini Saja (storage.session)</span>
+            <input
+              type="checkbox"
+              data-testid="popup-session-only-key"
+              checked={Boolean(globalSettings.sessionOnlyApiKey)}
+              onChange={(e) => {
+                onUpdateGlobalSettings({
+                  ...globalSettings,
+                  sessionOnlyApiKey: e.target.checked,
+                });
+                showStatus(
+                  e.target.checked
+                    ? '🔒 API Key disimpan di memori sesi saja'
+                    : '💾 API Key disimpan di storage lokal'
+                );
+              }}
+              className="accent-emerald-500"
+            />
+          </label>
 
           <button
             type="button"
-            onClick={() => showStatus('Konfigurasi Umum v2.2.7 tersimpan!')}
+            onClick={() => showStatus('Konfigurasi Umum v3.2.1 tersimpan!')}
             className="w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11.5px] cursor-pointer"
           >
             Simpan Konfigurasi
           </button>
 
-          <div className="pt-2 border-t border-slate-800">
+          <div className={`pt-2 border-t ${isLight ? 'border-slate-300' : 'border-slate-800'}`}>
             <div className="text-[10.5px] font-semibold text-slate-400 mb-1.5">
-              Cadangan & Transfer Data (Termasuk Pengaturan Per Kelompok)
+              Cadangan & Transfer Data JSON v3.2.1
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               <button
                 type="button"
                 onClick={handleCopyBackup}
-                className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
+                className={`py-1.5 px-2 rounded-md border font-semibold text-[10.5px] cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-sky-700 border-slate-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-sky-300 border-slate-700'
+                }`}
               >
                 📋 Salin Backup
               </button>
               <button
                 type="button"
                 onClick={() => setBackupDrawerOpen((v) => !v)}
-                className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
+                className={`py-1.5 px-2 rounded-md border font-semibold text-[10.5px] cursor-pointer ${
+                  isLight
+                    ? 'bg-white hover:bg-slate-100 text-sky-700 border-slate-300'
+                    : 'bg-slate-800 hover:bg-slate-700 text-sky-300 border-slate-700'
+                }`}
               >
                 📥 Tempel Backup
               </button>
@@ -279,12 +549,36 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
                   value={backupText}
                   onChange={(e) => setBackupText(e.target.value)}
                   rows={3}
-                  placeholder="Tempel JSON cadangan v2.2.7 di sini..."
+                  placeholder="Tempel JSON cadangan v3.2.1 di sini..."
                   className="w-full p-1.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-slate-200"
                 />
               </div>
             )}
           </div>
+
+          <details
+            className={`rounded-lg border px-2.5 py-2 text-[10px] ${
+              isLight ? 'bg-white border-slate-300 text-slate-600' : 'bg-slate-900/90 border-slate-800 text-slate-400'
+            }`}
+          >
+            <summary className="cursor-pointer font-bold text-sky-400">
+              📘 Panduan Singkat: Grace Period, Safe Mode &amp; Bypass
+            </summary>
+            <ul className="mt-1.5 pl-4 list-disc space-y-1">
+              <li>
+                <strong>Balanced vs Strict:</strong> Balanced blokir judol/affiliate sambil ramah
+                login OAuth &amp; SPA.
+              </li>
+              <li>
+                <strong>Safe Mode 15m/1j:</strong> Jeda proteksi agresif sementara pada 1 situs
+                tanpa melepas Blacklist.
+              </li>
+              <li>
+                <strong>CAPTCHA Kill-Switch:</strong> Mematikan timer acceleration &amp; auto-click
+                saat Turnstile/reCAPTCHA muncul.
+              </li>
+            </ul>
+          </details>
         </div>
       )}
 
@@ -1033,6 +1327,22 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
             </label>
 
             <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
+              <span>🐞 Catat Error Internal (Level DEBUG)</span>
+              <input
+                type="checkbox"
+                data-testid="toggle-debug-errors"
+                checked={Boolean(globalSettings.debugInternalErrors)}
+                onChange={(e) =>
+                  onUpdateGlobalSettings({
+                    ...globalSettings,
+                    debugInternalErrors: e.target.checked,
+                  })
+                }
+                className="accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
               <span>AI Smart UGC & Deteksi Gambar Tersusupi Iklan</span>
               <input
                 type="checkbox"
@@ -1139,7 +1449,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           <div className="grid grid-cols-2 gap-1.5 pt-1">
             <button
               type="button"
-              onClick={() => showStatus('Setting v2.2.7 berhasil disimpan!')}
+              onClick={() => showStatus('Setting v3.2.1 berhasil disimpan!')}
               className="py-1.5 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11px] cursor-pointer"
             >
               💾 Simpan Setting
@@ -1148,7 +1458,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               type="button"
               onClick={() => {
                 onResetGlobalSettings();
-                showStatus('Setting & posisi HUD dikembalikan ke default!');
+                showStatus('Setting & posisi HUD dikembalikan ke default v3.2.1!');
               }}
               className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
             >
@@ -1158,27 +1468,32 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
         </div>
       )}
 
-      {/* TAB 3: LOG DIAGNOSTIK (COPY-PASTE) */}
+      {/* TAB 3: LOG DIAGNOSTIK + LAPORAN FALSE POSITIVE TERSENSOR */}
       {activeTab === 'logs' && (
         <div data-testid="popup-panel-logs" className="space-y-2 text-xs">
           <p className="text-[11px] text-slate-400 leading-relaxed">
-            Salin log ini untuk melihat penyebab pasti gagal lanjut ke link tujuan (<code>transitionType</code>, <code>qualifiers</code>, alasan blokir, atau hasil Bypass Shortlink).
+            Salin log diagnostik atau klik <strong>🛡️ Laporan FP (Aman)</strong> untuk menyalin
+            laporan False Positive dengan query sensitif &amp; API key otomatis disensor.
           </p>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-5 gap-1">
             {(
               [
                 { id: 'ALL', label: 'Semua' },
-                { id: 'BLOCK', label: '🚫 Blokir' },
-                { id: 'BYPASS', label: '⚡ Bypass' },
+                { id: 'BLOCK', label: '🚫 Blok' },
+                { id: 'BYPASS', label: '⚡ Byp' },
                 { id: 'ALLOW', label: '✅ Lolos' },
+                { id: 'DEBUG', label: '🐞 Dbg' },
               ] as const
             ).map((f) => (
               <button
                 key={f.id}
                 type="button"
                 data-testid={`log-filter-${f.id.toLowerCase()}`}
-                onClick={() => setLogFilter(f.id)}
-                className={`py-1 px-1 rounded text-[10px] font-bold border transition-colors cursor-pointer ${
+                onClick={() => {
+                  setFpPreview(null);
+                  setLogFilter(f.id);
+                }}
+                className={`py-1 px-0.5 rounded text-[9.5px] font-bold border transition-colors cursor-pointer ${
                   logFilter === f.id
                     ? 'bg-slate-950 text-amber-300 border-amber-400'
                     : 'bg-slate-800 text-slate-400 border-slate-700 hover:text-slate-200'
@@ -1193,7 +1508,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
             data-testid="popup-log-textarea"
             aria-label="Log Diagnostik AEGIS-AI"
             readOnly
-            value={formattedLogText}
+            value={fpPreview ?? formattedLogText}
             rows={10}
             className="w-full p-2 rounded-lg bg-slate-950 border border-slate-700 font-mono text-[9.5px] leading-relaxed text-slate-200 whitespace-pre overflow-auto resize-y"
           />
@@ -1203,31 +1518,46 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               type="button"
               data-testid="popup-copy-log-btn"
               onClick={handleCopyLogs}
-              className="py-1.5 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11px] cursor-pointer"
+              className="py-1.5 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[10.5px] cursor-pointer"
             >
               📋 Salin Log
             </button>
             <button
               type="button"
-              data-testid="popup-clear-log-btn"
-              onClick={() => {
-                onClearLogs();
-                showStatus('Log diagnostik dibersihkan!');
-              }}
-              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
+              data-testid="popup-copy-fp-btn"
+              onClick={handleCopyFpReport}
+              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-emerald-300 border border-emerald-500/50 font-bold text-[10.5px] cursor-pointer"
             >
-              🧹 Hapus Log
+              🛡️ Laporan FP (Aman)
             </button>
           </div>
+          <button
+            type="button"
+            data-testid="popup-clear-log-btn"
+            onClick={() => {
+              setFpPreview(null);
+              onClearLogs();
+              showStatus('Log diagnostik dibersihkan!');
+            }}
+            className="w-full py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
+          >
+            🧹 Hapus Log
+          </button>
         </div>
       )}
 
-      {/* TAB 4: BLACKLIST */}
+      {/* TAB 4: BLACKLIST + DNR CONSOLIDATION + HOSTLIST .TXT */}
       {activeTab === 'blacklist' && (
         <div className="space-y-2 text-xs">
-          <p className="text-[11px] text-slate-400">
-            Domain di Blacklist diblokir langsung di level jaringan (DNR) tanpa membuka koneksi.
-          </p>
+          <div
+            data-testid="popup-dnr-stats"
+            className="flex items-center justify-between px-2.5 py-1.5 rounded-md bg-slate-950 border border-slate-800 text-[10px]"
+          >
+            <span className="text-slate-400">DNR Terkonsolidasi (150/rule):</span>
+            <strong className="font-mono text-emerald-400">
+              {dnrBuilt.totalDomains} domain · {dnrBuilt.ruleCount}/{dnrBuilt.maxRules} rule
+            </strong>
+          </div>
           <div className="flex gap-1.5">
             <input
               type="text"
@@ -1250,7 +1580,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               + Blokir
             </button>
           </div>
-          <div className="max-h-[170px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-md p-1.5 space-y-1">
+          <div className="max-h-[150px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-md p-1.5 space-y-1">
             {deniedDomains.map((dom) => (
               <div
                 key={dom}
@@ -1268,14 +1598,72 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               </div>
             ))}
           </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              data-testid="popup-export-bl-txt"
+              onClick={() => {
+                const txt = exportHostlistText(deniedDomains, 'AEGIS-AI Shield v3.2.1 Blacklist');
+                setBlImportText(txt);
+                setBlImportOpen(true);
+                try {
+                  navigator.clipboard.writeText(txt);
+                  showStatus('📤 Hostlist Blacklist (.txt) tersalin!');
+                } catch {
+                  showStatus('📤 Hostlist .txt ditampilkan di bawah.');
+                }
+              }}
+              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold text-[10px] cursor-pointer"
+            >
+              📤 Export .txt
+            </button>
+            <button
+              type="button"
+              data-testid="popup-toggle-import-bl-txt"
+              onClick={() => setBlImportOpen((v) => !v)}
+              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold text-[10px] cursor-pointer"
+            >
+              📥 Import .txt
+            </button>
+          </div>
+          {blImportOpen && (
+            <div className="p-2 rounded-lg bg-slate-950 border border-slate-700 space-y-1.5">
+              <textarea
+                data-testid="popup-bl-txt-area"
+                value={blImportText}
+                onChange={(e) => setBlImportText(e.target.value)}
+                rows={3}
+                placeholder="0.0.0.0 ads.example.top&#10;||tracker.xyz^"
+                className="w-full p-1.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-slate-200"
+              />
+              <button
+                type="button"
+                data-testid="popup-apply-import-bl-txt"
+                onClick={() => {
+                  const parsed = parseHostlistText(blImportText);
+                  if (parsed.length > 0) {
+                    onBulkAddDenied?.(parsed);
+                    setBlImportText('');
+                    setBlImportOpen(false);
+                    showStatus(`✅ ${parsed.length} domain diimport ke Blacklist!`);
+                  } else {
+                    showStatus('⚠️ Tidak ada domain valid di Hostlist.');
+                  }
+                }}
+                className="w-full py-1 rounded bg-emerald-500 text-emerald-950 font-bold text-[10.5px] cursor-pointer"
+              >
+                ✓ Import Hostlist ke Blacklist
+              </button>
+            </div>
+          )}
         </div>
       )}
 
-      {/* TAB 4: WHITELIST */}
+      {/* TAB 5: WHITELIST + HOSTLIST .TXT */}
       {activeTab === 'whitelist' && (
         <div className="space-y-2 text-xs">
           <p className="text-[11px] text-slate-400">
-            Domain di Whitelist diizinkan bebas tanpa ditahan oleh HUD.
+            Domain di Whitelist diizinkan bebas di mode Balanced maupun Strict.
           </p>
           <div className="flex gap-1.5">
             <input
@@ -1299,7 +1687,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               + Izinkan
             </button>
           </div>
-          <div className="max-h-[170px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-md p-1.5 space-y-1">
+          <div className="max-h-[150px] overflow-y-auto bg-slate-950 border border-slate-800 rounded-md p-1.5 space-y-1">
             {trustedDomains.map((dom) => (
               <div
                 key={dom}
@@ -1317,6 +1705,58 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               </div>
             ))}
           </div>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const txt = exportHostlistText(trustedDomains, 'AEGIS-AI Shield v3.2.1 Whitelist');
+                setWlImportText(txt);
+                setWlImportOpen(true);
+                try {
+                  navigator.clipboard.writeText(txt);
+                  showStatus('📤 Hostlist Whitelist (.txt) tersalin!');
+                } catch {
+                  showStatus('📤 Hostlist Whitelist ditampilkan di bawah.');
+                }
+              }}
+              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold text-[10px] cursor-pointer"
+            >
+              📤 Export .txt
+            </button>
+            <button
+              type="button"
+              onClick={() => setWlImportOpen((v) => !v)}
+              className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-sky-300 border border-slate-700 font-semibold text-[10px] cursor-pointer"
+            >
+              📥 Import .txt
+            </button>
+          </div>
+          {wlImportOpen && (
+            <div className="p-2 rounded-lg bg-slate-950 border border-slate-700 space-y-1.5">
+              <textarea
+                value={wlImportText}
+                onChange={(e) => setWlImportText(e.target.value)}
+                rows={3}
+                placeholder="semprot.com&#10;kaskus.co.id"
+                className="w-full p-1.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-slate-200"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const parsed = parseHostlistText(wlImportText);
+                  if (parsed.length > 0) {
+                    onBulkAddTrusted?.(parsed);
+                    setWlImportText('');
+                    setWlImportOpen(false);
+                    showStatus(`✅ ${parsed.length} domain diimport ke Whitelist!`);
+                  }
+                }}
+                className="w-full py-1 rounded bg-emerald-500 text-emerald-950 font-bold text-[10.5px] cursor-pointer"
+              >
+                ✓ Import Hostlist ke Whitelist
+              </button>
+            </div>
+          )}
         </div>
       )}
 

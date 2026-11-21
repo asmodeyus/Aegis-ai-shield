@@ -1,28 +1,38 @@
 {
   "manifest_version": 3,
   "name": "AEGIS-AI: Anti-Redirect, Video & Search Hijack Shield",
-  "version": "2.2.7",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAn85ImfgUz7UgyGDIYMaLO+iQ8HAuGWr6oc7K33rc7w8+KLQokC068Bhp3iLoxHiWmuF8vnfhnZcMyIbsvD16rOqh2waQuvE6f3Phq1px3qOyz8P50/1RJKQQhLZAssE7ToUd+RVKGTcUTXn6m8mLBaUq+XHApy5p2GrNB1ovadDaRdm6Be1Ix3KjVeJ2wFLvyqVmptWmlf/PyV06jtoHODpnyjdcTt+70u3gfHUd7xokpQfPhpm5lUE54KCsoI3OsESq8rTbVkYScKumvon5E63OmcFjLVMIqwEkJ4/Mdqrb3iGrXX5kTdAhhrpuVNxYYI8o8iNCXkgEVLJoADthDQIDAQAB",
-  "description": "Blokir redirect judol, Shopee/affiliate, popunder & iklan terselubung + Bypass All Shortlinks Debloated dengan Toast, Menu Log Diagnostik copy-paste, keamanan API Header, DNR debounced & kontrol Whitelist penuh.",
+  "version": "3.2.1",
+  "minimum_chrome_version": "111",
+  "description": "AEGIS-AI Shield v3.2.1: Anti-redirect, video-tap hijack & search-hijack shield with OAuth-safe filtering, isolated-world validation, wildcard Blacklist/DNR, reversible CAPTCHA guard, optional opt-in Gemini audit, and Native/Mini PiP.",
   "icons": {
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
     "128": "icon.png"
   },
   "permissions": [
     "storage",
     "webNavigation",
-    "scripting",
-    "tabs",
     "declarativeNetRequest"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://*/*",
+    "https://*/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none';"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_icon": "icon.png"
+    "default_icon": {
+      "16": "icon-16.png",
+      "32": "icon-32.png",
+      "48": "icon-48.png",
+      "128": "icon.png"
+    }
   },
   "content_scripts": [
     {

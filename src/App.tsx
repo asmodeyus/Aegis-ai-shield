@@ -10,10 +10,14 @@ import { GlobalSettingsState, InteractiveHudSandbox } from './components/Interac
 import { PopupSimulator } from './components/PopupSimulator';
 import { SourceCodeInspector } from './components/SourceCodeInspector';
 
-const STORAGE_KEY_POSITIONS = 'aegis_v221_hud_positions';
-const STORAGE_KEY_SETTINGS = 'aegis_v221_global_settings';
+const STORAGE_KEY_POSITIONS = 'aegis_v300_hud_positions';
+const STORAGE_KEY_SETTINGS = 'aegis_v300_global_settings';
 
 const DEFAULT_GLOBAL_SETTINGS: GlobalSettingsState = {
+  protectionMode: 'balanced',
+  popupTheme: 'dark',
+  sessionOnlyApiKey: false,
+  debugInternalErrors: false,
   hudEnabled: true,
   hudDurationSec: 4.5,
   hudPosition: 'top-center',
@@ -63,7 +67,7 @@ const INITIAL_DIAGNOSTIC_LOGS: AegisLogEntry[] = [
     code: 'BYPASS_QUERY_BASE64',
     fromUrl: 'https://safelink-blogger.example.net/?go=aHR0cHM6Ly9kcml2ZS5nb29nbGUuY29tL2ZpbGUvZC8xMjM=',
     toUrl: 'https://drive.google.com/file/d/123',
-    detail: 'Bypass Shortlink Debloated mengekstrak URL tujuan langsung (QUERY_BASE64)',
+    detail: 'Bypass Shortlink Debloated mengekstrak URL tujuan langsung + Toast 800ms (QUERY_BASE64)',
   },
   {
     id: 'seed-2',
@@ -83,17 +87,17 @@ const INITIAL_DIAGNOSTIC_LOGS: AegisLogEntry[] = [
     code: 'ALLOW_SHORTLINK_302',
     fromUrl: 'https://go.short-redirect.net/?download=1&t=498109fe',
     toUrl: 'https://files.example-cdn.org/video/episode.mp4',
-    detail: 'HTTP 302 dari tombol CTA shortlink diizinkan (transition=link, qualifiers=server_redirect)',
+    detail: 'HTTP 302 dari tombol CTA shortlink diizinkan (mode=balanced, qualifiers=server_redirect)',
   },
   {
     id: 'seed-4',
     ts: Date.now() - 8000,
     level: 'BLOCK',
     source: 'background',
-    code: 'BLOCK_RAPID_REDIRECT_REVERT',
+    code: 'BLOCK_SUSPICIOUS_COMMIT',
     fromUrl: 'https://short.example.net/wait',
-    toUrl: 'https://promo-gacor88.top/spin?clickid=99',
-    detail: 'Revert -> https://short.example.net/wait | reason=suspicious_url | transition=link | qualifiers=client_redirect | elapsed=420ms | shortlinkGrace=false',
+    toUrl: 'https://promo-gacor88.top/spin?clickid=99&token=secret12345',
+    detail: 'Revert -> https://short.example.net/wait | mode=balanced | reason=suspicious_url | elapsed=420ms',
   },
 ];
 
@@ -125,13 +129,23 @@ export default function App() {
   const [trustedDomains, setTrustedDomains] = useState<string[]>(INITIAL_TRUSTED_DOMAINS);
   const [deniedDomains, setDeniedDomains] = useState<string[]>(INITIAL_DENIED_DOMAINS);
   const [diagnosticLogs, setDiagnosticLogs] = useState<AegisLogEntry[]>(INITIAL_DIAGNOSTIC_LOGS);
+  const [localStats, setLocalStats] = useState({ blocked: 12, bypassed: 5, allowed: 18 });
+  const [tempAllowMinutesLeft, setTempAllowMinutesLeft] = useState<number | null>(null);
   const [zipStatus, setZipStatus] = useState<string>(
-    'Paket aegis-ai-shield-v2.2.7.zip siap diunduh (7 berkas ekstensi lengkap).'
+    'Paket aegis-ai-shield-v3.2.1-store.zip siap diunduh (10 berkas terbundel & diminifikasi esbuild · content.js 74.7 KB).'
   );
   const [isBuildingZip, setIsBuildingZip] = useState(false);
 
   const handleAppendLog = (entry: Omit<AegisLogEntry, 'id' | 'ts'>) => {
-    if (globalSettings.loggingEnabled === false) return;
+    if (entry.level === 'BLOCK') {
+      setLocalStats((s) => ({ ...s, blocked: s.blocked + 1 }));
+    } else if (entry.level === 'BYPASS') {
+      setLocalStats((s) => ({ ...s, bypassed: s.bypassed + 1 }));
+    } else if (entry.level === 'ALLOW') {
+      setLocalStats((s) => ({ ...s, allowed: s.allowed + 1 }));
+    }
+
+    if (globalSettings.loggingEnabled === false && entry.level !== 'DEBUG') return;
     setDiagnosticLogs((prev) => [
       {
         ...entry,
@@ -191,6 +205,9 @@ export default function App() {
         'main_world.js',
         'popup.html',
         'popup.js',
+        'icon-16.png',
+        'icon-32.png',
+        'icon-48.png',
         'icon.png',
       ];
       const entries = await Promise.all(
@@ -210,23 +227,23 @@ export default function App() {
 
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'aegis-ai-shield-v2.2.7.zip';
+      a.download = 'aegis-ai-shield-v3.2.1-store.zip';
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 3000);
 
       setZipStatus(
-        `Berhasil mengunduh aegis-ai-shield-v2.2.7.zip (${(zipBytes.length / 1024).toFixed(1)} KB · 7 berkas).`
+        `Berhasil mengunduh aegis-ai-shield-v3.2.1-store.zip (${(zipBytes.length / 1024).toFixed(1)} KB · 10 berkas · siap Store).`
       );
     } catch {
       const a = document.createElement('a');
-      a.href = '/aegis-ai-shield-v2.2.7.zip';
-      a.download = 'aegis-ai-shield-v2.2.7.zip';
+      a.href = '/aegis-ai-shield-v3.2.1-store.zip';
+      a.download = 'aegis-ai-shield-v3.2.1-store.zip';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setZipStatus('Mengunduh paket aegis-ai-shield-v2.2.7.zip...');
+      setZipStatus('Mengunduh paket aegis-ai-shield-v3.2.1-store.zip...');
     } finally {
       setIsBuildingZip(false);
     }
@@ -260,13 +277,13 @@ export default function App() {
             href="#package"
             className="hover:text-white transition-colors whitespace-nowrap shrink-0"
           >
-            Paket ZIP v2.2.7
+            Paket ZIP v3.2.1
           </a>
           <a
             href="#evaluation"
             className="hover:text-white transition-colors whitespace-nowrap shrink-0"
           >
-            Refactoring & Keamanan
+            Audit v3.2.1
           </a>
           <a
             href="#source"
@@ -284,7 +301,7 @@ export default function App() {
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-emerald-950 bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            {isBuildingZip ? 'Mempaketkan ZIP...' : 'Unduh ZIP v2.2.7'}
+            {isBuildingZip ? 'Mempaketkan ZIP...' : 'Unduh ZIP v3.2.1'}
           </button>
         </div>
       </header>
@@ -296,30 +313,24 @@ export default function App() {
           className="border border-slate-800 bg-slate-900/75 rounded-xl p-6 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6"
         >
           <div className="space-y-2.5 max-w-2xl">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
-              <span className="text-emerald-400 font-semibold">Rilis Pembaruan v2.2.7</span>
+            <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <span className="text-emerald-400 font-semibold">Rilis Perbaikan &amp; Store Hardening v3.2.1</span>
               <span aria-hidden="true">·</span>
-              <span>Refactoring MV3 & Zero Memory Leak</span>
+              <span>content.js 74.7 KB (&lt; 75 KB Minified)</span>
               <span aria-hidden="true">·</span>
-              <span>Gemini Header Auth & Toast Bypass</span>
+              <span>Video-Tap Shield · OAuth Safe · P1–P8</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight text-balance">
-              Refactoring Performa, Keamanan Gemini API, & Toast Bypass Shortlink (v2.2.7)
+              AEGIS-AI Shield v3.2.1 — Video-Tap Hijack Shield, Filter Judol Presisi &amp; Kepatuhan Store
             </h1>
 
             <p className="text-sm text-slate-300 leading-relaxed">
-              Versi <strong className="text-white">2.2.7</strong> menyempurnakan arsitektur
-              Manifest V3 tanpa menghapus fitur v2.2.6 (Log Diagnostik Copy-Paste, Bypass All
-              Shortlinks Debloated, HTTP 302 CTA Grace, Floating Video Pill, &amp; Mini PiP):
-              memperbaiki <em>memory leak</em> drag Pil Video via{' '}
-              <code className="text-sky-300">setPointerCapture</code>, menghapus{' '}
-              <code className="text-rose-300">nukeTimers()</code> agar buffer HLS/DASH tetap aman,
-              memindahkan <code className="text-emerald-300">x-goog-api-key</code> ke HTTP Header +
-              parsing JSON aman + <em>smart fallback</em> kuota, menambahkan{' '}
-              <em>debounce</em> DNR 350ms &amp; pembersihan <code className="text-sky-300">tabHistory</code>,
-              memindahkan domain komunitas ke default Whitelist (<strong>Trust</strong>), serta
-              menampilkan Toast singkat saat melompati Safelink.
+              Pembaruan <strong className="text-white">v3.2.1</strong> menyelesaikan seluruh temuan review{' '}
+              <strong className="text-emerald-300">P1–P8</strong> sekaligus menutup celah{' '}
+              <strong className="text-sky-300">video-tap hijack</strong> (Lemur Android / Chromium Balanced):
+              pemisahan regex judol presisi, alur login OAuth aman, validasi ulang isolated world + closed Shadow DOM &amp; 2-langkah Trust,
+              penghapusan izin <code>tabs</code>, ikon 16/32/48px, Gemini &amp; auto-click opt-in, optimasi timer hook, dan sanitasi restore backup.
             </p>
 
             <div className="pt-1 flex items-center gap-2 text-xs text-emerald-300">
@@ -335,30 +346,30 @@ export default function App() {
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-sm transition-colors whitespace-nowrap cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              Unduh aegis-ai-shield-v2.2.7.zip
+              Unduh ZIP Store v3.2.1
             </button>
 
             <a
-              href="/aegis-ai-shield-v2.2.7.zip"
-              download="aegis-ai-shield-v2.2.7.zip"
+              href="/aegis-ai-shield-v3.2.1-dev.zip"
+              download="aegis-ai-shield-v3.2.1-dev.zip"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-colors whitespace-nowrap text-center"
             >
-              Tautan Langsung ZIP Statis v2.2.7
+              Unduh ZIP Dev (dengan key)
             </a>
           </div>
         </section>
 
-        {/* Interactive HUD Layout Sandbox + Live Popup v2.2.7 Preview */}
+        {/* Interactive HUD Layout Sandbox + Live Popup v3.2.1 Preview */}
         <section id="simulator" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">
-                01. Studio Tata Letak HUD Interaktif & Pratinjau Popup v2.2.7
+                01. Studio Tata Letak HUD Interaktif &amp; Pratinjau Popup v3.2.1
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Uji 7 skenario logika v2.2.7 (termasuk Toast Bypass Shortlink Debloated &amp; default
-                Whitelist komunitas di tab <strong>✅ Trust</strong>) lalu lihat tab{' '}
-                <strong>📋 Log</strong> di popup kanan.
+                Uji Tema Gelap/Terang, Safe Mode (15m / 1 Jam), statistik lokal real-time, Mode
+                Balanced vs Strict, Laporan False Positive tersensor, &amp; Import/Export Hostlist{' '}
+                <code>.txt</code> di Popup v3.2.1.
               </p>
             </div>
 
@@ -389,6 +400,7 @@ export default function App() {
                 onUpdateGlobalSettings={setGlobalSettings}
                 trustedDomains={trustedDomains}
                 deniedDomains={deniedDomains}
+                tempAllowMinutesLeft={tempAllowMinutesLeft}
                 onTrustDomain={(dom) => {
                   if (!trustedDomains.includes(dom)) {
                     setTrustedDomains((prev) => [...prev, dom]);
@@ -429,73 +441,83 @@ export default function App() {
                 onRemoveDenied={(dom) =>
                   setDeniedDomains((prev) => prev.filter((d) => d !== dom))
                 }
+                onBulkAddDenied={(domains) => {
+                  setDeniedDomains((prev) => Array.from(new Set([...domains, ...prev])));
+                  const set = new Set(domains);
+                  setTrustedDomains((prev) => prev.filter((d) => !set.has(d)));
+                }}
+                onBulkAddTrusted={(domains) => {
+                  setTrustedDomains((prev) => Array.from(new Set([...domains, ...prev])));
+                  const set = new Set(domains);
+                  setDeniedDomains((prev) => prev.filter((d) => !set.has(d)));
+                }}
                 diagnosticLogs={diagnosticLogs}
                 onClearLogs={handleClearLogs}
+                localStats={localStats}
+                onResetStats={() => setLocalStats({ blocked: 0, bypassed: 0, allowed: 0 })}
+                tempAllowMinutesLeft={tempAllowMinutesLeft}
+                onSetTempAllow={(mins) => {
+                  setTempAllowMinutesLeft(mins);
+                  if (mins) {
+                    handleAppendLog({
+                      level: 'ALLOW',
+                      source: 'background',
+                      code: 'TEMP_ALLOW_ENABLED',
+                      fromUrl: 'https://www.semprot.com/',
+                      detail: `Safe Mode / Temporary Allow diaktifkan selama ${mins} menit (Blacklist tetap diblokir senyap)`,
+                    });
+                  }
+                }}
               />
             </div>
           </div>
         </section>
 
-        {/* Ringkasan 7 Perbaikan Teknis & Optimasi v2.2.7 */}
+        {/* Ringkasan Audit & Hardening v3.2.1 */}
         <section id="evaluation" className="space-y-4">
           <div>
             <h2 className="text-xl font-bold text-white">
-              02. Ringkasan 7 Refactoring & Optimasi Arsitektur MV3 (v2.2.7)
+              02. Ringkasan Perbaikan Review P1–P8 &amp; Video-Tap Hijack v3.2.1
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Seluruh fitur v2.2.6 (Diagnostic Log copy-paste, Bypass All Shortlinks Debloated,
-              HTTP 302 CTA Grace, Floating Video Pill, &amp; Mini PiP) tetap utuh dengan stabilitas
-              memori, keamanan API, dan kontrol pengguna yang lebih baik.
+              Seluruh temuan review diselesaikan di source modular, dibundel ulang via esbuild, dan diverifikasi dengan unit test serta pengujian headless Chromium.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border border-slate-800 bg-slate-900/80 rounded-xl p-4 space-y-2">
               <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                1. Zero Memory Leak & Buffer Video Aman
+                1. Video-Tap Shield, P1 &amp; P2 (OAuth)
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                <code>attachVideoDockDrag</code> di <code>content.js</code> kini memakai{' '}
-                <code>handleEl.setPointerCapture(e.pointerId)</code> dan memasang{' '}
-                <code>pointermove</code>/<code>pointerup</code>/<code>pointercancel</code> langsung
-                di <code>handleEl</code> tanpa menumpuk listener di <code>window</code>.
+                Memisahkan timestamp sentuhan <code>&lt;video&gt;</code> dari klik tautan nyata sehingga iklan sekali-sentuh (termasuk <code>/4/&lt;hex&gt;</code>) ditahan di HUD tanpa melempar tab balik. Filter judol dipisah spesifik vs token utuh hostname (nol false-positive pada <code>smartphone</code>, <code>startpage.com</code>, <code>judiciary.gov</code>).
               </p>
               <p className="text-xs text-emerald-300 leading-relaxed">
-                <code>nukeTimers()</code> dihapus dari <code>main_world.js</code> sehingga buffer
-                pemutar video HLS/DASH dan sesi SPA tidak pernah rusak saat blokir navigasi aktif.
+                Menghapus <code>redirect</code> telanjang dari parameter arbitrase &amp; mendahulukan OAuth Google/Microsoft/GitHub/Discord.
               </p>
             </div>
 
             <div className="border border-slate-800 bg-slate-900/80 rounded-xl p-4 space-y-2">
               <div className="text-xs font-bold text-amber-400 uppercase tracking-wide">
-                2. Keamanan & Kuota Gemini API + DNR Debounce
+                2. P3 Anti-Spoof, P4 Store Build &amp; P6 Timer
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                <code>geminiApiKey</code> dipindahkan dari query URL ke header{' '}
-                <code>x-goog-api-key</code> dengan pembersih blok markdown + <code>try-catch</code>{' '}
-                parsing JSON. <code>runAiDomAudit()</code> hanya berjalan sebagai fallback saat
-                auto-bypass tidak mengambil tindakan.
+                Event <code>main_world → content</code> diklasifikasi ulang di isolated world; Shadow DOM HUD &amp; Video Dock <code>closed</code>, klik tombol wajib <code>ev.isTrusted</code>, dan <code>✓ Trust</code> memakai konfirmasi 2-langkah dengan domain penuh.
               </p>
               <p className="text-xs text-amber-300 leading-relaxed">
-                <code>syncBlacklistToDnr()</code> kini di-<em>debounce</em> 350ms untuk mencegah{' '}
-                <em>race condition</em> DNR, dan <code>tabHistory</code> dibersihkan otomatis (&gt;2
-                jam / tab tertutup).
+                Izin <code>tabs</code> dihapus, <code>minimum_chrome_version: 111</code>, ikon 16/32/48px, split build Dev/Store, &amp; cache timer hook 500ms.
               </p>
             </div>
 
             <div className="border border-slate-800 bg-slate-900/80 rounded-xl p-4 space-y-2">
               <div className="text-xs font-bold text-sky-400 uppercase tracking-wide">
-                3. Default Whitelist Dinamis & Toast Bypass
+                3. P5 Privasi Gemini, P7 Netral &amp; P8 Restore
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                <code>semprot.com</code>, <code>kaskus.co.id</code>, dan <code>reddit.com</code>{' '}
-                tidak lagi di-hardcode di <code>content.js</code>/<code>main_world.js</code>,
-                melainkan di-seed ke <code>trustedDomains</code> saat instalasi agar bebas diubah di
-                Tab <strong>✅ Trust</strong>.
+                Audit Gemini, Auto-Skip Countdown, &amp; Auto-Klik Shortlink default <strong>OFF (opt-in)</strong> dengan pengungkapan data eksplisit; API Key default <code>session</code> + peringatan jika permanen; Whitelist awal kosong (<code>[]</code>).
               </p>
               <p className="text-xs text-sky-300 leading-relaxed">
-                Sebelum <code>location.replace()</code> pada bypass Safelink, ekstensi menampilkan
-                Toast elegan (<code>⚡ AEGIS Bypass: Melompati Safelink...</code>) selama ~800ms.
+                Restore backup memfilter key <code>globalSettings</code>, memvalidasi tipe/slider, &amp; membatasi jumlah domain (kompatibel v2.2.7–v3.2.0).
               </p>
             </div>
           </div>
@@ -506,16 +528,16 @@ export default function App() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">
-                03. Inspeksi Kode Sumber & Berkas Ekstensi v2.2.7
+                03. Inspeksi Kode Sumber &amp; Berkas Ekstensi v3.2.1
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Periksa kode lengkap setiap berkas yang ada di dalam paket{' '}
-                <code className="text-emerald-400">aegis-ai-shield-v2.2.7.zip</code>.
+                Periksa hasil bundel produksi setiap berkas di dalam paket{' '}
+                <code className="text-emerald-400">aegis-ai-shield-v3.2.1-store.zip</code>.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>Bebas CSP · Shadow DOM Terisolasi · Siap Pasang</span>
+              <span>esbuild Minified · content.js 74.7 KB · MV3 Siap Store</span>
             </div>
           </div>
 
@@ -524,8 +546,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-slate-800/80 py-5 px-6 text-center text-xs text-slate-500">
-        AEGIS-AI Shield v2.2.7 · Anti-Redirect, Bypass Shortlink Debloated & Diagnostic Log · Paket
-        Ekstensi Manifest V3
+        AEGIS-AI Shield v3.2.1 · Anti-Redirect, Video-Tap Hijack Shield &amp; Chrome Web Store Hardened Studio
       </footer>
     </div>
   );
