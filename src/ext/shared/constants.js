@@ -1,10 +1,10 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Centralized Configuration & Pattern Constants
+ * AEGIS-AI Shield v3.2.4 — Centralized Configuration & Pattern Constants
  * Single source of truth shared across background, main_world, content, and popup.
  */
 
-export const AEGIS_VERSION = "3.2.1";
+export const AEGIS_VERSION = "3.2.4";
 export const GEMINI_MODEL = "gemini-2.5-flash";
 
 // P7: Neutral default whitelist (zero pre-whitelisted third-party sites on fresh installs)
@@ -105,6 +105,7 @@ export const DEFAULT_GLOBAL_SETTINGS = Object.freeze({
   shortlinkBypassEnabled: true,
   shortlinkAutoClick: false, // P7: Opt-in auto-click CTA (default OFF)
   loggingEnabled: true,
+  antiAntiAdblock: true,
   removeTransparentOverlay: true,
   antiHistoryTrap: true,
   dnrEnabled: true,
@@ -148,8 +149,11 @@ export const GAMBLING_TEXT_STRICT_REGEX =
 export const COMMERCE_AFFILIATE_REGEX =
   /(shopee\.|shope\.ee|tokopedia\.|lazada\.|blibli\.|bukalapak\.|tiktok\.com\/t\/|invol\.co|accesstrade|admitad|ecotrack|go2cloud|onclickalgo|popads|popcash|propellerads|adsterra|hilltopads|exoclick|juicyads|trafficjunky|monetag|richads|wpadmngr|clickadu|doubleclick\.net|googlesyndication\.com|adservice\.google\.)/i;
 
+export const EXPLICIT_AD_NETWORK_HOST_REGEX =
+  /(^|\.)(invol\.co|accesstrade\.[^.]+|admitad\.com|ecotrack\.[^.]+|go2cloud\.org|onclickalgo\.com|popads\.net|popcash\.net|propellerads\.com|adsterra\.com|hilltopads\.net|exoclick\.com|juicyads\.com|trafficjunky\.net|monetag\.com|richads\.com|wpadmngr\.com|clickadu\.com|doubleclick\.net|googlesyndication\.com|adservice\.google\.[a-z.]+)$/i;
+
 export const RANDOM_SHORT_DOMAIN_REGEX =
-  /^[a-z0-9]{2,4}[0-9][a-z0-9]{1,4}\.(com|net|org|co|id|io|info|biz)$/i;
+  /^(?:[0-9][a-z0-9]{3,7}|[a-z]{1,3}[0-9][a-z0-9]*[0-9][a-z0-9]{0,3})\.(com|net|org|co|id|io|info|biz)$/i;
 
 // P2: Anchored strictly to actual ad/affiliate arbitrage query params — NEVER matches redirect_uri/redirect_url/redirect_to
 export const SEARCH_ARBITRAGE_PARAMS =

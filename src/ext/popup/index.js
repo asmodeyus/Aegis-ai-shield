@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Modular Popup Controller
+ * AEGIS-AI Shield v3.2.4 — Modular Popup Controller
  * Shares pure domain, debug, DNR, migration, and constant utilities with the rest of the extension.
  */
 import {
@@ -128,6 +128,7 @@ const gInputs = {
   loggingEnabled: /** @type {HTMLInputElement} */ (document.getElementById("loggingEnabledToggle")),
   debugInternalErrors: /** @type {HTMLInputElement} */ (document.getElementById("debugInternalErrorsToggle")),
   smartUgcSense: /** @type {HTMLInputElement} */ (document.getElementById("smartUgcSenseToggle")),
+  antiAntiAdblock: /** @type {HTMLInputElement} */ (document.getElementById("antiAntiAdblockToggle")),
   removeOverlay: /** @type {HTMLInputElement} */ (document.getElementById("removeOverlayToggle")),
   captchaKillSwitch: /** @type {HTMLInputElement} */ (document.getElementById("captchaKillSwitchToggle")),
   antiHistory: /** @type {HTMLInputElement} */ (document.getElementById("antiHistoryToggle")),
@@ -316,6 +317,9 @@ function applyGlobalSettingsToUI(raw) {
   gInputs.loggingEnabled.checked = g.loggingEnabled !== false;
   gInputs.debugInternalErrors.checked = Boolean(g.debugInternalErrors);
   gInputs.smartUgcSense.checked = g.smartUgcSense !== false;
+  if (gInputs.antiAntiAdblock) {
+    gInputs.antiAntiAdblock.checked = g.antiAntiAdblock !== false;
+  }
   gInputs.removeOverlay.checked = g.removeTransparentOverlay !== false;
   if (gInputs.captchaKillSwitch) {
     gInputs.captchaKillSwitch.checked = g.captchaKillSwitchEnabled !== false;
@@ -362,6 +366,7 @@ function readGlobalSettingsFromUI() {
     shortlinkAutoClick: gInputs.shortlinkAutoClick.checked,
     loggingEnabled: gInputs.loggingEnabled.checked,
     smartUgcSense: gInputs.smartUgcSense.checked,
+    antiAntiAdblock: gInputs.antiAntiAdblock ? gInputs.antiAntiAdblock.checked : true,
     removeTransparentOverlay: gInputs.removeOverlay.checked,
     captchaKillSwitchEnabled: gInputs.captchaKillSwitch ? gInputs.captchaKillSwitch.checked : true,
     antiHistoryTrap: gInputs.antiHistory.checked,
@@ -893,7 +898,7 @@ clearLogBtn.addEventListener("click", () => {
   });
 });
 
-// Backup & Restore JSON v3.2.1 (backward compatible with v2.2.7–v3.2.0)
+// Backup & Restore JSON v3.2.4 (backward compatible with v2.2.7–v3.2.3)
 document.getElementById("copyBackupBtn")?.addEventListener("click", () => {
   chrome.storage.local.get(
     ["strictCrossOrigin", "autoSkipCountdown", "deniedDomains", "trustedDomains", "globalSettings", "hudPositions"],

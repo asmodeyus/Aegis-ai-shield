@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.0.0 — HUD & Video Dock Position Manager
+ * AEGIS-AI Shield v3.2.2 — HUD & Video Dock Position Manager
  * Clamping, edge-anchoring, ratio persistence, and safe top margin calculations.
  */
 import { safeTry } from "../shared/debug.js";
@@ -82,7 +82,7 @@ export function saveHudPosition(key, coordObj) {
     ...runtimeState.hudPositions,
     [key]: coordObj
   };
-  safeTry("position.saveHudPosition", () => {
+  safeTry("pm.sv", () => {
     chrome.storage.local.set({ hudPositions: { ...runtimeState.hudPositions } });
   });
 }
@@ -93,6 +93,7 @@ export function getMiniPlayerSafeTop() {
 
 /**
  * Shared zero-leak pointer-capture drag handler for Top HUD, Video Dock Pill, and Mini PiP.
+ * Defers setPointerCapture until pointer movement exceeds threshold so button taps dispatch normal clicks.
  * @param {HTMLElement} handleEl
  * @param {{
  *   targetEl: HTMLElement,
@@ -110,6 +111,7 @@ export function getMiniPlayerSafeTop() {
 export function attachPointerDrag(handleEl, opts) {
   let dragging = false;
   let moved = false;
+  let captured = false;
   let startX = 0;
   let startY = 0;
   let initLeft = 0;
@@ -127,16 +129,30 @@ export function attachPointerDrag(handleEl, opts) {
     if (opts.onStart && opts.onStart(e, initLeft, initTop) === false) return;
     dragging = true;
     moved = thr === 0;
+    captured = false;
     startX = e.clientX;
     startY = e.clientY;
-    safeTry("drag.capture", () => handleEl.setPointerCapture(e.pointerId));
+    if (thr === 0) {
+      safeTry("pm.dc", () => {
+        handleEl.setPointerCapture(e.pointerId);
+        captured = true;
+      });
+    }
   });
 
   handleEl.addEventListener("pointermove", (e) => {
     if (!dragging) return;
     const dx = e.clientX - startX;
     const dy = e.clientY - startY;
-    if (!moved && Math.hypot(dx, dy) >= thr) moved = true;
+    if (!moved && Math.hypot(dx, dy) >= thr) {
+      moved = true;
+      if (!captured) {
+        safeTry("pm.dc", () => {
+          handleEl.setPointerCapture(e.pointerId);
+          captured = true;
+        });
+      }
+    }
     if (!moved) return;
     const dims = opts.getDims ? opts.getDims() : opts.targetEl.getBoundingClientRect();
     if (!dims) {
@@ -159,9 +175,12 @@ export function attachPointerDrag(handleEl, opts) {
   const endDrag = (e) => {
     if (!dragging) return;
     dragging = false;
-    safeTry("drag.release", () => {
-      if (handleEl.hasPointerCapture(e.pointerId)) handleEl.releasePointerCapture(e.pointerId);
-    });
+    if (captured) {
+      captured = false;
+      safeTry("drag.release", () => {
+        if (handleEl.hasPointerCapture(e.pointerId)) handleEl.releasePointerCapture(e.pointerId);
+      });
+    }
     if (opts.onEnd) opts.onEnd(moved, e);
   };
 

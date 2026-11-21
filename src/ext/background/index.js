@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Hardened MV3 Background Service Worker (Single Source of Truth)
+ * AEGIS-AI Shield v3.2.4 — Hardened MV3 Background Service Worker (Single Source of Truth)
  * Key Security, Stability & Reliability Guarantees:
  *  - Restricts chrome.storage.session to TRUSTED_CONTEXTS only (isolates session API key & worker state).
  *  - Persists & rehydrates tabHistory + recentlyAllowedTargets in chrome.storage.session across MV3 worker restarts.
@@ -46,9 +46,12 @@ import {
 } from "../shared/gemini-audit.js";
 import { migrateExtensionStorage } from "../shared/migration.js";
 import {
+  evaluateBeforeNavigateGuard,
   evaluateRedirectChain,
+  extractGoogleRedirectTarget,
   hasSpecificGamblingHostname,
   isAuthFlowUrl,
+  isBrowserInitiatedTransition,
   isHardMaliciousUrl,
   isSearchEngineHijackUrl,
   isSuspiciousUrl
@@ -774,23 +777,17 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
     return;
   }
 
-  if (now < entry.lockedUntil) return;
-
-  const isExternalOrFirstPageTransition =
-    entry.stack.length === 0 ||
-    details.transitionType === "auto_toplevel" ||
-    details.transitionType === "typed" ||
-    details.transitionType === "auto_bookmark" ||
-    details.transitionType === "generated" ||
-    details.transitionType === "start_page" ||
-    details.transitionType === "keyword" ||
-    qualifiers.includes("from_address_bar") ||
-    qualifiers.includes("from_api");
+  const isExternalOrFirstPageTransition = isBrowserInitiatedTransition(
+    details.transitionType,
+    qualifiers,
+    entry.stack.length
+  );
 
   if (isExternalOrFirstPageTransition) {
     entry.stack = [url];
     entry.redirectChain = [];
     entry.revertCount = 0;
+    entry.lockedUntil = 0;
     entry.failedRevertUrls = [];
     entry.lastTimestamp = now;
     entry.firstPageGraceUntil = now + TIMINGS.FIRST_PAGE_GRACE_MS;
@@ -807,6 +804,8 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
     return;
   }
 
+  if (now < entry.lockedUntil) return;
+
   if (prevUrl && prevUrl !== url) {
     safeTry("background.onCommittedCrossCheck", () => {
       const prevHost = getHostname(prevUrl);
@@ -816,10 +815,17 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
 
       const isFromSearchEngine = SEARCH_ENGINE_HOST_REGEX.test(prevHost);
       const isFromMessengerOrSocial = MESSENGER_OR_SOCIAL_ENTRY_REGEX.test(prevHost);
+      const wrappedGoogleTarget = extractGoogleRedirectTarget(url);
+      const isCleanWrappedSameBaseBounce = Boolean(
+        wrappedGoogleTarget &&
+          getBaseDomain(getHostname(wrappedGoogleTarget)) === prevBase &&
+          !isDomainInList(url, rules.denied) &&
+          !isHardMaliciousUrl(wrappedGoogleTarget, rules.denied)
+      );
       const isWithinFirstPageCanonicalRedirect =
         entry.firstPageGraceUntil &&
         now < entry.firstPageGraceUntil &&
-        (prevBase === currBase || qualifiers.includes("server_redirect"));
+        (prevBase === currBase || isCleanWrappedSameBaseBounce || qualifiers.includes("server_redirect"));
 
       if (isFromSearchEngine || isFromMessengerOrSocial || isWithinFirstPageCanonicalRedirect) {
         entry.stack.push(url);
@@ -832,7 +838,7 @@ chrome.webNavigation.onCommitted.addListener(async (details) => {
         return;
       }
 
-      if (prevBase !== currBase && !isSameSafeEcosystem(prevHost, currHost)) {
+      if (prevBase !== currBase && !isSameSafeEcosystem(prevHost, currHost) && !isCleanWrappedSameBaseBounce) {
         const isHardMalicious =
           isHardMaliciousUrl(url, rules.denied) || isSearchEngineHijackUrl(url, prevUrl);
         const isWithinShortlinkCtaGrace = Boolean(
@@ -975,74 +981,50 @@ chrome.webNavigation.onBeforeNavigate.addListener(async (details) => {
     return;
   }
 
-  if (!isTargetBlacklisted && isManuallyAllowed(entry, targetUrl)) return;
-  if (entry.stack.length === 0) return;
+  const currentUrl = entry.stack[entry.stack.length - 1] || "";
+  const evalResult = evaluateBeforeNavigateGuard(targetUrl, {
+    currentUrl,
+    stackLength: entry.stack.length,
+    denied: rules.denied,
+    trusted: rules.trusted,
+    isManuallyAllowed: isManuallyAllowed(entry, targetUrl),
+    tempAllowActive: Boolean(
+      (currentUrl && getTemporaryAllowState(rules.tempAllowMap, currentUrl, now).active) ||
+        getTemporaryAllowState(rules.tempAllowMap, targetUrl, now).active
+    ),
+    captchaActive: Boolean(entry.captchaActiveUntil && now < entry.captchaActiveUntil),
+    firstPageGraceActive: Boolean(entry.firstPageGraceUntil && now < entry.firstPageGraceUntil),
+    shortlinkCtaGraceActive: Boolean(entry.shortlinkCtaGraceUntil && now < entry.shortlinkCtaGraceUntil),
+    isLockedOrCoolingDown:
+      now < entry.lockedUntil || now - entry.lastRevertTime < TIMINGS.REVERT_COOLDOWN_MS
+  });
 
-  const currentUrl = entry.stack[entry.stack.length - 1];
-  if (!currentUrl || currentUrl === targetUrl) return;
-
-  if (
-    !isTargetBlacklisted &&
-    ((entry.captchaActiveUntil && now < entry.captchaActiveUntil) ||
-      getTemporaryAllowState(rules.tempAllowMap, currentUrl, now).active ||
-      getTemporaryAllowState(rules.tempAllowMap, targetUrl, now).active)
-  ) {
+  if (evalResult.action === "allow_manual") {
+    allowManualTarget(targetUrl, evalResult.durationMs || 15000);
     return;
   }
 
-  if (!isTargetBlacklisted && entry.firstPageGraceUntil && now < entry.firstPageGraceUntil) return;
-  if (now < entry.lockedUntil || now - entry.lastRevertTime < TIMINGS.REVERT_COOLDOWN_MS) return;
-
-  safeTry("background.onBeforeNavigate", () => {
-    const prevHost = getHostname(currentUrl);
-    const targetHost = getHostname(targetUrl);
-    const prevBase = getBaseDomain(prevHost);
-    const targetBase = getBaseDomain(targetHost);
-
-    const isCurrentSearchOrMessenger =
-      SEARCH_ENGINE_HOST_REGEX.test(prevHost) || MESSENGER_OR_SOCIAL_ENTRY_REGEX.test(prevHost);
-
-    if (prevBase !== targetBase && !isSameSafeEcosystem(prevHost, targetHost)) {
-      if (isCurrentSearchOrMessenger && !isTargetBlacklisted) {
-        allowManualTarget(targetUrl, 15000);
-        return;
-      }
-      const isHardMaliciousTarget =
-        isHardMaliciousUrl(targetUrl, rules.denied) || isSearchEngineHijackUrl(targetUrl, currentUrl);
-      if (
-        entry.shortlinkCtaGraceUntil &&
-        now < entry.shortlinkCtaGraceUntil &&
-        !isHardMaliciousTarget
-      ) {
-        allowManualTarget(targetUrl, 18000);
-        return;
-      }
-      if (SAFE_MEDIA_HOST_REGEX.test(targetHost) && !isHardMaliciousTarget) return;
-
-      if (
-        isTargetBlacklisted ||
-        isSuspiciousUrl(targetUrl, rules, currentUrl, isTargetRecentlyAllowed)
-      ) {
-        const safeUrl = getSafeReturnUrl(details.tabId, targetUrl, rules) || currentUrl;
-        appendAegisLog({
-          level: "BLOCK",
-          source: "background",
-          code: isTargetBlacklisted ? "BLOCK_BEFORE_NAV_BLACKLIST" : "BLOCK_BEFORE_NAV_SUSPICIOUS",
-          fromUrl: currentUrl,
-          toUrl: targetUrl,
-          detail: `onBeforeNavigate ditahan -> kembali ke ${safeUrl} | blacklisted=${isTargetBlacklisted} | hardMalicious=${isHardMaliciousTarget}`
-        });
-        forceRevertTab(
-          details.tabId,
-          safeUrl,
-          targetUrl,
-          "Redirect iklan/affiliate/search-hijack ditahan",
-          isTargetBlacklisted,
-          rules.denied
-        );
-      }
+  if (evalResult.action === "block") {
+    const safeUrl = getSafeReturnUrl(details.tabId, targetUrl, rules) || currentUrl;
+    if (safeUrl) {
+      appendAegisLog({
+        level: "BLOCK",
+        source: "background",
+        code: evalResult.code || "BLOCK_BEFORE_NAV_SUSPICIOUS",
+        fromUrl: currentUrl || safeUrl,
+        toUrl: targetUrl,
+        detail: `onBeforeNavigate ditahan -> kembali ke ${safeUrl} | blacklisted=${evalResult.isTargetBlacklisted} | hardMalicious=${evalResult.isHardMalicious} | reason=${evalResult.reason}`
+      });
+      forceRevertTab(
+        details.tabId,
+        safeUrl,
+        targetUrl,
+        "Redirect iklan/affiliate/search-hijack ditahan",
+        evalResult.isTargetBlacklisted,
+        rules.denied
+      );
     }
-  });
+  }
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
@@ -1745,7 +1727,7 @@ function scheduleSyncBlacklistToDnr(delayMs = TIMINGS.DNR_DEBOUNCE_MS) {
 }
 
 // =========================================================================
-// INSTALL (SMOOTH MIGRATION v2.2.7 -> v3.2.1), STARTUP & STORAGE SYNC
+// INSTALL (SMOOTH MIGRATION v2.2.7 -> v3.2.2), STARTUP & STORAGE SYNC
 // =========================================================================
 chrome.runtime.onInstalled.addListener(async () => {
   enforceTrustedSessionAccess();

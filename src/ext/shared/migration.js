@@ -1,11 +1,11 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Backward-Compatible & Hardened Storage Migration / Restore Helper
+ * AEGIS-AI Shield v3.2.4 — Backward-Compatible & Hardened Storage Migration / Restore Helper
  * P8 Hardening:
  *  - Filters globalSettings strictly to known keys from DEFAULT_GLOBAL_SETTINGS.
  *  - Validates types, enums, and numeric ranges for all sliders & options.
  *  - Sanitizes hudPositions and caps domain list sizes (denied <= 5000, trusted <= 2000).
- *  - Preserves backward compatibility with v2.2.7 / v3.0.0 / v3.1.0 / v3.2.0 backups.
+ *  - Preserves backward compatibility with v2.2.7 – v3.2.3 backups.
  */
 import {
   AEGIS_VERSION,

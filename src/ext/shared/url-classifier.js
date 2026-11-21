@@ -1,14 +1,16 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Unified URL Classifier, Search Hijack Guard & Redirect Chain Detector
+ * AEGIS-AI Shield v3.2.4 — Unified URL Classifier, Search Hijack Guard & Redirect Chain Detector
  * Single source of truth shared between background.js, main_world.js, and content.js.
  *
- * v3.2.1 upgrades:
+ * v3.2.1–v3.2.4 upgrades:
  *  - P1: Split gambling matching (specific hostname substring vs ambiguous whole-token hostname labels,
  *        whole-word/phrase search query & button text checks).
  *  - P2: Legitimate OAuth/IdP flows evaluated BEFORE generic affiliate/TLD checks (after Blacklist & specific gambling).
  *  - Video-Tap Hijack Guard: Blocks cross-origin navigation triggered immediately after tapping <video>
  *    and detects direct-link ad paths like /4/<32-hex>.
+ *  - v3.2.4: Defers ambiguous navigations (clean search engine URLs, TLDs, commerce) in onBeforeNavigate
+ *    to onCommitted so Chrome Omnibox / Back-Forward transitions are never falsely reverted.
  */
 import {
   AUTH_PATH_OR_PARAM_REGEX,
@@ -17,11 +19,13 @@ import {
   CHALLENGE_HOST_REGEX,
   COMMERCE_AFFILIATE_REGEX,
   DIRECT_LINK_AD_PATH_REGEX,
+  EXPLICIT_AD_NETWORK_HOST_REGEX,
   GAMBLING_AMBIGUOUS_TOKEN_REGEX,
   GAMBLING_SEARCH_WORD_REGEX,
   GAMBLING_SPECIFIC_REGEX,
   GAMBLING_TEXT_STRICT_REGEX,
   KNOWN_AD_SHORTENER_REGEX,
+  MESSENGER_OR_SOCIAL_ENTRY_REGEX,
   RANDOM_SHORT_DOMAIN_REGEX,
   SAFE_MEDIA_HOST_REGEX,
   SEARCH_ARBITRAGE_PARAMS,
@@ -40,7 +44,7 @@ import { getBaseDomain, getHostname, isDomainInList, isSameSafeEcosystem } from 
 export function hasSpecificGamblingHostname(urlOrObj) {
   if (!urlOrObj) return false;
   return safeTry(
-    "urlClassifier.hasSpecificGamblingHost",
+    "uc.sg",
     () => {
       const u = urlOrObj instanceof URL ? urlOrObj : new URL(String(urlOrObj));
       const host = u.hostname.toLowerCase();
@@ -62,7 +66,7 @@ export function hasSpecificGamblingHostname(urlOrObj) {
 export function hasGamblingSignalInUrl(urlOrObj) {
   if (!urlOrObj) return false;
   return safeTry(
-    "urlClassifier.hasGamblingUrl",
+    "uc.gu",
     () => {
       const u = urlOrObj instanceof URL ? urlOrObj : new URL(String(urlOrObj));
       const host = u.hostname.toLowerCase();
@@ -109,6 +113,28 @@ export function hasGamblingSignalInText(text) {
 }
 
 /**
+ * Extract explicit HTTP(S) destination wrapped inside Google's /url referrer-wrapper
+ * (e.g., https://www.google.com/url?sa=t&url=https://tech8s.net/article/).
+ * @param {string | URL} urlOrObj
+ * @returns {string}
+ */
+export function extractGoogleRedirectTarget(urlOrObj) {
+  if (!urlOrObj) return "";
+  return safeTry(
+    "uc.gr",
+    () => {
+      const u = urlOrObj instanceof URL ? urlOrObj : new URL(String(urlOrObj));
+      if (!u.hostname.toLowerCase().includes("google.") || u.pathname !== "/url") return "";
+      const raw = (u.searchParams.get("url") || u.searchParams.get("q") || "").trim();
+      if (!raw || !/^https?:\/\//i.test(raw)) return "";
+      const target = new URL(raw);
+      return target.protocol === "http:" || target.protocol === "https:" ? target.href : "";
+    },
+    ""
+  );
+}
+
+/**
  * Determine whether a URL is part of an authentication / OAuth / SSO / SAML flow.
  * For multi-purpose hosts like github.com / discord.com, checks auth path/params as well.
  * @param {string} urlStr
@@ -117,7 +143,7 @@ export function hasGamblingSignalInText(text) {
 export function isAuthFlowUrl(urlStr) {
   if (!urlStr) return false;
   return safeTry(
-    "urlClassifier.isAuthFlowUrl",
+    "uc.ia",
     () => {
       const u = new URL(urlStr);
       const host = u.hostname.toLowerCase();
@@ -140,6 +166,7 @@ export function isAuthFlowUrl(urlStr) {
 
 /**
  * Detect whether a destination URL is a Search Engine redirect hijack (Google/Bing/DDG/Yahoo/Yandex search page).
+ * Google /url with an explicit clean HTTP(S) target parameter is treated as a referrer wrapper rather than SERP hijack.
  * @param {string} urlStr
  * @param {string} [sourceUrl]
  * @returns {boolean}
@@ -147,7 +174,7 @@ export function isAuthFlowUrl(urlStr) {
 export function isSearchEngineHijackUrl(urlStr, sourceUrl = "") {
   if (!urlStr) return false;
   return safeTry(
-    "urlClassifier.isSearchHijack",
+    "uc.sh",
     () => {
       const u = new URL(urlStr);
       const host = u.hostname.toLowerCase();
@@ -160,8 +187,17 @@ export function isSearchEngineHijackUrl(urlStr, sourceUrl = "") {
 
       if (!isSearchPage) return false;
 
+      if (SEARCH_ARBITRAGE_PARAMS.test(u.href)) return true;
+
+      if (host.includes("google.") && u.pathname === "/url") {
+        const target = extractGoogleRedirectTarget(u);
+        if (target) {
+          return isSearchEngineHijackUrl(target, sourceUrl) || hasGamblingSignalInUrl(target);
+        }
+      }
+
       const q = u.searchParams.get("q") || u.searchParams.get("p") || u.searchParams.get("text") || "";
-      if (SEARCH_ARBITRAGE_PARAMS.test(u.href) || hasGamblingSignalInSearchQuery(q)) return true;
+      if (hasGamblingSignalInSearchQuery(q)) return true;
 
       if (sourceUrl) {
         const srcHost = getHostname(sourceUrl);
@@ -185,7 +221,7 @@ export function isSearchEngineHijackUrl(urlStr, sourceUrl = "") {
 export function isHardMaliciousUrl(urlStr, deniedList = [], baseHref) {
   if (!urlStr) return false;
   return safeTry(
-    "urlClassifier.isHardMaliciousUrl",
+    "uc.hm",
     () => {
       const u = baseHref ? new URL(urlStr, baseHref) : new URL(urlStr);
       const host = u.hostname.toLowerCase();
@@ -207,12 +243,12 @@ export function isHardMaliciousUrl(urlStr, deniedList = [], baseHref) {
 /**
  * Evaluate whether a URL should be treated as suspicious in background/content checks.
  * Precedence:
- *  1. Blacklist (rules.denied) ALWAYS wins
+ *  1. Blacklist (rules.denied) ALWAYS wins (including wrapped Google /url targets)
  *  2. Search-engine hijack from non-search page
- *  3. Whitelist / recentlyAllowed / CAPTCHA / same ecosystem
- *  4. P2: Legitimate OAuth/Auth flows (unless specific gambling hostname)
- *  5. Hard ad/gambling/affiliate/direct-link signals
- *  6. Safe media hosts & Suspicious TLDs
+ *  3. Hard ad/gambling/affiliate/direct-link/TLD signals on wrapped Google /url targets
+ *  4. Whitelist / recentlyAllowed / CAPTCHA / same ecosystem
+ *  5. P2: Legitimate OAuth/Auth flows (unless specific gambling hostname)
+ *  6. Hard ad/gambling/affiliate/direct-link signals & Suspicious TLDs
  * @param {string} urlStr
  * @param {{ trusted?: string[], denied?: string[], strictCrossOrigin?: boolean, protectionMode?: string }} [rules]
  * @param {string} [sourceUrl]
@@ -226,17 +262,28 @@ export function isSuspiciousUrl(
   isRecentlyAllowedFn
 ) {
   return safeTry(
-    "urlClassifier.isSuspiciousUrl",
+    "uc.su",
     () => {
       const u = new URL(urlStr);
       const host = u.hostname.toLowerCase();
       const baseHost = getBaseDomain(host);
+      const denied = rules.denied || [];
+      const googleTarget = extractGoogleRedirectTarget(u);
 
-      // 1. Blacklist ALWAYS wins
-      if (isDomainInList(urlStr, rules.denied || [])) return true;
+      // 1. Blacklist ALWAYS wins (including wrapped target inside google.com/url)
+      if (isDomainInList(urlStr, denied) || (googleTarget && isDomainInList(googleTarget, denied))) {
+        return true;
+      }
 
       // 2. Search-engine hijack from non-search page is suspicious even if google.com is in trusted
       if (isSearchEngineHijackUrl(urlStr, sourceUrl)) return true;
+
+      // Never allow google.com/url wrapper to smuggle a hard-malicious or suspicious-TLD destination
+      if (googleTarget) {
+        if (isHardMaliciousUrl(googleTarget, denied)) return true;
+        const targetHost = getHostname(googleTarget);
+        if (targetHost && SUSPICIOUS_TLD.test(targetHost)) return true;
+      }
 
       // 3. Whitelist (after Blacklist & Search Hijack checks)
       if (isDomainInList(urlStr, rules.trusted || [])) return false;
@@ -253,15 +300,7 @@ export function isSuspiciousUrl(
         return false;
       }
 
-      const hasHardAdSignals =
-        hasGamblingSignalInUrl(u) ||
-        COMMERCE_AFFILIATE_REGEX.test(u.href) ||
-        RANDOM_SHORT_DOMAIN_REGEX.test(baseHost) ||
-        SEARCH_ARBITRAGE_PARAMS.test(u.href) ||
-        KNOWN_AD_SHORTENER_REGEX.test(host) ||
-        DIRECT_LINK_AD_PATH_REGEX.test(u.pathname);
-
-      if (hasHardAdSignals) return true;
+      if (isHardMaliciousUrl(u.href, denied)) return true;
 
       if (SAFE_MEDIA_HOST_REGEX.test(host)) return false;
       if (SUSPICIOUS_TLD.test(host)) return true;
@@ -339,7 +378,7 @@ export function diagnoseDestinationBlock(urlStr, ctx) {
   }
 
   return safeTry(
-    "urlClassifier.diagnoseDestinationBlock",
+    "uc.db",
     () => {
       const dest = new URL(raw, ctx.currentHref);
       if (dest.protocol !== "http:" && dest.protocol !== "https:") {
@@ -351,9 +390,14 @@ export function diagnoseDestinationBlock(urlStr, ctx) {
       const destHost = dest.hostname.toLowerCase();
       const destBase = getBaseDomain(destHost);
       const curBase = getBaseDomain(curHost);
+      const wrappedTarget = extractGoogleRedirectTarget(dest);
+      const wrappedHost = wrappedTarget ? getHostname(wrappedTarget) : "";
 
-      // 1. Explicit user Blacklist ALWAYS wins even under Temp Allow or CAPTCHA
-      if (isDomainInList(dest.href, ctx.denied || [])) {
+      // 1. Explicit user Blacklist ALWAYS wins (including wrapped Google /url targets)
+      if (
+        isDomainInList(dest.href, ctx.denied || []) ||
+        (wrappedTarget && isDomainInList(wrappedTarget, ctx.denied || []))
+      ) {
         return { block: true, reason: "denied_blacklist" };
       }
 
@@ -375,12 +419,31 @@ export function diagnoseDestinationBlock(urlStr, ctx) {
         return { block: true, reason: "search_hijack" };
       }
 
+      // Google /url referrer-wrapper targeting a clean same-base or trusted host (non-media-tap)
+      if (wrappedTarget) {
+        if (isHardMaliciousUrl(wrappedTarget, ctx.denied || [])) {
+          return { block: true, reason: "hard_ad_or_gambling_pattern" };
+        }
+        if (wrappedHost && SUSPICIOUS_TLD.test(wrappedHost)) {
+          return { block: true, reason: "suspicious_tld" };
+        }
+        if (ctx.hasRecentMediaTap && !ctx.hasRecentUserGesture) {
+          return { block: true, reason: "media_tap_hijack" };
+        }
+        if (
+          !ctx.hasRecentMediaTap &&
+          (getBaseDomain(wrappedHost) === curBase ||
+            isDomainInList(wrappedTarget, ctx.trusted || []))
+        ) {
+          return { block: false, reason: "same_base_domain_referrer_bounce" };
+        }
+      }
+
       if (isDomainInList(dest.href, ctx.trusted || [])) {
         return { block: false, reason: "trusted_whitelist" };
       }
 
       // 5. P2: Legitimate Auth/OAuth flow with user or auth gesture evaluated BEFORE generic hard patterns
-      //    (Still blocked if blacklisted above or matches specific gambling hostname)
       if (
         (ctx.hasRecentUserGesture || ctx.hasRecentAuthGesture) &&
         (isAuthFlowUrl(dest.href) || ctx.hasRecentAuthGesture) &&
@@ -390,15 +453,7 @@ export function diagnoseDestinationBlock(urlStr, ctx) {
       }
 
       // 6. Hard ad/gambling/affiliate/shortener/direct-link patterns
-      const isHardBadPattern =
-        hasGamblingSignalInUrl(dest) ||
-        COMMERCE_AFFILIATE_REGEX.test(dest.href) ||
-        RANDOM_SHORT_DOMAIN_REGEX.test(destBase) ||
-        SEARCH_ARBITRAGE_PARAMS.test(dest.href) ||
-        KNOWN_AD_SHORTENER_REGEX.test(destHost) ||
-        DIRECT_LINK_AD_PATH_REGEX.test(dest.pathname);
-
-      if (isHardBadPattern) return { block: true, reason: "hard_ad_or_gambling_pattern" };
+      if (isHardMaliciousUrl(dest.href, [])) return { block: true, reason: "hard_ad_or_gambling_pattern" };
 
       // 7. Media-tap hijack guard: tapping <video> MUST NOT trigger cross-origin navigation!
       if (ctx.hasRecentMediaTap && !ctx.hasRecentUserGesture) {
@@ -434,3 +489,262 @@ export function diagnoseDestinationBlock(urlStr, ctx) {
     { block: false, reason: "parse_error" }
   );
 }
+
+/**
+ * Detect threats that are unambiguous even BEFORE Chrome exposes transitionType/transitionQualifiers
+ * (Blacklist, gambling hostnames, explicit ad-network hosts, search-arbitrage params, /4/<hex> direct-link ads, random short domains).
+ * Excludes clean search engine pages, generic TLDs, and mainstream commerce hosts so omnibox & Back/Forward
+ * navigations can be accurately evaluated in onCommitted.
+ * @param {string} urlStr
+ * @param {string[]} [deniedList]
+ * @returns {boolean}
+ */
+export function isUnambiguousBeforeNavThreat(urlStr, deniedList = []) {
+  if (!urlStr) return false;
+  return safeTry(
+    "uc.ubn",
+    () => {
+      const u = new URL(urlStr);
+      const host = u.hostname.toLowerCase();
+      const baseHost = getBaseDomain(host);
+      if (isDomainInList(u.href, deniedList)) return true;
+      return (
+        hasGamblingSignalInUrl(u) ||
+        EXPLICIT_AD_NETWORK_HOST_REGEX.test(host) ||
+        RANDOM_SHORT_DOMAIN_REGEX.test(baseHost) ||
+        SEARCH_ARBITRAGE_PARAMS.test(u.href) ||
+        DIRECT_LINK_AD_PATH_REGEX.test(u.pathname)
+      );
+    },
+    false
+  );
+}
+
+/**
+ * Evaluate chrome.webNavigation.onBeforeNavigate without falsely blocking browser-UI navigations
+ * (Chrome Omnibox search, typed URL, bookmark, or Back/Forward) whose transitionType/qualifiers
+ * are only available later in onCommitted.
+ * @param {string} targetUrl
+ * @param {object} [ctx]
+ * @param {string} [ctx.currentUrl]
+ * @param {number} [ctx.stackLength]
+ * @param {string[]} [ctx.denied]
+ * @param {string[]} [ctx.trusted]
+ * @param {boolean} [ctx.isManuallyAllowed]
+ * @param {boolean} [ctx.tempAllowActive]
+ * @param {boolean} [ctx.captchaActive]
+ * @param {boolean} [ctx.firstPageGraceActive]
+ * @param {boolean} [ctx.shortlinkCtaGraceActive]
+ * @param {boolean} [ctx.isLockedOrCoolingDown]
+ * @returns {{ action: "allow" | "allow_manual" | "block" | "defer_to_committed", code?: string, durationMs?: number, isTargetBlacklisted: boolean, isHardMalicious: boolean, reason: string }}
+ */
+export function evaluateBeforeNavigateGuard(targetUrl, ctx = {}) {
+  return safeTry(
+    "uc.bn",
+    () => {
+      if (!targetUrl || !String(targetUrl).startsWith("http")) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "non_http"
+        };
+      }
+
+      const denied = Array.isArray(ctx.denied) ? ctx.denied : [];
+      const trusted = Array.isArray(ctx.trusted) ? ctx.trusted : [];
+      const wrappedGoogleTarget = extractGoogleRedirectTarget(targetUrl);
+      const isTargetBlacklisted = Boolean(
+        isDomainInList(targetUrl, denied) ||
+          (wrappedGoogleTarget && isDomainInList(wrappedGoogleTarget, denied))
+      );
+
+      // 1. Explicit Blacklist ALWAYS blocks immediately (even during omnibox/grace/temp-allow)
+      if (isTargetBlacklisted) {
+        return {
+          action: "block",
+          code: "BLOCK_BEFORE_NAV_BLACKLIST",
+          isTargetBlacklisted: true,
+          isHardMalicious: true,
+          reason: "denied_blacklist"
+        };
+      }
+
+      if (ctx.isManuallyAllowed) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "manual_allowed"
+        };
+      }
+      if (!ctx.stackLength || !ctx.currentUrl || ctx.currentUrl === targetUrl) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "empty_or_same_stack"
+        };
+      }
+      if (ctx.captchaActive || ctx.tempAllowActive) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "captcha_or_temp_allow"
+        };
+      }
+      if (ctx.firstPageGraceActive) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "first_page_grace"
+        };
+      }
+      if (ctx.isLockedOrCoolingDown) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "locked_or_cooldown"
+        };
+      }
+
+      const prevHost = getHostname(ctx.currentUrl);
+      const targetHost = getHostname(targetUrl);
+      const prevBase = getBaseDomain(prevHost);
+      const targetBase = getBaseDomain(targetHost);
+
+      const isCleanWrappedSameBaseBounce = Boolean(
+        wrappedGoogleTarget &&
+          getBaseDomain(getHostname(wrappedGoogleTarget)) === prevBase &&
+          !isHardMaliciousUrl(wrappedGoogleTarget, denied)
+      );
+
+      if (
+        prevBase === targetBase ||
+        isSameSafeEcosystem(prevHost, targetHost) ||
+        isCleanWrappedSameBaseBounce
+      ) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "same_base_or_ecosystem"
+        };
+      }
+
+      const isCurrentSearchOrMessenger =
+        SEARCH_ENGINE_HOST_REGEX.test(prevHost) || MESSENGER_OR_SOCIAL_ENTRY_REGEX.test(prevHost);
+      if (isCurrentSearchOrMessenger) {
+        return {
+          action: "allow_manual",
+          durationMs: 15000,
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "from_search_or_messenger"
+        };
+      }
+
+      const isHardMaliciousTarget =
+        isHardMaliciousUrl(targetUrl, denied) || isSearchEngineHijackUrl(targetUrl, ctx.currentUrl);
+
+      if (ctx.shortlinkCtaGraceActive && !isHardMaliciousTarget) {
+        return {
+          action: "allow_manual",
+          durationMs: 18000,
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "shortlink_cta_grace"
+        };
+      }
+
+      if (SAFE_MEDIA_HOST_REGEX.test(targetHost) && !isHardMaliciousTarget) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "safe_media_host"
+        };
+      }
+
+      if (isDomainInList(targetUrl, trusted)) {
+        return {
+          action: "allow",
+          isTargetBlacklisted: false,
+          isHardMalicious: false,
+          reason: "trusted_whitelist"
+        };
+      }
+
+      if (wrappedGoogleTarget && isHardMaliciousUrl(wrappedGoogleTarget, denied)) {
+        return {
+          action: "block",
+          code: "BLOCK_BEFORE_NAV_SUSPICIOUS",
+          isTargetBlacklisted: false,
+          isHardMalicious: true,
+          reason: "wrapped_google_hard_malicious"
+        };
+      }
+
+      if (isUnambiguousBeforeNavThreat(targetUrl, denied)) {
+        return {
+          action: "block",
+          code: "BLOCK_BEFORE_NAV_SUSPICIOUS",
+          isTargetBlacklisted: false,
+          isHardMalicious: true,
+          reason: "unambiguous_before_nav_threat"
+        };
+      }
+
+      return {
+        action: "defer_to_committed",
+        isTargetBlacklisted: false,
+        isHardMalicious: false,
+        reason: "defer_to_committed"
+      };
+    },
+    {
+      action: "allow",
+      isTargetBlacklisted: false,
+      isHardMalicious: false,
+      reason: "guard_error"
+    }
+  );
+}
+
+/**
+ * Determine whether a webNavigation.onCommitted event originated from trusted browser UI
+ * (Omnibox search/URL, bookmark, start page, external API/intent, initial tab entry, or non-redirect manual reload).
+ * @param {string} [transitionType]
+ * @param {string[]} [qualifiers]
+ * @param {number} [stackLength]
+ * @returns {boolean}
+ */
+export function isBrowserInitiatedTransition(transitionType = "", qualifiers = [], stackLength = 0) {
+  if (!stackLength) return true;
+  const q = Array.isArray(qualifiers) ? qualifiers : [];
+  if (
+    transitionType === "auto_toplevel" ||
+    transitionType === "typed" ||
+    transitionType === "auto_bookmark" ||
+    transitionType === "generated" ||
+    transitionType === "keyword" ||
+    transitionType === "keyword_generated" ||
+    transitionType === "start_page" ||
+    q.includes("from_address_bar") ||
+    q.includes("from_api")
+  ) {
+    return true;
+  }
+  if (
+    transitionType === "reload" &&
+    !q.includes("server_redirect") &&
+    !q.includes("client_redirect")
+  ) {
+    return true;
+  }
+  return false;
+}
+

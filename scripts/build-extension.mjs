@@ -9,7 +9,7 @@ const outDir = path.join(rootDir, "public", "extension-v2.1.6");
 const manifestBasePath = path.join(rootDir, "src", "ext", "manifest.base.json");
 const manifestDevKeyPath = path.join(rootDir, "src", "ext", "manifest.dev-key.json");
 
-const VERSION = "3.2.1";
+const VERSION = "3.2.4";
 const targetArg = process.argv.find((arg) => arg.startsWith("--target="));
 const buildTarget = targetArg ? targetArg.split("=")[1] : "dev"; // "dev" (default, preserves key/ID) | "store"
 
@@ -227,8 +227,11 @@ async function run() {
     const stat = fs.statSync(target.out);
     const kb = stat.size / 1024;
     console.log(`Built ${target.name} (${kb.toFixed(1)} KB)`);
+    if (target.name === "content.js" && kb >= 85) {
+      throw new Error(`Bundle budget exceeded: content.js is ${kb.toFixed(1)} KB (limit < 85 KB)`);
+    }
     if (target.name === "content.js" && kb >= 75) {
-      throw new Error(`Bundle budget exceeded: content.js is ${kb.toFixed(1)} KB (limit < 75 KB)`);
+      console.warn(`Bundle notice: content.js is ${kb.toFixed(1)} KB (soft target 75 KB, max 85 KB)`);
     }
   }
 

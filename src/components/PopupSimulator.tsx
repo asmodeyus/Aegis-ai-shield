@@ -89,7 +89,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
   const handleCopyBackup = () => {
     const payload = {
       app: 'AEGIS-AI Shield',
-      version: '3.2.1',
+      version: '3.2.4',
       strictCrossOrigin: protectionMode === 'strict',
       autoSkipCountdown: autoSkip,
       globalSettings,
@@ -102,19 +102,19 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
     setBackupDrawerOpen(true);
     try {
       navigator.clipboard.writeText(jsonStr);
-      showStatus('Backup JSON v3.2.1 (API Key tidak ikut) tersalin!');
+      showStatus('Backup JSON v3.2.4 (API Key tidak ikut) tersalin!');
     } catch {
-      showStatus('JSON Backup v3.2.1 ditampilkan di bawah.');
+      showStatus('JSON Backup v3.2.4 ditampilkan di bawah.');
     }
   };
 
-  const formattedLogText = formatAegisLogsForCopy(diagnosticLogs, logFilter, '3.2.1');
+  const formattedLogText = formatAegisLogsForCopy(diagnosticLogs, logFilter, '3.2.4');
 
   const handleCopyLogs = async () => {
     setFpPreview(null);
     try {
       await navigator.clipboard.writeText(formattedLogText);
-      showStatus('Log diagnostik v3.2.1 tersalin ke Clipboard!');
+      showStatus('Log diagnostik v3.2.4 tersalin ke Clipboard!');
     } catch {
       showStatus('Silakan pilih teks di kotak log lalu salin (Ctrl+C).');
     }
@@ -122,7 +122,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
 
   const handleCopyFpReport = async () => {
     const report = buildSanitizedFalsePositiveReport({
-      version: '3.2.1',
+      version: '3.2.4',
       activeUrl: 'https://www.semprot.com/threads/demo?token=secret12345',
       protectionMode,
       tempAllowActive: Boolean(tempAllowMinutesLeft),
@@ -193,7 +193,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
                 : 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40'
             }`}
           >
-            v3.2.1
+            v3.2.4
           </span>
         </div>
         <button
@@ -508,7 +508,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
 
           <button
             type="button"
-            onClick={() => showStatus('Konfigurasi Umum v3.2.1 tersimpan!')}
+            onClick={() => showStatus('Konfigurasi Umum v3.2.4 tersimpan!')}
             className="w-full py-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11.5px] cursor-pointer"
           >
             Simpan Konfigurasi
@@ -516,7 +516,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
 
           <div className={`pt-2 border-t ${isLight ? 'border-slate-300' : 'border-slate-800'}`}>
             <div className="text-[10.5px] font-semibold text-slate-400 mb-1.5">
-              Cadangan & Transfer Data JSON v3.2.1
+              Cadangan & Transfer Data JSON v3.2.4
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               <button
@@ -549,7 +549,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
                   value={backupText}
                   onChange={(e) => setBackupText(e.target.value)}
                   rows={3}
-                  placeholder="Tempel JSON cadangan v3.2.1 di sini..."
+                  placeholder="Tempel JSON cadangan v3.2.4 di sini..."
                   className="w-full p-1.5 rounded bg-slate-900 border border-slate-700 font-mono text-[10px] text-slate-200"
                 />
               </div>
@@ -1359,6 +1359,22 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
             </label>
 
             <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
+              <span>🛡️ Anti-Anti-Adblock (Tutup Modal Adblock)</span>
+              <input
+                type="checkbox"
+                data-testid="toggle-anti-anti-adblock"
+                checked={globalSettings.antiAntiAdblock !== false}
+                onChange={(e) =>
+                  onUpdateGlobalSettings({
+                    ...globalSettings,
+                    antiAntiAdblock: e.target.checked,
+                  })
+                }
+                className="accent-emerald-500"
+              />
+            </label>
+
+            <label className="flex items-center justify-between bg-slate-800/80 border border-slate-700/70 rounded-lg px-2.5 py-1.5 text-[10.5px] cursor-pointer">
               <span>Hapus Overlay Transparan Jebakan</span>
               <input
                 type="checkbox"
@@ -1449,7 +1465,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
           <div className="grid grid-cols-2 gap-1.5 pt-1">
             <button
               type="button"
-              onClick={() => showStatus('Setting v3.2.1 berhasil disimpan!')}
+              onClick={() => showStatus('Setting v3.2.4 berhasil disimpan!')}
               className="py-1.5 px-2 rounded-md bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-[11px] cursor-pointer"
             >
               💾 Simpan Setting
@@ -1458,7 +1474,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               type="button"
               onClick={() => {
                 onResetGlobalSettings();
-                showStatus('Setting & posisi HUD dikembalikan ke default v3.2.1!');
+                showStatus('Setting & posisi HUD dikembalikan ke default v3.2.4!');
               }}
               className="py-1.5 px-2 rounded-md bg-slate-800 hover:bg-slate-700 text-rose-300 border border-slate-700 font-semibold text-[10.5px] cursor-pointer"
             >
@@ -1603,7 +1619,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
               type="button"
               data-testid="popup-export-bl-txt"
               onClick={() => {
-                const txt = exportHostlistText(deniedDomains, 'AEGIS-AI Shield v3.2.1 Blacklist');
+                const txt = exportHostlistText(deniedDomains, 'AEGIS-AI Shield v3.2.4 Blacklist');
                 setBlImportText(txt);
                 setBlImportOpen(true);
                 try {
@@ -1709,7 +1725,7 @@ export const PopupSimulator: React.FC<PopupSimulatorProps> = ({
             <button
               type="button"
               onClick={() => {
-                const txt = exportHostlistText(trustedDomains, 'AEGIS-AI Shield v3.2.1 Whitelist');
+                const txt = exportHostlistText(trustedDomains, 'AEGIS-AI Shield v3.2.4 Whitelist');
                 setWlImportText(txt);
                 setWlImportOpen(true);
                 try {

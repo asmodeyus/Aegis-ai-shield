@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Smart Shortlink Decoder, Nested Multi-Layer Unwrapper & Anti-Ad Trap Scorer
+ * AEGIS-AI Shield v3.2.3 — Smart Shortlink Decoder, Nested Multi-Layer Unwrapper & Anti-Ad Trap Scorer
  * Supports nested shortlinks (depth up to 4), single/double Base64, URL-safe Base64, reversed strings,
  * hidden WP Safelink JSON, meta-refresh targets, Google Search hijack rejection, and fake-vs-real CTA scoring.
  */
@@ -55,7 +55,7 @@ const FAKE_AD_BUTTON_TEXT_REGEX =
  */
 export function safeShortlinkBase64Decode(raw) {
   return safeTry(
-    "shortlinkDecoder.base64",
+    "sd.b",
     () => {
       let normalized = String(raw || "").trim().replace(/-/g, "+").replace(/_/g, "/");
       if (!normalized || normalized.length < 8) return "";
@@ -77,7 +77,7 @@ export function extractHttpUrlFromDecodedStr(raw) {
   const trimmed = raw.trim();
   if (/^https?:\/\/[^\s"'<>]+$/i.test(trimmed)) return trimmed;
   const fromJson = safeTry(
-    "shortlinkDecoder.jsonExtract",
+    "sd.j",
     () => {
       if (!trimmed.startsWith("{")) return "";
       const parsed = JSON.parse(trimmed);
@@ -109,7 +109,7 @@ export function decodeShortlinkCandidateValue(rawValue) {
   if (val.length < 8 || val.length > 2400) return null;
 
   val = safeTry(
-    "shortlinkDecoder.decodeURI",
+    "sd.d",
     () => {
       const dec = decodeURIComponent(val);
       return dec ? dec.trim() : val;

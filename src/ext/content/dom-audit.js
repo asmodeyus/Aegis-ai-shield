@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — AI DOM Audit v2 (Opt-In Assistant + Local Rule Fallback)
+ * AEGIS-AI Shield v3.2.3 — AI DOM Audit v2 (Opt-In Assistant + Local Rule Fallback)
  * P5 Security Invariant:
  *  - Content scripts NEVER read geminiApiKey or access chrome.storage.session.
  *  - Sending candidate DOM summaries to background/Gemini is STRICTLY opt-in
@@ -11,9 +11,8 @@ import { safeTry } from "../shared/debug.js";
 import { pruneDomCandidatesForAudit } from "../shared/gemini-audit.js";
 import { isSearchEngineHijackUrl } from "../shared/url-classifier.js";
 import {
-  isTempAllowActiveHere,
+  isSiteShieldBypassed,
   isUrlInDeniedList,
-  isUrlInTrustedList,
   logAegisEvent,
   runtimeState
 } from "./state.js";
@@ -21,14 +20,7 @@ import {
 let auditAlreadyRan = false;
 
 export function runAiDomAuditFallback() {
-  if (auditAlreadyRan || window !== window.top) return;
-  if (
-    runtimeState.captchaDetected ||
-    isTempAllowActiveHere() ||
-    isUrlInTrustedList(location.href)
-  ) {
-    return;
-  }
+  if (auditAlreadyRan || window !== window.top || isSiteShieldBypassed()) return;
 
   // Quota Rule: skip Gemini API if opt-in shortlink auto-bypass already succeeded
   if (
@@ -40,7 +32,7 @@ export function runAiDomAuditFallback() {
 
   auditAlreadyRan = true;
 
-  safeTry("domAudit.collectAndAnalyze", () => {
+  safeTry("da.r", () => {
     const els = Array.from(document.querySelectorAll("a[href], button")).slice(0, 60);
     const rawCandidates = els
       .map((el, index) => {
@@ -102,7 +94,7 @@ export function runAiDomAuditFallback() {
           const targetHref = realEl.getAttribute("href") || "";
           // Final client-side defense-in-depth check before highlighting any AI-picked CTA
           if (targetHref && !targetHref.startsWith("#") && !targetHref.startsWith("javascript:")) {
-            const absHref = safeTry("domAudit.resolveHref", () => new URL(targetHref, location.href).href, "");
+            const absHref = safeTry("da.h", () => new URL(targetHref, location.href).href, "");
             if (absHref && (isUrlInDeniedList(absHref) || isSearchEngineHijackUrl(absHref, location.href))) {
               return;
             }

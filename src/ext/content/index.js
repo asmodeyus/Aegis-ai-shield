@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Hardened Content Script Orchestrator & Unified DOM Observer
+ * AEGIS-AI Shield v3.2.3 — Hardened Content Script Orchestrator & Unified DOM Observer
  * P3 Hardening:
  *  - Treats ALL main_world -> content events (BLOCKED_EVENT, VIDEO_DETECTED, LOG_EVENT) as UNTRUSTED HINTS.
  *  - Independently re-classifies BLOCKED_EVENT URLs using isolated-world state + genuine ev.isTrusted gestures.
@@ -9,6 +9,10 @@
 import { BRIDGE_EVENTS, TIMINGS } from "../shared/constants.js";
 import { safeTry } from "../shared/debug.js";
 import { diagnoseDestinationBlock } from "../shared/url-classifier.js";
+import {
+  cleanupAntiAdblockLifecycle,
+  neutralizeAntiAdblockOverlays
+} from "./anti-adblock.js";
 import {
   attachClickGuardListener,
   neutralizeEmptyTrapOverlays,
@@ -100,7 +104,7 @@ function buildTrustedHudMessage(reason, kind) {
     const d = /** @type {CustomEvent} */ (ev).detail;
     if (!d || typeof d.url !== "string" || !d.url || d.url.length > 2048) return;
 
-    const absUrl = safeTry("content.validateBlockedUrl", () => {
+    const absUrl = safeTry("c.vb", () => {
       const u = new URL(d.url, location.href);
       return u.protocol === "http:" || u.protocol === "https:" ? u.href : "";
     }, "");
@@ -174,7 +178,7 @@ function buildTrustedHudMessage(reason, kind) {
   if (window === window.top) {
     storageReady.then(() => {
       if (checkAndBroadcastCaptchaStatus()) return;
-      safeTry("content.getPendingPrompts", () => {
+      safeTry("c.gp", () => {
         chrome.runtime.sendMessage({ type: "GET_PENDING_PROMPTS" }, (res) => {
           if (res && Array.isArray(res.prompts)) {
             res.prompts.forEach((p) => enqueueManualPrompt(p));
@@ -199,7 +203,7 @@ function buildTrustedHudMessage(reason, kind) {
       domSweepTimer = null;
     }
     if (domSweepIdleId !== null && typeof window.cancelIdleCallback === "function") {
-      safeTry("content.cancelIdleCallback", () => window.cancelIdleCallback(domSweepIdleId));
+      safeTry("c.ci", () => window.cancelIdleCallback(domSweepIdleId));
       domSweepIdleId = null;
     }
   }
@@ -211,6 +215,7 @@ function buildTrustedHudMessage(reason, kind) {
     if (window !== window.top) return;
     neutralizeMaliciousMetaRefreshAndIframes();
     neutralizeEmptyTrapOverlays();
+    neutralizeAntiAdblockOverlays();
     if (!tryEarlyDirectShortlinkBypass()) {
       runShortlinkDebloatedBypassStep();
     }
@@ -320,6 +325,11 @@ function buildTrustedHudMessage(reason, kind) {
       if (window === window.top) {
         setTimeout(() => {
           if (!document.hidden && !runtimeState.captchaDetected) {
+            neutralizeAntiAdblockOverlays();
+          }
+        }, 900);
+        setTimeout(() => {
+          if (!document.hidden && !runtimeState.captchaDetected) {
             runAiDomAuditFallback();
           }
         }, 2200);
@@ -384,6 +394,7 @@ function buildTrustedHudMessage(reason, kind) {
   window.addEventListener("pagehide", () => {
     clearTimeout(resizeTimer);
     freezeAllDomActivity();
+    cleanupAntiAdblockLifecycle();
     cleanupVideoDockLifecycle();
     cleanupShortlinkBypassLifecycle();
   });

@@ -1,10 +1,10 @@
-# AEGIS-AI Shield v3.2.1 — Privacy Policy & Chrome Web Store Listing Draft
+# AEGIS-AI Shield v3.2.4 — Privacy Policy & Chrome Web Store Listing Draft
 
 ---
 
 ## 1. Privacy Policy (Draft untuk Chrome Web Store)
 
-**Terakhir diperbarui:** v3.2.1  
+**Terakhir diperbarui:** v3.2.4  
 **Pengembang:** AEGIS-AI Shield
 
 ### Ringkasan Singkat
@@ -43,7 +43,7 @@ Penggunaan Google Gemini API tunduk pada [Google API Terms of Service](https://d
 Pelindung anti-redirect, anti-popup, video-tap hijack, search-hijack, blacklist DNR, & pil kontrol video dengan desain ramah OAuth.
 
 ### Deskripsi Lengkap
-**AEGIS-AI Shield v3.2.1** melindungi aktivitas browsing Anda dari redirect paksa, popup iklan terselubung, pembajakan klik pada pemutar video (*video-tap hijack*), dan pengalihan paksa ke mesin pencari (*search hijack*), tanpa mengganggu proses login OAuth/SSO modern.
+**AEGIS-AI Shield v3.2.4** melindungi aktivitas browsing Anda dari redirect paksa, popup iklan terselubung, modal pemblokir Adblock (*anti-anti-adblock*), pembajakan klik pada pemutar video (*video-tap hijack*), dan pengalihan paksa ke mesin pencari (*search hijack*), tanpa mengganggu proses login OAuth/SSO modern maupun pencarian langsung dari bilah alamat browser.
 
 **Fitur Utama:**
 - **Anti-Redirect & Video-Tap Hijack Shield:** Menahan redirect lintas-domain tanpa interaksi sah dan mencegah klik pada elemen `<video>` melempar Anda ke tautan iklan.
@@ -58,8 +58,8 @@ Pelindung anti-redirect, anti-popup, video-tap hijack, search-hijack, blacklist 
 
 ## 3. Catatan Kepatuhan Chrome Web Store (Wajib Review Sebelum Publish — P7)
 
-Sebelum mengunggah paket **`aegis-ai-shield-v3.2.1-store.zip`** ke Chrome Web Store, pastikan hal-hal berikut ditinjau:
-1. **Paket Store vs Dev:** Selalu unggah `aegis-ai-shield-v3.2.1-store.zip` (hasil `npm run build:ext:store`) yang **tidak** berisi properti `"key"` di `manifest.json` dan **tidak** meminta izin `"tabs"`.
+Sebelum mengunggah paket **`aegis-ai-shield-v3.2.4-store.zip`** ke Chrome Web Store, pastikan hal-hal berikut ditinjau:
+1. **Paket Store vs Dev:** Selalu unggah `aegis-ai-shield-v3.2.4-store.zip` (hasil `npm run build:ext:store`) yang **tidak** berisi properti `"key"` di `manifest.json` dan **tidak** meminta izin `"tabs"`.
 2. **Fitur Opt-In yang Perlu Tinjauan Kebijakan Store:**
    - **Auto-Klik & Submit Shortlink (`shortlinkAutoClick`, default `false`):** Fitur otomasi klik pada halaman pihak ketiga dapat ditinjau ketat di bawah kebijakan *Chrome Web Store Spam / Automated Behavior / Circumvention*. Pastikan tetap opt-in atau pertimbangkan menghapusnya dari varian Store apabila reviewer menolak perilaku auto-click.
    - **Auto-Skip Countdown / Timer Acceleration (`autoSkipCountdown`, default `false`):** Modifikasi `setTimeout`/`setInterval` pada situs pihak ketiga juga bersifat opt-in dengan konfirmasi risiko eksplisit. Dokumentasikan dengan jelas di *Reviewer Notes* bahwa fitur ini nonaktif secara default dan hanya diaktifkan oleh pengguna.
@@ -67,9 +67,22 @@ Sebelum mengunggah paket **`aegis-ai-shield-v3.2.1-store.zip`** ke Chrome Web St
 
 ---
 
-## 4. Changelog v3.2.1
+## 4. Changelog v3.2.4, v3.2.3 & v3.2.2
 
-### Security & Anti-Hijack
+### Perbaikan v3.2.4 (Fix False-Positive Pencarian Omnibox di `onBeforeNavigate`)
+- **Fix `BLOCK_BEFORE_NAV_SUSPICIOUS` pada Pencarian Bilah Alamat (Mode Strict & Balanced):** `chrome.webNavigation.onBeforeNavigate` tidak memiliki `transitionType`/`transitionQualifiers`, sehingga sebelumnya pencarian langsung dari Chrome Omnibox (`sourceid=chrome-mobile&source=chrome.ob` maupun pencarian Google/Bing/DuckDuckGo/Yahoo/Yandex lainnya) ikut ditahan sebelum `onCommitted` sempat memverifikasi transisi `generated` / `from_address_bar`. Kini `evaluateBeforeNavigateGuard` mendelegasikan URL mesin pencari bersih, TLD generik, dan situs umum ke `onCommitted` agar pencarian Omnibox, pengetikan URL, bookmark, serta tombol Back/Forward berjalan mulus — sementara Blacklist, domain judi, jaringan iklan eksplisit, arbitrase (`clickid=`), dan tautan `/4/<hex>` tetap diblokir seketika dan pembajakan search dari halaman tetap ditahan di `main_world.js`, `click-guard.js`, dan `onCommitted`.
+- **Reset Loop Lock pada Navigasi Omnibox:** `onCommitted` kini mengevaluasi transisi eksternal/Omnibox sebelum batas `lockedUntil` sehingga pencarian baru dari bilah alamat langsung mereset state tab dengan bersih.
+
+### Pembaruan v3.2.3 (Anti-Anti-Adblock Modal)
+- **Kontrol Popup Anti-Anti-Adblock:** Menambahkan toggle khusus **Anti-Anti-Adblock** pada tab Setting (default `ON`, tersinkronisasi antara `popup.html`, `content.js`, dan `main_world.js` untuk netralisasi modal overlay dan probe `fetch`).
+- **Detektor Modal Modular & Aman:** Menambahkan `src/ext/shared/anti-adblock.js` dan `src/ext/content/anti-adblock.js` untuk menutup modal deteksi Adblock (termasuk AntiAdBlock Core ber-ID acak seperti `#ne8e5602d` / `antiadblockcore.com`), memulihkan kunci scroll (`overflow: hidden`) saat overlay ditutup, serta otomatis berhenti saat situs masuk **Whitelist**, **Safe Mode (Temp-Allow)**, atau **CAPTCHA**. Tidak menutup form login, GDPR/cookie banner, dialog pembayaran, atau pemutar video.
+- **Refaktor Gate Terpusat:** Menyatukan pemeriksaan `isSiteShieldBypassed()` di `src/ext/content/state.js` dan menjaga alur shortlink/DropLink (`adl22-flow-heartbeat-v220`) tetap utuh tanpa regresi.
+
+### Perbaikan v3.2.2 (Pil Video & Drawer Daftar Stream)
+- **Fix Bug Tap Pil Memicu Fullscreen (`#vpFs`):** Memindahkan toggle `🎬(N)` ke event `click` (setelah `position-manager.js` menunda `setPointerCapture` hanya saat drag melebihi threshold), menambahkan cooldown klik tombol aksi `350ms` (`shouldAcceptPillActionClick`), dan memakai `flex-direction: row-reverse` pada mode RTL sehingga `🎬(N)` tetap jangkar di kanan dan `#vpFs` tidak pernah tertindih tap awal.
+- **Fix Bug Daftar Stream Video Kosong (`#vpList`):** Membuka drawer kini menghentikan timer auto-dim (`clearTimeout(videoDimTimer)`) serta mempertahankan `videoDockDimmed = false`, menyetel reset CSS inherited pada `:host`, membungkus `.stream-lbl` (`flex: 1; min-width: 0; display: block`) dengan `formatVideoStreamLabel` agar host + ID embed tampil terbaca, serta menyinkronkan posisi `column-reverse` dekat tepi atas viewport.
+
+### Security & Anti-Hijack (v3.2.1)
 - **Video-Tap Hijack Fix (Lemur Android / Chromium Balanced Mode):** Memisahkan timestamp sentuhan `<video>`/`<audio>` dari klik tautan nyata; mencegah `Navigation API` (`event.userInitiated`) meloloskan redirect iklan sekali-sentuh pada elemen `<video>` (termasuk pola direct-link `/4/<hex>` seperti `asiafilm.org/4/...`); menonaktifkan pelemparan balik paksa (`forceRevertTab`) pada tap video tunggal.
 - **P1 — Filter Judol Presisi:** Memecah regex judi menjadi daftar spesifik (substring hostname) dan ambigu (token utuh per label hostname yang dipisah `.`/`-`/`_`, tidak lagi memicu path/query seperti `smartphone`, `startpage.com`, `judiciary.gov`, `bandara`, `pragmaticengineer.com`, `depositphotos.com`).
 - **P2 — Fix OAuth Login Blocking:** Menghapus `redirect` telanjang dari `SEARCH_ARBITRAGE_PARAMS` (agar `redirect_uri=`/`redirect_url=`/`redirect_to=` aman) dan mengevaluasi alur OAuth/IdP sah (Google, Microsoft, GitHub, Discord) sebelum pemeriksaan generik/affiliate/TLD di `main_world.js`, `content.js`, dan `background.js`.

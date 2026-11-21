@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Isolated Content Script State & Hardened Bridge
+ * AEGIS-AI Shield v3.2.3 — Isolated Content Script State & Hardened Bridge
  * Security boundaries:
  *  - content -> main_world uses INBOUND_BRIDGE_TOKEN swallowed in capture phase at document_start.
  *  - main_world -> content uses OUTBOUND_BRIDGE_TOKEN + rate limiting, AND all main->content payloads
@@ -23,7 +23,7 @@ import {
 
 function generateSecureToken(bytesLen = 16) {
   return safeTry(
-    "content.generateToken",
+    "st.gt",
     () => {
       const bytes = new Uint8Array(bytesLen);
       crypto.getRandomValues(bytes);
@@ -101,7 +101,7 @@ export function onCaptchaKillSwitch(cb) {
 
 export function notifyRuntimeStateChange() {
   for (const cb of stateChangeListeners) {
-    safeTry("content.stateChangeCb", cb);
+    safeTry("st.cb", cb);
   }
 }
 
@@ -117,9 +117,15 @@ export function isUrlInDeniedList(urlStr) {
   return isDomainInList(urlStr, runtimeState.deniedDomains, location.href);
 }
 
+export function isSiteShieldBypassed() {
+  return Boolean(
+    runtimeState.captchaDetected || isTempAllowActiveHere() || isUrlInTrustedList(location.href)
+  );
+}
+
 export function logAegisEvent(level, code, toUrl = "", detail = "", source = "content") {
   if (level !== "DEBUG" && runtimeState.globalSettings.loggingEnabled === false) return;
-  safeTry("content.logAegisEvent", () => {
+  safeTry("st.lg", () => {
     chrome.runtime.sendMessage({
       type: "APPEND_AEGIS_LOG",
       entry: {
@@ -158,7 +164,7 @@ window.addEventListener(
 );
 
 export function initMainWorldHandshake() {
-  safeTry("content.initHandshake", () => {
+  safeTry("st.hs", () => {
     window.dispatchEvent(
       new CustomEvent(BRIDGE_EVENTS.HANDSHAKE_INIT, {
         detail: {
@@ -181,7 +187,7 @@ function emitMainWorld(scope, eventName, detail = {}) {
 }
 
 export function syncMainWorldRules() {
-  emitMainWorld("content.syncRules", BRIDGE_EVENTS.SYNC_RULES, {
+  emitMainWorld("st.sr", BRIDGE_EVENTS.SYNC_RULES, {
     trusted: runtimeState.trustedDomains,
     denied: runtimeState.deniedDomains,
     protectionMode: runtimeState.globalSettings.protectionMode || "balanced",
@@ -194,7 +200,7 @@ export function syncMainWorldRules() {
 }
 
 export function signalCaptchaToMainWorld(detected = true) {
-  emitMainWorld("content.signalCaptcha", BRIDGE_EVENTS.CAPTCHA_SIGNAL, {
+  emitMainWorld("st.sc", BRIDGE_EVENTS.CAPTCHA_SIGNAL, {
     detected: Boolean(detected)
   });
 }
@@ -206,7 +212,7 @@ export function triggerLocalCaptchaKillSwitch() {
   signalCaptchaToMainWorld(true);
   if (changed) {
     for (const cb of captchaStateListeners) {
-      safeTry("content.captchaKillCb", () => cb(true));
+      safeTry("st.ck", () => cb(true));
     }
   }
 }
@@ -216,13 +222,13 @@ export function clearLocalCaptchaKillSwitch() {
   runtimeState.captchaDetected = false;
   signalCaptchaToMainWorld(false);
   for (const cb of captchaStateListeners) {
-    safeTry("content.captchaRecoverCb", () => cb(false));
+    safeTry("st.cr", () => cb(false));
   }
 }
 
 export function signalShortlinkCtaToMainWorld() {
   if (!runtimeState.captchaDetected) {
-    emitMainWorld("content.cta", BRIDGE_EVENTS.SHORTLINK_CTA_CLICK);
+    emitMainWorld("st.ct", BRIDGE_EVENTS.SHORTLINK_CTA_CLICK);
   }
 }
 
@@ -235,7 +241,7 @@ function updateDomainRuleList(urlStr, isAllow, callback) {
     runtimeState[addKey] = [...runtimeState[addKey], dom];
   }
   runtimeState[remKey] = runtimeState[remKey].filter((d) => d !== dom);
-  safeTry(isAllow ? "content.addWhitelist" : "content.addBlacklist", () => {
+  safeTry(isAllow ? "st.uw" : "st.ub", () => {
     chrome.storage.local.set(
       {
         trustedDomains: runtimeState.trustedDomains,
@@ -328,7 +334,7 @@ export function initStorageSync() {
     return changed;
   };
 
-  safeTry("content.regOnChanged", () => {
+  safeTry("st.ch", () => {
     chrome.storage.onChanged.addListener((changes, areaName) => {
       if (areaName !== "local") return;
       const patch = {};
@@ -343,7 +349,7 @@ export function initStorageSync() {
     });
   });
 
-  safeTry("content.regMsg", () => {
+  safeTry("st.rm", () => {
     chrome.runtime.onMessage.addListener((msg) => {
       if (!msg || typeof msg.type !== "string") return;
       if (msg.type === "CAPTCHA_KILL_SWITCH_TAB") {
@@ -356,7 +362,7 @@ export function initStorageSync() {
 
   const readyPromise = new Promise((resolve) => {
     safeTry(
-      "content.loadStorage",
+      "st.ls",
       () => {
         // P5: Explicitly NEVER request geminiApiKey from storage in content script
         chrome.storage.local.get(STORAGE_KEYS, (res) => {

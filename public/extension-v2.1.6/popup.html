@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AEGIS-AI Shield v3.2.1</title>
+  <title>AEGIS-AI Shield v3.2.4</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -551,7 +551,7 @@
   <div class="header">
     <div class="header-left">
       <h3>⚡ AEGIS-AI Shield</h3>
-      <span class="ver">v3.2.1</span>
+      <span class="ver">v3.2.4</span>
     </div>
     <button class="theme-btn" id="themeToggleBtn" title="Ganti Tema Gelap / Terang">☀️ Terang</button>
   </div>
@@ -589,7 +589,7 @@
 
   <!-- TAB 1: UMUM -->
   <div class="panel active" id="panel-general">
-    <p class="desc">AEGIS-AI Shield v3.2.1: Anti-redirect &amp; video-tap hijack, validasi ulang di isolated world (closed Shadow DOM &amp; isTrusted), filter judol presisi, ramah OAuth, wildcard Blacklist/DNR, &amp; CAPTCHA guard.</p>
+    <p class="desc">AEGIS-AI Shield v3.2.4: Anti-redirect &amp; video-tap hijack, Anti-Anti-Adblock modal (aman Whitelist/CAPTCHA), aman pencarian Omnibox, validasi ulang di isolated world, filter judol presisi, ramah OAuth, pil video, wildcard Blacklist/DNR, &amp; CAPTCHA guard.</p>
 
     <div class="mode-grid" role="group" aria-label="Mode Proteksi">
       <button type="button" class="mode-card active" id="modeBalancedBtn" data-mode="balanced">
@@ -639,7 +639,7 @@
     <button class="btn btn-full" id="saveBtn">Simpan Konfigurasi</button>
 
     <div class="backup-box">
-      <div class="backup-title">Cadangan &amp; Transfer Data JSON v3.2.1</div>
+      <div class="backup-title">Cadangan &amp; Transfer Data JSON v3.2.4</div>
       <div class="btn-pair">
         <button class="btn-mini" id="copyBackupBtn">📋 Salin Backup</button>
         <button class="btn-mini" id="toggleRestoreBtn">📥 Tempel Backup</button>
@@ -871,6 +871,11 @@
         </label>
 
         <label class="toggle-row">
+          <span>🛡️ Anti-Anti-Adblock (Tutup Modal Adblock, Aman Whitelist/CAPTCHA)</span>
+          <input type="checkbox" id="antiAntiAdblockToggle" checked />
+        </label>
+
+        <label class="toggle-row">
           <span>Hapus Overlay Transparan Jebakan (Aman Modal/Dialog)</span>
           <input type="checkbox" id="removeOverlayToggle" checked />
         </label>
@@ -917,7 +922,7 @@
       <button class="log-filter-btn" data-log-filter="ALLOW">✅ Lolos</button>
       <button class="log-filter-btn" data-log-filter="DEBUG">🐞 Dbg</button>
     </div>
-    <textarea id="logOutputArea" class="log-textarea" readonly placeholder="Memuat log diagnostik AEGIS-AI v3.2.1 (otomatis menyensor token/API key)..."></textarea>
+    <textarea id="logOutputArea" class="log-textarea" readonly placeholder="Memuat log diagnostik AEGIS-AI v3.2.4 (otomatis menyensor token/API key)..."></textarea>
     <div class="log-actions">
       <button class="btn" id="copyLogBtn" style="padding:6px 8px; font-size:10.5px;">📋 Salin Log</button>
       <button class="btn-mini" id="copyFpReportBtn" style="color:var(--accent);">🛡️ Laporan FP (Aman)</button>

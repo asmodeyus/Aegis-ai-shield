@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Smart Shortlink Bypass Debloated, Fake-CTA Scoring
+ * AEGIS-AI Shield v3.2.3 — Smart Shortlink Bypass Debloated, Fake-CTA Scoring
  * & Reversible All-Frames CAPTCHA Kill-Switch (with automatic recovery when solved)
  */
 import { TIMINGS } from "../shared/constants.js";
@@ -47,7 +47,7 @@ function startCaptchaRecoveryMonitor() {
       stopCaptchaRecoveryMonitor();
       captchaBroadcastSent = false;
       clearLocalCaptchaKillSwitch();
-      safeTry("shortlink.broadcastCaptchaCleared", () => {
+      safeTry("sl.cc", () => {
         chrome.runtime.sendMessage({ type: "CAPTCHA_CLEARED_IN_FRAME" });
       });
       logAegisEvent(
@@ -93,7 +93,7 @@ export function checkAndBroadcastCaptchaStatus() {
     startCaptchaRecoveryMonitor();
     if (!captchaBroadcastSent) {
       captchaBroadcastSent = true;
-      safeTry("shortlink.broadcastCaptcha", () => {
+      safeTry("sl.bc", () => {
         chrome.runtime.sendMessage({ type: "CAPTCHA_DETECTED_IN_FRAME" });
       });
       logAegisEvent(
@@ -110,7 +110,7 @@ export function checkAndBroadcastCaptchaStatus() {
     stopCaptchaRecoveryMonitor();
     captchaBroadcastSent = false;
     clearLocalCaptchaKillSwitch();
-    safeTry("shortlink.broadcastCaptchaCleared", () => {
+    safeTry("sl.cc", () => {
       chrome.runtime.sendMessage({ type: "CAPTCHA_CLEARED_IN_FRAME" });
     });
   }
@@ -121,7 +121,7 @@ export function checkAndBroadcastCaptchaStatus() {
 export function signalShortlinkCtaClick(hrefUrl) {
   if (runtimeState.captchaDetected) return;
   signalShortlinkCtaToMainWorld();
-  safeTry("shortlink.signalCtaClick", () => {
+  safeTry("sl.cta", () => {
     chrome.runtime.sendMessage({
       type: "USER_CLICKED_SHORTLINK_CTA",
       sourceUrl: location.href,
@@ -132,7 +132,7 @@ export function signalShortlinkCtaClick(hrefUrl) {
 
 export function extractDirectShortlinkUrlFromPage() {
   const hiddenValues = [];
-  safeTry("shortlink.readHiddenInputs", () => {
+  safeTry("sl.in", () => {
     if (document.forms.length > 0 || document.querySelector("input[type='hidden']")) {
       document
         .querySelectorAll(
@@ -184,14 +184,14 @@ export function tryEarlyDirectShortlinkBypass() {
   const performReplace = () => {
     if (redirected) return;
     redirected = true;
-    safeTry("shortlink.locationReplace", () => {
+    safeTry("sl.rep", () => {
       location.replace(extracted.url);
     });
   };
 
   const safetyTimer = setTimeout(performReplace, TIMINGS.BYPASS_TOAST_MAX_WAIT_MS);
   safeTry(
-    "shortlink.allowBypassNavMsg",
+    "sl.nav",
     () => {
       chrome.runtime.sendMessage(
         {
@@ -235,7 +235,10 @@ export function runShortlinkDebloatedBypassStep() {
 
   let actionTaken = false;
 
-  safeTry("shortlink.autoStep", () => {
+const isElemDisabled = (el) =>
+  Boolean(el && (el.disabled || el.classList.contains("disabled") || el.getAttribute("aria-disabled") === "true"));
+
+  safeTry("sl.auto", () => {
     // 1. AdLinkFly form#go-link
     const goForm = /** @type {HTMLFormElement | null} */ (
       document.querySelector("form#go-link, form[action*='/links/go']")
@@ -244,12 +247,7 @@ export function runShortlinkDebloatedBypassStep() {
       const submitBtn = /** @type {HTMLButtonElement | null} */ (
         goForm.querySelector("button[type='submit'], input[type='submit'], a.get-link")
       );
-      const isDisabled =
-        submitBtn &&
-        (submitBtn.disabled ||
-          submitBtn.classList.contains("disabled") ||
-          submitBtn.getAttribute("aria-disabled") === "true");
-      if (!isDisabled) {
+      if (!isElemDisabled(submitBtn)) {
         goForm.dataset.aegisSubmitted = "1";
         lastAutoStepTs = now;
         runtimeState.shortlinkBypassActionTaken = true;
@@ -278,13 +276,7 @@ export function runShortlinkDebloatedBypassStep() {
 
     for (const node of ctaCandidates) {
       const el = /** @type {HTMLElement} */ (node);
-      if (el.dataset.aegisAutoClicked === "1") continue;
-      if (el.offsetParent === null) continue;
-      const isDisabled =
-        /** @type {HTMLButtonElement} */ (el).disabled ||
-        el.classList.contains("disabled") ||
-        el.getAttribute("aria-disabled") === "true";
-      if (isDisabled) continue;
+      if (el.dataset.aegisAutoClicked === "1" || el.offsetParent === null || isElemDisabled(el)) continue;
 
       const rawHref = el.getAttribute("href") || "";
       const scored = scoreShortlinkButtonCandidate({

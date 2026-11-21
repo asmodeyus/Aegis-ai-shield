@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — AI Smart UGC Classifier, Trusted Auth & Media-Tap Gesture Guard,
+ * AEGIS-AI Shield v3.2.3 — AI Smart UGC Classifier, Trusted Auth & Media-Tap Gesture Guard,
  * Click Guard, Throttled Overlay Cleaner & Malicious Meta-Refresh / Iframe Neutralizer
  */
 import {
@@ -23,6 +23,7 @@ import {
 import { enqueueManualPrompt } from "./hud-manager.js";
 import { signalShortlinkCtaClick } from "./shortlink-bypass.js";
 import {
+  isSiteShieldBypassed,
   isTempAllowActiveHere,
   isUrlInDeniedList,
   isUrlInTrustedList,
@@ -37,21 +38,11 @@ let lastOverlaySweepTs = 0;
 const checkedTrapOverlays = new WeakSet();
 const neutralizedIframes = new WeakSet();
 
-function hasDisguisedAdCssClass(el) {
+function hasAncestorClassMatch(el, regex, maxDepth) {
   let cur = el;
-  for (let depth = 0; cur && depth < 4; depth++) {
+  for (let d = 0; cur && d < maxDepth; d++) {
     const sig = `${cur.id || ""} ${typeof cur.className === "string" ? cur.className : ""}`;
-    if (DISGUISED_AD_CLASS_REGEX.test(sig)) return true;
-    cur = cur.parentElement;
-  }
-  return false;
-}
-
-function isRealAdSlotContainer(el) {
-  let cur = el;
-  for (let depth = 0; cur && depth < 6; depth++) {
-    const sig = `${cur.id || ""} ${typeof cur.className === "string" ? cur.className : ""}`;
-    if (AD_SLOT_CLASS_ID_REGEX.test(sig)) return true;
+    if (regex.test(sig)) return true;
     cur = cur.parentElement;
   }
   return false;
@@ -74,7 +65,7 @@ function isInsideUserPostContent(el) {
  */
 export function classifyContentLinkOrImage(anchorEl, rawHref) {
   if (!rawHref) return { action: "allow", resolvedUrl: "", reason: "empty_href" };
-  const resolved = safeTry("clickGuard.resolveUrl", () => new URL(rawHref, location.href), null);
+  const resolved = safeTry("cg.u", () => new URL(rawHref, location.href), null);
   if (!resolved) {
     return { action: "allow", resolvedUrl: rawHref, reason: "invalid_url" };
   }
@@ -111,8 +102,8 @@ export function classifyContentLinkOrImage(anchorEl, rawHref) {
     return { action: "allow", resolvedUrl: destUrl, reason: "trusted_or_same_domain" };
   }
 
-  const disguisedAd = hasDisguisedAdCssClass(anchorEl);
-  const inAdSlot = isRealAdSlotContainer(anchorEl);
+  const disguisedAd = hasAncestorClassMatch(anchorEl, DISGUISED_AD_CLASS_REGEX, 4);
+  const inAdSlot = hasAncestorClassMatch(anchorEl, AD_SLOT_CLASS_ID_REGEX, 6);
   const hardMalicious = isHardMaliciousUrl(destUrl, runtimeState.deniedDomains);
 
   // 4. Hard malicious / disguised ad CSS class / real ad slot -> Hold in HUD
@@ -166,12 +157,7 @@ export function classifyContentLinkOrImage(anchorEl, rawHref) {
  */
 export function isEmptyFullscreenTrapOverlay(el) {
   if (!el || el.nodeType !== 1) return false;
-  if (
-    el.id === "aegis-top-manual-hud" ||
-    el.id === "aegis-video-bottom-dock" ||
-    el.id === "aegis-bypass-toast-host" ||
-    el.id === "aegis-mini-pip-drag-bar"
-  ) {
+  if (/^aegis-(top-manual-hud|video-bottom-dock|bypass-toast-host|mini-pip-drag-bar)$/.test(el.id)) {
     return false;
   }
   const role = (el.getAttribute("role") || "").toLowerCase();
@@ -206,19 +192,14 @@ export function isEmptyFullscreenTrapOverlay(el) {
  * Throttled trap overlay cleaner with WeakSet cache + element cap to prevent layout thrashing on large DOMs.
  */
 export function neutralizeEmptyTrapOverlays() {
-  if (
-    runtimeState.globalSettings.removeTransparentOverlay === false ||
-    runtimeState.captchaDetected ||
-    isTempAllowActiveHere() ||
-    isUrlInTrustedList(location.href)
-  ) {
+  if (runtimeState.globalSettings.removeTransparentOverlay === false || isSiteShieldBypassed()) {
     return;
   }
   const now = Date.now();
   if (now - lastOverlaySweepTs < TIMINGS.OVERLAY_SWEEP_THROTTLE_MS) return;
   lastOverlaySweepTs = now;
 
-  safeTry("clickGuard.neutralizeOverlays", () => {
+  safeTry("cg.o", () => {
     const candidates = document.querySelectorAll(
       "div#overlay, div[class*='overlay'], div[id*='overlay'], div[style*='position: fixed'], div[style*='position:fixed']"
     );
@@ -248,11 +229,9 @@ export function neutralizeEmptyTrapOverlays() {
  * pointing to blacklisted, gambling/affiliate, or search-hijack destinations.
  */
 export function neutralizeMaliciousMetaRefreshAndIframes() {
-  if (runtimeState.captchaDetected || isTempAllowActiveHere() || isUrlInTrustedList(location.href)) {
-    return;
-  }
+  if (isSiteShieldBypassed()) return;
 
-  safeTry("clickGuard.metaAndIframeGuard", () => {
+  safeTry("cg.m", () => {
     // 1. Meta refresh guard
     const metas = document.querySelectorAll("meta[http-equiv='refresh' i][content]");
     metas.forEach((meta) => {
@@ -313,7 +292,7 @@ export function neutralizeMaliciousMetaRefreshAndIframes() {
 
 function signalTrustedAuthFlow() {
   runtimeState.lastTrustedAuthTs = Date.now();
-  safeTry("clickGuard.signalAuth", () => {
+  safeTry("cg.a", () => {
     chrome.runtime.sendMessage({ type: "AUTH_FLOW_STARTED" });
   });
 }
@@ -387,7 +366,7 @@ export function attachClickGuardListener() {
   document.addEventListener(
     "click",
     (ev) => {
-      safeTry("clickGuard.onClick", () => {
+      safeTry("cg.c", () => {
         if (!ev.isTrusted) return;
         recordIsolatedGesture(ev);
         const target = /** @type {HTMLElement | null} */ (ev.target);

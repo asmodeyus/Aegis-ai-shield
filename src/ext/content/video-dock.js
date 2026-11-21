@@ -1,8 +1,9 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.0 — Hardened Floating Video Pill, Native + Mini PiP, Stream Scanner & Lazy Auto-Skip
- * Eliminates Shadow DOM XSS via safe DOM node creation (textContent), supports Native Browser PiP
- * alongside draggable Mini PiP, tracks dynamic <video> lifecycles via WeakSet, and cleans up on pagehide.
+ * AEGIS-AI Shield v3.2.3 — Hardened Floating Video Pill, Native + Mini PiP, Stream Scanner & Lazy Auto-Skip
+ * v3.2.2 Fixes:
+ *  - Prevents tapping 🎬(N) from triggering #vpFs (Fullscreen) via click-based toggle + 350ms action cooldown + RTL flex-row-reverse.
+ *  - Fixes Stream List Drawer (#vpList) visibility via :host CSS reset, flex:1 min-width:0 labels, cleared dim timer, & near-top placement.
  */
 import {
   TIMINGS
@@ -10,7 +11,12 @@ import {
 import { isCaptchaChallengeUrl } from "../shared/captcha-guard.js";
 import { safeTry } from "../shared/debug.js";
 import { isHardMaliciousUrl } from "../shared/url-classifier.js";
-import { isVideoEmbedIframeCandidate, isVideoStreamUrl } from "../shared/video-detect.js";
+import {
+  formatVideoStreamLabel,
+  isVideoEmbedIframeCandidate,
+  isVideoStreamUrl,
+  shouldAcceptPillActionClick
+} from "../shared/video-detect.js";
 import {
   attachPointerDrag,
   clampHudPosition,
@@ -21,9 +27,8 @@ import {
   saveHudPosition
 } from "./position-manager.js";
 import {
-  isTempAllowActiveHere,
+  isSiteShieldBypassed,
   isUrlInDeniedList,
-  isUrlInTrustedList,
   runtimeState
 } from "./state.js";
 
@@ -34,6 +39,8 @@ const MINI_PIP_STYLE_ID = "aegis-mini-pip-style";
 let videoDimTimer = null;
 let lazyAutoSkipTimer = null;
 let lazyAutoSkipActive = false;
+let suppressBadgeClickUntil = 0;
+let pillToggleGuardUntil = 0;
 
 /** Track video elements we already attached passive play/pause state sync listeners to */
 const observedVideos = new WeakSet();
@@ -61,7 +68,7 @@ export function enqueuePendingConfirmedVideo(rawUrl) {
     registerDetectedVideo(rawUrl, true);
     return;
   }
-  const abs = safeTry("videoDock.pendingUrl", () => new URL(String(rawUrl), location.href).href, "");
+  const abs = safeTry("vd.p", () => new URL(String(rawUrl), location.href).href, "");
   if (!abs || !abs.startsWith("http")) return;
   if (!pendingConfirmedVideos.includes(abs)) {
     if (pendingConfirmedVideos.length >= 6) pendingConfirmedVideos.shift();
@@ -70,7 +77,7 @@ export function enqueuePendingConfirmedVideo(rawUrl) {
 }
 
 export function registerDetectedVideo(rawUrl, isConfirmedMime = false, sourceFrameId = null) {
-  safeTry("videoDock.registerVideo", () => {
+  safeTry("vd.r", () => {
     if (!rawUrl) return;
     if (runtimeState.detectedVideos.length >= TIMINGS.VIDEO_DOCK_MAX_ITEMS_PER_PAGE) return;
     const abs = new URL(String(rawUrl), location.href).href;
@@ -80,7 +87,7 @@ export function registerDetectedVideo(rawUrl, isConfirmedMime = false, sourceFra
     }
     if (window !== window.top && !relayedIframeVideos.has(abs)) {
       relayedIframeVideos.add(abs);
-      safeTry("videoDock.relayIframeVideo", () => {
+      safeTry("vd.ri", () => {
         chrome.runtime.sendMessage({
           type: "IFRAME_VIDEO_DETECTED",
           url: abs,
@@ -162,7 +169,7 @@ function getActiveVideoFrameId() {
 }
 
 export function scanDomForVideos() {
-  safeTry("videoDock.scanDom", () => {
+  safeTry("vd.s", () => {
     if (runtimeState.miniPlayerActive && runtimeState.activeMiniVideoEl && !runtimeState.activeMiniVideoEl.isConnected) {
       disableMiniPlayer();
     }
@@ -197,7 +204,7 @@ export function scanDomForVideos() {
       for (let i = 0; i < cap; i++) {
         const iframe = /** @type {HTMLIFrameElement} */ (iframes[i]);
         const rawSrc = iframe.getAttribute("src") || "";
-        const absSrc = safeTry("videoDock.iframeSrc", () => new URL(rawSrc, location.href).href, "");
+        const absSrc = safeTry("vd.i", () => new URL(rawSrc, location.href).href, "");
         if (!absSrc) continue;
         const rect = iframe.getBoundingClientRect();
         const st = window.getComputedStyle(iframe);
@@ -248,17 +255,11 @@ function isVideoElementAnAd(v) {
 }
 
 export function runIsolatedAutoSkip() {
-  if (
-    document.hidden ||
-    !runtimeState.autoSkipCountdown ||
-    runtimeState.captchaDetected ||
-    isTempAllowActiveHere() ||
-    isUrlInTrustedList(location.href)
-  ) {
+  if (document.hidden || !runtimeState.autoSkipCountdown || isSiteShieldBypassed()) {
     return;
   }
 
-  safeTry("videoDock.autoSkip", () => {
+  safeTry("vd.a", () => {
     const videos = document.querySelectorAll("video");
     const skipBtns = document.querySelectorAll(
       ".ytp-ad-skip-button, .ytp-ad-skip-button-modern, .ytp-skip-ad-button, .jw-skip, .vjs-skip-ad-button, [class*='skip-ad'], [class*='skipAd'], [id*='skip-ad'], [id*='skipAd']"
@@ -321,7 +322,7 @@ function ensureMiniPlayerStyle() {
   const st = document.createElement("style");
   st.id = MINI_PIP_STYLE_ID;
   st.textContent =
-    "video.__aegis_mini_pip__,iframe.__aegis_mini_pip__{position:fixed!important;z-index:2147483645!important;border-radius:0 0 10px 10px!important;box-shadow:0 14px 36px rgba(0,0,0,.65)!important;border:1px solid rgba(52,211,153,.45)!important;background:#000!important;object-fit:contain!important;}";
+    "video.__aegis_mini_pip__,iframe.__aegis_mini_pip__{position:fixed!important;z-index:2147483645!important;border-radius:0 0 10px 10px!important;box-shadow:0 14px 36px #000a!important;border:1px solid #34d39973!important;background:#000!important;object-fit:contain!important}";
   (document.head || document.documentElement).appendChild(st);
 }
 
@@ -334,13 +335,11 @@ function getMiniPipDims() {
 
 export function disableMiniPlayer() {
   if (runtimeState.activeMiniVideoEl) {
-    safeTry("videoDock.cleanupMiniVideo", () => {
+    safeTry("vd.m", () => {
       runtimeState.activeMiniVideoEl.classList.remove("__aegis_mini_pip__");
-      runtimeState.activeMiniVideoEl.style.left = "";
-      runtimeState.activeMiniVideoEl.style.top = "";
-      runtimeState.activeMiniVideoEl.style.width = "";
-      runtimeState.activeMiniVideoEl.style.height = "";
-      runtimeState.activeMiniVideoEl.style.opacity = "";
+      ["left", "top", "width", "height", "opacity"].forEach((k) => {
+        runtimeState.activeMiniVideoEl.style[k] = "";
+      });
     });
     runtimeState.activeMiniVideoEl = null;
   }
@@ -414,7 +413,7 @@ function renderMiniPlayerDragBar(videoEl) {
   const bar = document.createElement("div");
   bar.id = MINI_PIP_BAR_ID;
   bar.style.cssText =
-    "position:fixed;z-index:2147483646;height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:rgba(15,23,42,.96);border:1px solid rgba(52,211,153,.45);border-bottom:none;border-radius:10px 10px 0 0;color:#e2e8f0;font:700 10.5px system-ui,sans-serif;cursor:grab;user-select:none;touch-action:none";
+    "position:fixed;z-index:2147483646;height:24px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;background:#0f172af5;border:1px solid #34d39973;border-bottom:0;border-radius:10px 10px 0 0;color:#e2e8f0;font:700 10.5px system-ui,sans-serif;cursor:grab;user-select:none;touch-action:none";
 
   const titleSpan = document.createElement("span");
   titleSpan.textContent = "⠿ Mini PiP";
@@ -432,7 +431,7 @@ function renderMiniPlayerDragBar(videoEl) {
     nativeBtn.textContent = "↗ Native";
     nativeBtn.title = "Native Browser PiP";
     nativeBtn.style.cssText =
-      "background:#0f766e;color:#ecfeff;border:none;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:700;cursor:pointer";
+      "background:#0f766e;color:#ecfeff;border:0;border-radius:4px;padding:1px 5px;font-size:9.5px;font-weight:700;cursor:pointer";
     nativeBtn.addEventListener("click", () => {
       if (isVideoEl) {
         toggleNativeBrowserPiP();
@@ -449,7 +448,7 @@ function renderMiniPlayerDragBar(videoEl) {
   closeBtn.textContent = "✕";
   closeBtn.title = "Tutup Mini PiP";
   closeBtn.style.cssText =
-    "background:#1e293b;color:#f87171;border:none;border-radius:4px;padding:1px 6px;font-weight:700;cursor:pointer";
+    "background:#1e293b;color:#f87171;border:0;border-radius:4px;padding:1px 6px;font-weight:700;cursor:pointer";
   closeBtn.addEventListener("click", disableMiniPlayer);
   controlsWrap.appendChild(closeBtn);
 
@@ -521,6 +520,7 @@ function scheduleVideoDockDim() {
   const dimSec = Math.max(0, Math.min(10, Number(runtimeState.globalSettings.videoDockDimSec ?? 2.5)));
   if (dimSec <= 0 || runtimeState.videoDrawerOpen) return;
   videoDimTimer = setTimeout(() => {
+    if (runtimeState.videoDrawerOpen) return;
     runtimeState.videoDockDimmed = true;
     renderFloatingVideoDock();
   }, dimSec * 1000);
@@ -535,6 +535,8 @@ export function updateFloatingVideoDockPosition() {
   const dir = getEffectiveVideoDockDir();
   const rect = host.getBoundingClientRect();
   const saved = runtimeState.hudPositions.videoDock;
+  const root = closedVideoDockRoots.get(host);
+  const wrap = root ? root.getElementById("dockWrap") : null;
 
   host.style.opacity = String(opacity);
   host.style.transform = `scale(${scale})`;
@@ -542,7 +544,11 @@ export function updateFloatingVideoDockPosition() {
   if (saved) {
     const resolved = resolveSavedHudCoord(saved, rect.width || 68, rect.height || 40, 4);
     if (resolved) {
-      const nearTop = resolved.top < 180;
+      const nearTop = resolved.top < 190;
+      if (wrap) {
+        wrap.style.flexDirection = nearTop ? "column-reverse" : "column";
+        wrap.style.alignItems = dir === "ltr" ? "flex-start" : "flex-end";
+      }
       host.style.transformOrigin = `${nearTop ? "top" : "bottom"} ${dir === "ltr" ? "left" : "right"}`;
       if (dir === "rtl") {
         host.style.right = `${resolved.right}px`;
@@ -557,6 +563,10 @@ export function updateFloatingVideoDockPosition() {
     }
   }
 
+  if (wrap) {
+    wrap.style.flexDirection = "column";
+    wrap.style.alignItems = dir === "ltr" ? "flex-start" : "flex-end";
+  }
   host.style.transformOrigin = `bottom ${dir === "ltr" ? "left" : "right"}`;
   host.style.bottom = "14px";
   host.style.top = "auto";
@@ -570,29 +580,21 @@ export function updateFloatingVideoDockPosition() {
 }
 
 function attachVideoDockDrag(handleEl, hostEl) {
-  let downOnBadge = false;
   attachPointerDrag(handleEl, {
     targetEl: hostEl,
     margin: 4,
-    threshold: 5,
+    threshold: 6,
     allowSelector: "#dimCompactBadge",
-    onStart: (e) => {
-      downOnBadge = Boolean(/** @type {HTMLElement} */ (e.target).closest("#dimCompactBadge"));
-    },
     onMove: () => {
       hostEl.style.right = "auto";
       hostEl.style.bottom = "auto";
     },
     onEnd: (moved) => {
       if (moved) {
+        suppressBadgeClickUntil = Date.now() + 350;
         const rect = hostEl.getBoundingClientRect();
         saveHudPosition("videoDock", createSavedHudCoord(rect.left, rect.top, rect.width, rect.height, 4));
         updateFloatingVideoDockPosition();
-      } else if (downOnBadge) {
-        runtimeState.videoDrawerOpen = false;
-        runtimeState.videoDockDimmed = !runtimeState.videoDockDimmed;
-        renderFloatingVideoDock();
-        if (!runtimeState.videoDockDimmed) scheduleVideoDockDim();
       }
     }
   });
@@ -618,7 +620,9 @@ export function renderFloatingVideoDock() {
   }
 
   const g = runtimeState.globalSettings;
-  const count = runtimeState.detectedVideos.length;
+  const dir = getEffectiveVideoDockDir();
+  const streams = runtimeState.detectedVideos.filter((u) => typeof u === "string" && u.trim());
+  const count = streams.length || runtimeState.detectedVideos.length;
   const videoEl = findPrimaryVideoElement();
   if (videoEl) attachPassiveVideoSync(videoEl);
   const isPlaying = videoEl ? !videoEl.paused : false;
@@ -628,7 +632,7 @@ export function renderFloatingVideoDock() {
     closedVideoDockRoots.set(hostEl, shadow);
   }
 
-  shadow.innerHTML = `<style>*{box-sizing:border-box;font-family:system-ui,-apple-system,sans-serif}.wrap{display:flex;flex-direction:column;align-items:flex-end;gap:6px}.drawer{width:290px;background:rgba(15,23,42,.96);border:1px solid rgba(52,211,153,.45);border-radius:12px;padding:8px;box-shadow:0 12px 32px rgba(0,0,0,.55);color:#f8fafc}.drawer-title{font-size:10.5px;font-weight:800;color:#34d399;margin-bottom:6px}.stream-row{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;border-radius:6px;background:#020617;border:1px solid #1e293b;margin-bottom:4px;font-size:10px}.stream-lbl{font-family:ui-monospace,monospace;color:#cbd5e1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.s-btn{background:#10b981;color:#022c22;border:none;border-radius:5px;padding:2px 7px;font-size:9.5px;font-weight:800;cursor:pointer;flex-shrink:0}.pill{display:inline-flex;align-items:center;gap:4px;padding:4px 6px;border-radius:999px;background:rgba(15,23,42,.95);border:1px solid rgba(52,211,153,.48);box-shadow:0 10px 28px rgba(0,0,0,.5);cursor:grab;user-select:none;touch-action:none}.pill:active{cursor:grabbing}.badge{border:none;background:rgba(16,185,129,.2);color:#6ee7b7;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}.pill-btn{width:28px;height:28px;border-radius:999px;border:none;background:transparent;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}.pill-btn:hover{background:rgba(255,255,255,.12)}</style><div class="wrap" id="dockWrap"><div class="pill" id="pillHandle" title="Geser untuk pindah · Tekan 🎬 untuk buka/lipat"><button class="badge" id="dimCompactBadge"></button></div></div>`;
+  shadow.innerHTML = `<style>:host{font:12px/1.35 system-ui,sans-serif;color:#f8fafc;text-align:left;visibility:visible;letter-spacing:normal;white-space:normal}*{box-sizing:border-box;line-height:inherit}button{border:0;cursor:pointer;font-weight:700;font-family:inherit}.w{display:flex;flex-direction:column;align-items:${dir === "ltr" ? "flex-start" : "flex-end"};gap:6px}.dw{width:min(290px,calc(100vw - 16px));max-height:220px;overflow-y:auto;background:#0f172af7;border:1px solid #34d3997a;border-radius:12px;padding:8px;box-shadow:0 12px 32px #0009;color:#f8fafc}.dh{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px}.dt{font-size:10.5px;font-weight:800;color:#34d399}.dx{background:#1e293b;color:#cbd5e1;border-radius:5px;padding:1px 6px;font-size:10px}.sr{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:4px 6px;border-radius:6px;background:#020617;border:1px solid #1e293b;margin-bottom:4px;font-size:10.5px}.sl{flex:1;min-width:0;display:block;font-family:monospace;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sb{background:#10b981;color:#022c22;border-radius:5px;padding:2px 7px;font-size:9.5px;font-weight:800;flex-shrink:0}.pill{display:inline-flex;flex-direction:${dir === "rtl" ? "row-reverse" : "row"};align-items:center;gap:4px;padding:4px 6px;border-radius:999px;background:#0f172af2;border:1px solid #34d3997a;box-shadow:0 10px 28px #0008;cursor:grab;user-select:none;touch-action:none}.badge{background:#10b98138;color:#6ee7b7;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:800;white-space:nowrap}.pb{width:28px;height:28px;border-radius:999px;background:transparent;color:#e2e8f0;font-size:12px;display:inline-flex;align-items:center;justify-content:center}.pb:hover{background:#ffffff1f}</style><div class="w" id="dockWrap"><div class="pill" id="pillHandle" title="Geser · Tekan 🎬"><button type="button" class="badge" id="dimCompactBadge"></button></div></div>`;
 
   const wrap = shadow.getElementById("dockWrap");
   const pillHandle = shadow.getElementById("pillHandle");
@@ -636,40 +640,72 @@ export function renderFloatingVideoDock() {
   if (!wrap || !pillHandle || !compactBadge) return;
 
   compactBadge.textContent = `🎬(${count})`;
+  pillHandle.addEventListener("click", (ev) => ev.stopPropagation());
+  compactBadge.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    if (Date.now() < suppressBadgeClickUntil) return;
+    runtimeState.videoDrawerOpen = false;
+    runtimeState.videoDockDimmed = !runtimeState.videoDockDimmed;
+    pillToggleGuardUntil = Date.now() + 350;
+    clearTimeout(videoDimTimer);
+    renderFloatingVideoDock();
+    if (!runtimeState.videoDockDimmed) scheduleVideoDockDim();
+  });
 
   if (runtimeState.videoDrawerOpen) {
+    clearTimeout(videoDimTimer);
     const drawer = document.createElement("div");
-    drawer.className = "drawer";
+    drawer.className = "dw";
+    drawer.addEventListener("click", (ev) => ev.stopPropagation());
 
+    const head = document.createElement("div");
+    head.className = "dh";
     const title = document.createElement("div");
-    title.className = "drawer-title";
-    title.textContent = `🎬 Stream Video Terdeteksi (${count})`;
-    drawer.appendChild(title);
-
-    runtimeState.detectedVideos.slice(0, 8).forEach((u, idx) => {
-      const safeUrl = String(u || "");
-      const label = safeUrl.split("/").pop()?.split("?")[0] || safeUrl.slice(0, 40);
-
-      const row = document.createElement("div");
-      row.className = "stream-row";
-
-      const lbl = document.createElement("span");
-      lbl.className = "stream-lbl";
-      lbl.title = safeUrl;
-      lbl.textContent = `${idx + 1}. ${label.slice(0, 32)}`;
-
-      const openBtn = document.createElement("button");
-      openBtn.type = "button";
-      openBtn.className = "s-btn";
-      openBtn.textContent = "↗ Buka";
-      openBtn.addEventListener("click", () => {
-        if (safeUrl) chrome.runtime.sendMessage({ type: "OPEN_GROUP_TAB", url: safeUrl });
-      });
-
-      row.appendChild(lbl);
-      row.appendChild(openBtn);
-      drawer.appendChild(row);
+    title.className = "dt";
+    title.textContent = `🎬 Stream Video (${count})`;
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "dx";
+    closeBtn.textContent = "✕";
+    closeBtn.title = "Tutup";
+    closeBtn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      runtimeState.videoDrawerOpen = false;
+      renderFloatingVideoDock();
+      scheduleVideoDockDim();
     });
+    head.append(title, closeBtn);
+    drawer.appendChild(head);
+
+    if (streams.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "sr";
+      empty.textContent = "Tidak ada stream valid.";
+      drawer.appendChild(empty);
+    } else {
+      streams.slice(0, TIMINGS.VIDEO_DOCK_MAX_ITEMS_PER_PAGE).forEach((u, idx) => {
+        const safeUrl = String(u || "");
+        const row = document.createElement("div");
+        row.className = "sr";
+
+        const lbl = document.createElement("span");
+        lbl.className = "sl";
+        lbl.title = safeUrl;
+        lbl.textContent = `${idx + 1}. ${formatVideoStreamLabel(safeUrl)}`;
+
+        const openBtn = document.createElement("button");
+        openBtn.type = "button";
+        openBtn.className = "sb";
+        openBtn.textContent = "↗ Buka";
+        openBtn.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+          if (safeUrl) chrome.runtime.sendMessage({ type: "OPEN_GROUP_TAB", url: safeUrl });
+        });
+
+        row.append(lbl, openBtn);
+        drawer.appendChild(row);
+      });
+    }
 
     wrap.insertBefore(drawer, pillHandle);
   }
@@ -683,11 +719,15 @@ export function renderFloatingVideoDock() {
   const addPillBtn = (id, text, title, onClick) => {
     const btn = document.createElement("button");
     btn.type = "button";
-    btn.className = "pill-btn";
+    btn.className = "pb";
     btn.id = id;
     btn.title = title;
     btn.textContent = text;
-    btn.addEventListener("click", onClick);
+    btn.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      if (!shouldAcceptPillActionClick(Date.now(), pillToggleGuardUntil)) return;
+      onClick(ev);
+    });
     pillHandle.appendChild(btn);
   };
 
@@ -715,13 +755,19 @@ export function renderFloatingVideoDock() {
     }
     if (g.videoPillShowList !== false) {
       addPillBtn("vpList", "☰", "Daftar Stream", () => {
+        clearTimeout(videoDimTimer);
         runtimeState.videoDrawerOpen = !runtimeState.videoDrawerOpen;
+        if (runtimeState.videoDrawerOpen) {
+          runtimeState.videoDockDimmed = false;
+        } else {
+          scheduleVideoDockDim();
+        }
         renderFloatingVideoDock();
       });
     }
     if (g.videoPillShowDownload !== false) {
       addPillBtn("vpDl", "⬇", "Buka Stream di Tab Grup", () => {
-        const target = runtimeState.detectedVideos[0];
+        const target = streams[0] || runtimeState.detectedVideos[0];
         if (target) chrome.runtime.sendMessage({ type: "OPEN_GROUP_TAB", url: target });
         scheduleVideoDockDim();
       });

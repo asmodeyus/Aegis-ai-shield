@@ -39,11 +39,14 @@ import { createHistoryFloodDetector, normalizeHistoryRouteKey } from './history-
 import { migrateExtensionStorage, sanitizeGlobalSettings } from './migration.js';
 import {
   diagnoseDestinationBlock,
+  evaluateBeforeNavigateGuard,
   evaluateRedirectChain,
+  extractGoogleRedirectTarget,
   hasGamblingSignalInSearchQuery,
   hasGamblingSignalInText,
   hasGamblingSignalInUrl,
   isAuthFlowUrl,
+  isBrowserInitiatedTransition,
   isHardMaliciousUrl,
   isSearchEngineHijackUrl,
   isSuspiciousUrl,
@@ -64,13 +67,23 @@ import {
   pruneDomCandidatesForAudit,
   validateAndFallbackAiAudit,
 } from './gemini-audit.js';
-import { isVideoEmbedIframeCandidate, isVideoStreamUrl } from './video-detect.js';
+import {
+  formatVideoStreamLabel,
+  isVideoEmbedIframeCandidate,
+  isVideoStreamUrl,
+  shouldAcceptPillActionClick,
+} from './video-detect.js';
+import {
+  classifyAntiAdblockOverlay,
+  shouldRunAntiAdblockNeutralizer,
+} from './anti-adblock.js';
 
-test('v3.2.1 constants: P5/P7 privacy-first & store-compliant defaults (empty whitelist, opt-in Gemini/autoClick/autoSkip, session key)', () => {
-  assert.equal(AEGIS_VERSION, '3.2.1');
+test('v3.2.4 constants: P5/P7 privacy-first & store-compliant defaults (empty whitelist, opt-in Gemini/autoClick/autoSkip, session key, antiAntiAdblock ON)', () => {
+  assert.equal(AEGIS_VERSION, '3.2.4');
   assert.equal(BRIDGE_EVENTS.HANDSHAKE_ACK, '__AEGIS_HANDSHAKE_ACK__');
   assert.equal(DEFAULT_GLOBAL_SETTINGS.protectionMode, 'balanced');
   assert.equal(DEFAULT_GLOBAL_SETTINGS.captchaKillSwitchEnabled, true);
+  assert.equal(DEFAULT_GLOBAL_SETTINGS.antiAntiAdblock, true);
   assert.equal(DEFAULT_GLOBAL_SETTINGS.popupTheme, 'dark');
   // P5: Gemini audit opt-in OFF & sessionOnlyApiKey default ON
   assert.equal(DEFAULT_GLOBAL_SETTINGS.geminiAuditEnabled, false);
@@ -571,10 +584,11 @@ test('P8 migration & restore hardening: filters unknown keys, validates types/en
   };
 
   const migrated = migrateExtensionStorage(legacyV227);
-  assert.equal(migrated.schemaVersion, '3.2.1');
+  assert.equal(migrated.schemaVersion, '3.2.4');
   assert.equal(migrated.globalSettings.protectionMode, 'strict');
   assert.equal(migrated.autoSkipCountdown, true);
   assert.equal(migrated.globalSettings.captchaKillSwitchEnabled, true);
+  assert.equal(migrated.globalSettings.antiAntiAdblock, true);
   assert.equal(migrated.globalSettings.hudDurationSec, 7.5);
   assert.deepEqual(migrated.deniedDomains, ['hai8g.com', '*.ad-spam.top']);
   assert.deepEqual(migrated.trustedDomains, ['example.org', 'docs.example.net']);
@@ -625,9 +639,14 @@ test('P8 migration & restore hardening: filters unknown keys, validates types/en
   assert.equal('evilExtraSlot' in sanitized.hudPositions, false);
   assert.deepEqual(sanitized.aegisStats, { blocked: 0, bypassed: 0, allowed: 12 });
 
-  const onlyKnown = sanitizeGlobalSettings({ extra: 123, hudPosition: 'bottom-center' });
+  const onlyKnown = sanitizeGlobalSettings({
+    extra: 123,
+    hudPosition: 'bottom-center',
+    antiAntiAdblock: false,
+  });
   assert.equal('extra' in onlyKnown, false);
   assert.equal(onlyKnown.hudPosition, 'bottom-center');
+  assert.equal(onlyKnown.antiAntiAdblock, false);
 });
 
 test('Update migration preserves existing persistent geminiApiKey & settings from pre-v3.2.1 installs', () => {
@@ -666,7 +685,7 @@ test('P4 manifest & popup.html compliance: no tabs permission, minimum_chrome_ve
   const builtManifest = JSON.parse(fs.readFileSync(path.join(root, 'public/extension-v2.1.6/manifest.json'), 'utf8'));
   const popupHtml = fs.readFileSync(path.join(root, 'public/extension-v2.1.6/popup.html'), 'utf8');
 
-  assert.equal(baseManifest.version, '3.2.1');
+  assert.equal(baseManifest.version, '3.2.4');
   assert.equal(baseManifest.minimum_chrome_version, '111');
   assert.equal('key' in baseManifest, false);
   assert.equal(baseManifest.permissions.includes('tabs'), false);
@@ -674,7 +693,7 @@ test('P4 manifest & popup.html compliance: no tabs permission, minimum_chrome_ve
   assert.deepEqual(Object.keys(baseManifest.icons).sort(), ['128', '16', '32', '48']);
   assert.deepEqual(Object.keys(baseManifest.action.default_icon).sort(), ['128', '16', '32', '48']);
   assert.ok(typeof devKeyOverlay.key === 'string' && devKeyOverlay.key.length > 100);
-  assert.equal(builtManifest.version, '3.2.1');
+  assert.equal(builtManifest.version, '3.2.4');
   assert.equal(builtManifest.key, devKeyOverlay.key);
   assert.doesNotMatch(popupHtml, /_aistudio-iframe/i);
   for (const iconFile of ['icon-16.png', 'icon-32.png', 'icon-48.png', 'icon.png']) {
@@ -839,7 +858,7 @@ test('debug: redactSensitiveText & FP report strip API keys, Bearer tokens, JWTs
   assert.match(sanitizedUrl, /page=2/);
 
   const report = buildSanitizedFalsePositiveReport({
-    version: '3.2.1',
+    version: '3.2.4',
     activeUrl: 'https://example.com/dl?token=TOPSECRET999',
     protectionMode: 'balanced',
     tempAllowActive: false,
@@ -856,7 +875,7 @@ test('debug: redactSensitiveText & FP report strip API keys, Bearer tokens, JWTs
       },
     ],
   });
-  assert.match(report, /AEGIS-AI SHIELD v3\.2\.1 FALSE POSITIVE REPORT \(SANITIZED\)/);
+  assert.match(report, /AEGIS-AI SHIELD v3\.2\.4 FALSE POSITIVE REPORT \(SANITIZED\)/);
   assert.doesNotMatch(report, /TOPSECRET999/);
   assert.doesNotMatch(report, /AIzaSyRealLookingSecretKey/);
 });
@@ -953,3 +972,386 @@ test('video-detect: detects playmogo/embed iframes in video wrappers while rejec
   assert.equal(isVideoStreamUrl('https://cdn.example.net/poster.jpg', true), false);
 });
 
+test('v3.2.2 video pill guards & stream label formatter prevent empty rows and fullscreen missclicks', () => {
+  assert.equal(formatVideoStreamLabel('https://playmogo.com/e/mwzrxgipspf3'), 'playmogo.com/mwzrxgipspf3');
+  assert.equal(formatVideoStreamLabel('https://cdn.example.net/hls/ep04/master.m3u8?token=abc'), 'cdn.example.net/master.m3u8');
+  assert.equal(formatVideoStreamLabel('https://stream.example.org/'), 'stream.example.org');
+  assert.equal(formatVideoStreamLabel('https://stream.example.org/?id=991'), 'stream.example.org?id=991');
+  assert.ok(formatVideoStreamLabel('not-a-valid-url').length > 0);
+
+  // Ghost click right after expanding pill must be blocked to prevent triggering Fullscreen (#vpFs)
+  assert.equal(shouldAcceptPillActionClick(1000, 1350), false);
+  assert.equal(shouldAcceptPillActionClick(1349, 1350), false);
+  assert.equal(shouldAcceptPillActionClick(1350, 1350), true);
+  assert.equal(shouldAcceptPillActionClick(1500, 1350), true);
+  assert.equal(shouldAcceptPillActionClick(1000, 0), true);
+});
+
+test('droplink.co / adl220 Google /url referrer bounce allowed cleanly without lowering search_hijack or smuggling guards', () => {
+  const safe2Href =
+    'https://tech8s.net/Linkpage%202.3.0/safe2-v2.php?source=adl01&link=ZzIuai&ts=1795252545&sig=f1b698a2';
+  const wrappedTech8sTarget =
+    'https://tech8s.net/master-your-mindset-the-power-of-positive-thinking-for-improved-well-being-and-success/';
+  const googleWrapper =
+    'https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=' +
+    encodeURIComponent(wrappedTech8sTarget) +
+    '&ved=2ahUKEwizy-WL9Y-PAxVtaPUHHUklIeA4RhAWegQIGRAB&usg=AOvVaw21OrBeQ3nvRayljVB60Qbu';
+
+  // Root cause 2 regression: ordinary alphanumeric brands like tech8s.net & droplink.co must NOT trigger RANDOM_SHORT_DOMAIN_REGEX
+  assert.equal(isHardMaliciousUrl('https://tech8s.net/master-your-mindset/', []), false);
+  assert.equal(isHardMaliciousUrl('https://droplink.co/ZzIuai', []), false);
+  assert.equal(isHardMaliciousUrl('https://x9k2m7.com/trap', []), true);
+
+  // Extract unwrapped destination cleanly
+  assert.equal(extractGoogleRedirectTarget(googleWrapper), wrappedTech8sTarget);
+  assert.equal(extractGoogleRedirectTarget('https://www.google.com/search?q=slot+gacor'), '');
+
+  // Clean Google /url referrer-wrapper from non-search origin is NOT a search_hijack
+  assert.equal(isSearchEngineHijackUrl(googleWrapper, safe2Href), false);
+  assert.equal(isSuspiciousUrl(googleWrapper, { trusted: [], denied: [] }, safe2Href), false);
+
+  // Automatic location.replace bounce back to same base domain allowed even when userGesture=false & strict mode
+  const balancedBounce = diagnoseDestinationBlock(googleWrapper, {
+    currentHref: safe2Href,
+    trusted: [],
+    denied: [],
+    protectionMode: 'balanced',
+    strictCrossOrigin: false,
+    hasRecentUserGesture: false,
+    hasRecentMediaTap: false,
+  });
+  assert.equal(balancedBounce.block, false);
+  assert.equal(balancedBounce.reason, 'same_base_domain_referrer_bounce');
+
+  const strictBounce = diagnoseDestinationBlock(googleWrapper, {
+    currentHref: safe2Href,
+    trusted: [],
+    denied: [],
+    protectionMode: 'strict',
+    strictCrossOrigin: true,
+    hasRecentUserGesture: false,
+    hasRecentMediaTap: false,
+  });
+  assert.equal(strictBounce.block, false);
+  assert.equal(strictBounce.reason, 'same_base_domain_referrer_bounce');
+
+  // Intentional user click on google.com/url wrapping clean external destination allowed in balanced mode
+  const userClickGoogleUrl = diagnoseDestinationBlock(
+    'https://www.google.com/url?sa=t&url=https%3A%2F%2Fdocs.python.org%2F3%2F',
+    {
+      currentHref: 'https://blog.example.com/post',
+      trusted: [],
+      denied: [],
+      protectionMode: 'balanced',
+      strictCrossOrigin: false,
+      hasRecentUserGesture: true,
+      hasRecentMediaTap: false,
+    }
+  );
+  assert.equal(userClickGoogleUrl.block, false);
+  assert.equal(userClickGoogleUrl.reason, 'balanced_user_click_allowed');
+
+  // Security regressions: search hijacks, gambling/blacklisted/suspicious-TLD smuggling, media taps, & unprompted external jumps stay BLOCKED
+  const searchHijack = diagnoseDestinationBlock('https://www.google.com/search?q=slot+gacor', {
+    currentHref: safe2Href,
+    trusted: ['google.com'],
+    denied: [],
+    protectionMode: 'balanced',
+    hasRecentUserGesture: false,
+  });
+  assert.equal(searchHijack.block, true);
+  assert.equal(searchHijack.reason, 'search_hijack');
+
+  const queryHijack = diagnoseDestinationBlock('https://www.google.com/url?q=slot+gacor', {
+    currentHref: safe2Href,
+    trusted: ['google.com'],
+    denied: [],
+    protectionMode: 'balanced',
+    hasRecentUserGesture: false,
+  });
+  assert.equal(queryHijack.block, true);
+  assert.equal(queryHijack.reason, 'search_hijack');
+
+  const smuggledGambling = diagnoseDestinationBlock(
+    'https://www.google.com/url?sa=t&url=https%3A%2F%2Fslot88-gacor.xyz%2F',
+    {
+      currentHref: safe2Href,
+      trusted: ['google.com'],
+      denied: [],
+      protectionMode: 'balanced',
+      hasRecentUserGesture: true,
+    }
+  );
+  assert.equal(smuggledGambling.block, true);
+  assert.equal(smuggledGambling.reason, 'search_hijack');
+
+  const smuggledShortener = diagnoseDestinationBlock(
+    'https://www.google.com/url?sa=t&url=https%3A%2F%2Frebrand.ly%2Fpromo',
+    {
+      currentHref: safe2Href,
+      trusted: ['google.com'],
+      denied: [],
+      protectionMode: 'balanced',
+      hasRecentUserGesture: true,
+    }
+  );
+  assert.equal(smuggledShortener.block, true);
+  assert.equal(smuggledShortener.reason, 'hard_ad_or_gambling_pattern');
+
+  const smuggledSuspiciousTld = diagnoseDestinationBlock(
+    'https://www.google.com/url?sa=t&url=https%3A%2F%2Fpromo-example.top%2Fgo',
+    {
+      currentHref: safe2Href,
+      trusted: ['google.com'],
+      denied: [],
+      protectionMode: 'balanced',
+      hasRecentUserGesture: true,
+    }
+  );
+  assert.equal(smuggledSuspiciousTld.block, true);
+  assert.equal(smuggledSuspiciousTld.reason, 'suspicious_tld');
+
+  const smuggledBlacklist = diagnoseDestinationBlock(
+    'https://www.google.com/url?sa=t&url=https%3A%2F%2Fhai8g.com%2Fjump',
+    {
+      currentHref: safe2Href,
+      trusted: ['google.com'],
+      denied: ['hai8g.com'],
+      protectionMode: 'balanced',
+      hasRecentUserGesture: true,
+    }
+  );
+  assert.equal(smuggledBlacklist.block, true);
+  assert.equal(smuggledBlacklist.reason, 'denied_blacklist');
+
+  const mediaTapBounce = diagnoseDestinationBlock(googleWrapper, {
+    currentHref: safe2Href,
+    trusted: [],
+    denied: [],
+    protectionMode: 'balanced',
+    hasRecentUserGesture: false,
+    hasRecentMediaTap: true,
+  });
+  assert.equal(mediaTapBounce.block, true);
+  assert.equal(mediaTapBounce.reason, 'media_tap_hijack');
+
+  const unpromptedExternal = diagnoseDestinationBlock(
+    'https://www.google.com/url?sa=t&url=https%3A%2F%2Funrelated.example.com%2F',
+    {
+      currentHref: safe2Href,
+      trusted: [],
+      denied: [],
+      protectionMode: 'balanced',
+      hasRecentUserGesture: false,
+      hasRecentMediaTap: false,
+    }
+  );
+  assert.equal(unpromptedExternal.block, true);
+  assert.equal(unpromptedExternal.reason, 'no_recent_user_gesture');
+});
+
+test('v3.2.3 anti-adblock: closes AntiAdBlock Core & adblock modals while honoring toggle, whitelist, temp-allow, CAPTCHA & rejecting false positives', () => {
+  // 1. Gate checks: enabled ON normal site allowed; OFF / Whitelist / Temp-Allow / CAPTCHA blocked
+  assert.equal(
+    shouldRunAntiAdblockNeutralizer({
+      enabled: true,
+      isWhitelisted: false,
+      tempAllowActive: false,
+      captchaDetected: false,
+      isCaptchaUrl: false,
+    }),
+    true
+  );
+  assert.equal(shouldRunAntiAdblockNeutralizer({ enabled: false }), false);
+  assert.equal(shouldRunAntiAdblockNeutralizer({ enabled: true, isWhitelisted: true }), false);
+  assert.equal(shouldRunAntiAdblockNeutralizer({ enabled: true, tempAllowActive: true }), false);
+  assert.equal(shouldRunAntiAdblockNeutralizer({ enabled: true, captchaDetected: true }), false);
+  assert.equal(shouldRunAntiAdblockNeutralizer({ enabled: true, isCaptchaUrl: true }), false);
+
+  // 2. Exact AntiAdBlock Core modal from Paste (#ne8e5602d + antiadblockcore.com)
+  const coreVerdict = classifyAntiAdblockOverlay({
+    id: 'ne8e5602d',
+    role: 'dialog',
+    ariaModal: true,
+    text: 'Adblock Detected! It seems like you are using an ad blocker. Please disable your adblocker to access this page. What happened? Powered by AntiAdBlock Core',
+    linkHrefs: ['https://antiadblockcore.com'],
+    position: 'fixed',
+    display: 'flex',
+    visibility: 'visible',
+    pointerEvents: 'auto',
+    widthRatio: 1,
+    heightRatio: 1,
+    zIndex: 2147483647,
+  });
+  assert.equal(coreVerdict.isAntiAdblock, true);
+  assert.equal(coreVerdict.reason, 'vendor_anti_adblock_modal');
+
+  // 3. Generic Indonesian / English fixed adblock modal without vendor link
+  const genericVerdict = classifyAntiAdblockOverlay({
+    id: 'modal-blocker-99',
+    role: 'dialog',
+    ariaModal: true,
+    text: 'Adblock Terdeteksi! Mohon matikan adblocker Anda lalu refresh halaman untuk melanjutkan.',
+    position: 'fixed',
+    display: 'flex',
+    visibility: 'visible',
+    pointerEvents: 'auto',
+    widthRatio: 0.5,
+    heightRatio: 0.4,
+    zIndex: 9999,
+  });
+  assert.equal(genericVerdict.isAntiAdblock, true);
+  assert.equal(genericVerdict.reason, 'multi_signal_anti_adblock_modal');
+
+  // 4. False-positive protections: AEGIS HUD, Login modal (password), CAPTCHA, Video player, GDPR cookie, non-fixed editorial article
+  assert.equal(
+    classifyAntiAdblockOverlay({
+      id: 'aegis-top-manual-hud',
+      text: 'Adblock Detected',
+      position: 'fixed',
+      widthRatio: 1,
+      heightRatio: 1,
+    }).isAntiAdblock,
+    false
+  );
+  assert.equal(
+    classifyAntiAdblockOverlay({
+      role: 'dialog',
+      text: 'Please sign in to continue (do not use adblocker with SSO)',
+      position: 'fixed',
+      widthRatio: 1,
+      heightRatio: 1,
+      hasPasswordInput: true,
+    }).isAntiAdblock,
+    false
+  );
+  assert.equal(
+    classifyAntiAdblockOverlay({
+      role: 'dialog',
+      text: 'Adblock Detected — Complete Turnstile challenge',
+      position: 'fixed',
+      widthRatio: 1,
+      heightRatio: 1,
+      hasCaptcha: true,
+    }).isAntiAdblock,
+    false
+  );
+  assert.equal(
+    classifyAntiAdblockOverlay({
+      role: 'dialog',
+      text: 'Please disable adblocker on video player',
+      position: 'fixed',
+      widthRatio: 1,
+      heightRatio: 1,
+      hasVideo: true,
+    }).isAntiAdblock,
+    false
+  );
+  assert.equal(
+    classifyAntiAdblockOverlay({
+      role: 'dialog',
+      text: 'We use cookies and privacy settings (GDPR). Manage cookie consent preferences.',
+      position: 'fixed',
+      widthRatio: 1,
+      heightRatio: 1,
+    }).isAntiAdblock,
+    false
+  );
+  assert.equal(
+    classifyAntiAdblockOverlay({
+      tagName: 'article',
+      text: 'Adblock Detected: How to disable your adblocker in Chrome tutorial',
+      position: 'static',
+      widthRatio: 1,
+      heightRatio: 1,
+    }).isAntiAdblock,
+    false
+  );
+});
+
+test('v3.2.4 onBeforeNavigate guard: allows Chrome Omnibox search from idwebhost.com while still blocking real threats & in-page search hijacks', () => {
+  const baseBeforeNavCtx = {
+    currentUrl: 'https://idwebhost.com/domain-murah',
+    stackLength: 1,
+    denied: ['evil-ads.com'],
+    trusted: [],
+    isManuallyAllowed: false,
+    tempAllowActive: false,
+    captchaActive: false,
+    firstPageGraceActive: false,
+    shortlinkCtaGraceActive: false,
+    isLockedOrCoolingDown: false,
+  };
+
+  // 1. Exact user diagnostic log scenario: Chrome Mobile Omnibox search for "chatgpt" while on idwebhost.com in strict mode
+  const mobileOmniboxSearch = evaluateBeforeNavigateGuard(
+    'https://www.google.com/search?q=chatgpt&oq=chatgpt&gs_lcrp=EgZjaHJvbWU&sourceid=chrome-mobile&source=chrome.ob&ie=UTF-8',
+    baseBeforeNavCtx
+  );
+  assert.equal(mobileOmniboxSearch.action, 'defer_to_committed');
+  assert.equal(mobileOmniboxSearch.isTargetBlacklisted, false);
+  assert.equal(mobileOmniboxSearch.isHardMalicious, false);
+
+  // 2. Other search engines & user-typed domains / commerce sites also defer cleanly to onCommitted
+  for (const benignNav of [
+    'https://www.bing.com/search?q=chatgpt',
+    'https://duckduckgo.com/?q=chatgpt',
+    'https://www.tokopedia.com/',
+    'https://shopee.co.id/',
+    'https://portfolio-demo.xyz/',
+  ]) {
+    const res = evaluateBeforeNavigateGuard(benignNav, baseBeforeNavCtx);
+    assert.equal(res.action, 'defer_to_committed', `Expected defer_to_committed for ${benignNav}`);
+  }
+
+  // 3. Unambiguous threats STILL block immediately in onBeforeNavigate
+  const blacklistedRes = evaluateBeforeNavigateGuard('https://sub.evil-ads.com/landing', baseBeforeNavCtx);
+  assert.equal(blacklistedRes.action, 'block');
+  assert.equal(blacklistedRes.code, 'BLOCK_BEFORE_NAV_BLACKLIST');
+  assert.equal(blacklistedRes.isTargetBlacklisted, true);
+
+  for (const hardThreat of [
+    'https://slot88-gacor.xyz/daftar',
+    'https://popads.net/pop.js',
+    'https://js.wpadmngr.com/static/popunder',
+    'https://asiafilm.org/4/0a81c13285160c8c8cf50a40daa3adcb',
+    'https://www.google.com/search?q=vpn&clickid=arb_991',
+    'https://www.google.com/url?url=https%3A%2F%2Fslot88-gacor.xyz%2F',
+  ]) {
+    const res = evaluateBeforeNavigateGuard(hardThreat, baseBeforeNavCtx);
+    assert.equal(res.action, 'block', `Expected immediate block in onBeforeNavigate for ${hardThreat}`);
+    assert.equal(res.code, 'BLOCK_BEFORE_NAV_SUSPICIOUS');
+    assert.equal(res.isHardMalicious, true);
+  }
+
+  // 4. In-page search hijack (main_world / click-guard / onCommitted non-omnibox transition) STILL stays blocked!
+  assert.equal(
+    isSearchEngineHijackUrl(
+      'https://www.google.com/search?q=chatgpt&sourceid=chrome-mobile&source=chrome.ob',
+      'https://idwebhost.com/domain-murah'
+    ),
+    true
+  );
+  const inPageHijack = diagnoseDestinationBlock(
+    'https://www.google.com/search?q=chatgpt',
+    {
+      currentHref: 'https://idwebhost.com/domain-murah',
+      trusted: [],
+      denied: [],
+      protectionMode: 'strict',
+      strictCrossOrigin: true,
+      hasRecentUserGesture: false,
+    }
+  );
+  assert.equal(inPageHijack.block, true);
+  assert.equal(inPageHijack.reason, 'search_hijack');
+
+  // 5. Browser-initiated transitions in onCommitted allow Omnibox keyword_generated & manual Reload recovery
+  //    (e.g. retrying after ERR_TUNNEL_CONNECTION_FAILED), while rejecting link/server_redirect/client_redirect.
+  assert.equal(isBrowserInitiatedTransition('generated', ['from_address_bar'], 1), true);
+  assert.equal(isBrowserInitiatedTransition('keyword_generated', [], 1), true);
+  assert.equal(isBrowserInitiatedTransition('reload', [], 1), true);
+  assert.equal(isBrowserInitiatedTransition('reload', ['server_redirect'], 1), false);
+  assert.equal(isBrowserInitiatedTransition('reload', ['client_redirect'], 1), false);
+  assert.equal(isBrowserInitiatedTransition('link', [], 1), false);
+});

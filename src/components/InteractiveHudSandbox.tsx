@@ -21,6 +21,10 @@ import {
   detectShortlinkBypassAction,
   extractDirectShortlinkUrl,
 } from '../utils/shortlinkBypassEngine';
+import {
+  classifyAntiAdblockOverlay,
+  shouldRunAntiAdblockNeutralizer,
+} from '../ext/shared/anti-adblock.js';
 
 export interface GlobalSettingsState {
   protectionMode?: 'balanced' | 'strict';
@@ -54,6 +58,7 @@ export interface GlobalSettingsState {
   shortlinkBypassEnabled?: boolean;
   shortlinkAutoClick?: boolean;
   loggingEnabled?: boolean;
+  antiAntiAdblock?: boolean;
   removeTransparentOverlay: boolean;
   antiHistoryTrap: boolean;
   dnrEnabled: boolean;
@@ -138,7 +143,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
   const [bypassToast, setBypassToast] = useState<{ host: string; method: string } | null>(null);
   const bypassToastTimerRef = useRef<number | null>(null);
   const [activeActionLog, setActiveActionLog] = useState<string>(
-    'v3.2.1 Modular: Mode Balanced/Strict, Safe Mode 15m/1j, CAPTCHA Kill-Switch, Toast Bypass Safelink, & DNR batch 150 domain/rule aktif.'
+    'v3.2.4 Modular: Fix Omnibox Search (onBeforeNavigate), Anti-Anti-Adblock Modal (aman Whitelist/Safe Mode/CAPTCHA), Pil Video Anti-Missclick, Drawer Daftar Stream, & DNR 150 domain/rule.'
   );
 
   useEffect(() => {
@@ -643,7 +648,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
             <span className={tempAllowMinutesLeft ? 'text-amber-300 font-bold' : 'text-emerald-400'}>
               {tempAllowMinutesLeft
                 ? `⏸ Safe Mode (${tempAllowMinutesLeft}m)`
-                : `AEGIS v3.2.1 (${globalSettings.protectionMode === 'strict' ? 'Strict' : 'Balanced'})`}
+                : `AEGIS v3.2.4 (${globalSettings.protectionMode === 'strict' ? 'Strict' : 'Balanced'})`}
             </span>
           </div>
 
@@ -675,17 +680,17 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
             </div>
           </div>
 
-          {/* Simulated Shortlink Bypass Debloated, 302 CTA, First-Page Entry & Silent Blacklist Test Bench (v3.2.1) */}
+          {/* Simulated Shortlink Bypass Debloated, 302 CTA, First-Page Entry, Anti-Anti-Adblock & Blacklist Test Bench (v3.2.4) */}
           <div
             data-testid="smart-ugc-test-bench"
             className="w-full max-w-[535px] rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 space-y-2"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-sky-300">
-                🧠 Uji Logika v3.2.1: Toast Bypass Shortlink, Log Diagnostik & AI UGC
+                🧠 Uji Logika v3.2.4: Anti-Anti-Adblock Modal, Bypass Shortlink &amp; AI UGC
               </span>
               <span className="text-[10px] font-mono text-emerald-400">
-                v3.2.1 Modular
+                v3.2.4 Modular
               </span>
             </div>
 
@@ -978,7 +983,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                       detail: `Bypass Shortlink Debloated mengekstrak URL tujuan langsung dengan Toast 800ms (${extracted.method})`,
                     });
                     setActiveActionLog(
-                      `⚡ [Bypass Toast v3.2.1] Double-Base64 Safelink didekode (${extracted.method}) → Toast tampil ~800ms sebelum lompat ke ${extracted.decodedUrl} & dicatat ke Tab 📋 Log!`
+                      `⚡ [Bypass Toast v3.2.4] Double-Base64 Safelink didekode (${extracted.method}) → Toast tampil ~800ms sebelum lompat ke ${extracted.decodedUrl} & dicatat ke Tab 📋 Log!`
                     );
                   }
                 }}
@@ -994,6 +999,76 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                 </div>
                 <span className="text-[9px] text-amber-300 font-bold shrink-0 ml-2">
                   Decode Instan ⚡
+                </span>
+              </button>
+
+              {/* Case 8: v3.2.3 Anti-Anti-Adblock Modal Neutralizer */}
+              <button
+                type="button"
+                data-testid="test-anti-anti-adblock"
+                onClick={() => {
+                  const whitelisted = isDomainMatchedInList('https://www.semprot.com/', trustedDomains);
+                  const allowed = shouldRunAntiAdblockNeutralizer({
+                    enabled: globalSettings.antiAntiAdblock !== false,
+                    isWhitelisted: whitelisted,
+                    tempAllowActive: Boolean(tempAllowMinutesLeft),
+                    captchaDetected: false,
+                    isCaptchaUrl: false,
+                  });
+                  if (!allowed) {
+                    const skipReason =
+                      globalSettings.antiAntiAdblock === false
+                        ? 'toggle OFF'
+                        : whitelisted
+                        ? 'Whitelist'
+                        : 'Safe Mode';
+                    setActiveActionLog(
+                      `⏸️ [Anti-Anti-Adblock Dilewati] Alasan: ${skipReason} (tetap menghormati Whitelist / Safe Mode / toggle Popup).`
+                    );
+                    return;
+                  }
+                  const verdict = classifyAntiAdblockOverlay({
+                    id: 'ne8e5602d',
+                    role: 'dialog',
+                    ariaModal: true,
+                    text: 'Adblock Detected! It seems like you are using an ad blocker. Please disable your adblocker to access this page. What happened? Powered by AntiAdBlock Core',
+                    linkHrefs: ['https://antiadblockcore.com'],
+                    position: 'fixed',
+                    display: 'flex',
+                    visibility: 'visible',
+                    pointerEvents: 'auto',
+                    widthRatio: 1,
+                    heightRatio: 1,
+                    zIndex: 2147483647,
+                    hasPasswordInput: false,
+                    hasCaptcha: false,
+                    hasVideo: false,
+                  });
+                  if (verdict.isAntiAdblock) {
+                    onAppendLog?.({
+                      level: 'BYPASS',
+                      source: 'content',
+                      code: 'BYPASS_ANTI_ADBLOCK_MODAL',
+                      fromUrl: 'https://shortlink-demo.net/step',
+                      detail: `Modal Anti-Adblock (${verdict.reason}) ditutup & scroll halaman dipulihkan`,
+                    });
+                    setActiveActionLog(
+                      `🛡️ [Anti-Anti-Adblock v3.2.4] Modal #ne8e5602d (antiadblockcore.com) ditutup otomatis & scroll halaman (overflow:hidden) dipulihkan (${verdict.reason})!`
+                    );
+                  }
+                }}
+                className="col-span-3 flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/50 border border-emerald-400/50 text-left transition-colors cursor-pointer"
+              >
+                <div className="min-w-0">
+                  <span className="font-bold text-emerald-300">
+                    🛡️ 8. Uji Anti-Anti-Adblock Modal (v3.2.4)
+                  </span>
+                  <span className="ml-2 font-mono text-[9px] text-slate-300">
+                    #ne8e5602d · AntiAdBlock Core + Pulihkan Scroll (Aman Whitelist/Safe Mode)
+                  </span>
+                </div>
+                <span className="text-[9px] text-emerald-300 font-bold shrink-0 ml-2">
+                  Tutup Modal 🛡️
                 </span>
               </button>
             </div>
@@ -1238,7 +1313,7 @@ export const InteractiveHudSandbox: React.FC<InteractiveHudSandboxProps> = ({
                         key={streamUrl}
                         className="flex items-center justify-between gap-2 py-1 border-b border-slate-800/80 last:border-b-0"
                       >
-                        <span className="text-[10.5px] text-slate-200 truncate font-mono">
+                        <span className="flex-1 min-w-0 text-[10.5px] text-slate-200 truncate font-mono">
                           {idx + 1}. {shortName}
                         </span>
                         <div className="flex items-center gap-1 shrink-0">

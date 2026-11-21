@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Pure Video Stream & Embed Iframe Detection Helpers
+ * AEGIS-AI Shield v3.2.2 — Pure Video Stream & Embed Iframe Detection Helpers
  */
 import {
   AD_SLOT_CLASS_ID_REGEX,
@@ -31,6 +31,39 @@ export function isVideoStreamUrl(urlStr, isConfirmedMime = false) {
   if (s.startsWith("data:") || s.startsWith("blob:") || s.startsWith("javascript:")) return false;
   if (NON_VIDEO_ASSET_REGEX.test(s)) return false;
   return Boolean(isConfirmedMime || VIDEO_EXT_REGEX.test(s) || VIDEO_STREAM_HINT_REGEX.test(s));
+}
+
+/**
+ * Format a detected stream or embed URL into a non-empty, human-readable label
+ * for the Floating Video Dock drawer list.
+ * @param {string} urlStr
+ * @returns {string}
+ */
+export function formatVideoStreamLabel(urlStr) {
+  const safeUrl = String(urlStr || "").trim();
+  if (!safeUrl) return "stream-video";
+  try {
+    const u = new URL(safeUrl);
+    const host = u.hostname.replace(/^www\./i, "");
+    const segs = u.pathname.split("/").filter(Boolean);
+    const tail = segs.length > 0 ? segs[segs.length - 1] : "";
+    if (tail) return `${host}/${tail}`.slice(0, 38);
+    if (u.search) return `${host}${u.search}`.slice(0, 38);
+    return host.slice(0, 38) || safeUrl.slice(0, 38);
+  } catch {
+    return (safeUrl.split("/").filter(Boolean).pop()?.split("?")[0] || safeUrl).slice(0, 38);
+  }
+}
+
+/**
+ * Guard against accidental/ghost clicks landing on newly expanded pill action buttons
+ * (e.g., #vpFs Layar Penuh) immediately after tapping 🎬(N).
+ * @param {number} nowTs
+ * @param {number} guardUntilTs
+ * @returns {boolean}
+ */
+export function shouldAcceptPillActionClick(nowTs, guardUntilTs) {
+  return Number(nowTs) >= Number(guardUntilTs || 0);
 }
 
 /**

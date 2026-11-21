@@ -1,9 +1,9 @@
 {
   "manifest_version": 3,
   "name": "AEGIS-AI: Anti-Redirect, Video & Search Hijack Shield",
-  "version": "3.2.1",
+  "version": "3.2.4",
   "minimum_chrome_version": "111",
-  "description": "AEGIS-AI Shield v3.2.1: Anti-redirect, video-tap hijack & search-hijack shield with OAuth-safe filtering, isolated-world validation, wildcard Blacklist/DNR, reversible CAPTCHA guard, optional opt-in Gemini audit, and Native/Mini PiP.",
+  "description": "AEGIS-AI Shield v3.2.4: Anti-redirect, anti-anti-adblock modal, video-tap hijack & search-hijack shield with Chrome Omnibox protection, OAuth-safe filtering, isolated-world validation, wildcard Blacklist/DNR, reversible CAPTCHA guard, optional opt-in Gemini audit, and Native/Mini PiP.",
   "icons": {
     "16": "icon-16.png",
     "32": "icon-32.png",

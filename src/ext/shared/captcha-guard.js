@@ -40,7 +40,7 @@ export const CAPTCHA_DOM_SELECTORS = [
 export function isCaptchaChallengeUrl(urlStr) {
   if (!urlStr || typeof urlStr !== "string") return false;
   return safeTry(
-    "captchaGuard.isChallengeUrl",
+    "cg.u",
     () => {
       const u = new URL(urlStr);
       if (u.protocol !== "http:" && u.protocol !== "https:") return false;
@@ -97,7 +97,7 @@ function isHiddenOrInvisibleCaptchaBadge(el) {
 export function detectCaptchaState(doc) {
   if (!doc) return { active: false, solved: false, provider: "" };
   return safeTry(
-    "captchaGuard.detectState",
+    "cg.d",
     () => {
       if (doc.location && isCaptchaChallengeUrl(doc.location.href)) {
         return { active: true, solved: false, provider: "challenge_url" };

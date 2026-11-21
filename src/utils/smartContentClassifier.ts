@@ -64,7 +64,7 @@ export const COMMERCE_AFFILIATE_REGEX =
   /(shopee\.|shope\.ee|tokopedia\.|lazada\.|blibli\.|bukalapak\.|tiktok\.com\/t\/|invol\.co|accesstrade|admitad|ecotrack|go2cloud|onclickalgo|popads|popcash|propellerads|adsterra|hilltopads|exoclick|juicyads|trafficjunky|monetag|richads|wpadmngr|clickadu)/i;
 
 export const RANDOM_SHORT_DOMAIN_REGEX =
-  /^[a-z0-9]{2,4}[0-9][a-z0-9]{1,4}\.(com|net|org|co|id|io|info|biz)$/i;
+  /^(?:[0-9][a-z0-9]{3,7}|[a-z]{1,3}[0-9][a-z0-9]*[0-9][a-z0-9]{0,3})\.(com|net|org|co|id|io|info|biz)$/i;
 
 export const SEARCH_ARBITRAGE_PARAMS_REGEX =
   /(utm_source=.*ad|utm_medium=affiliate|af_siteid=|af_sub|clickid=|click_id=|subid=|sub_id=|aff_id=|zoneid=|bannerid=|popunder|redirect|gclid=)/i;

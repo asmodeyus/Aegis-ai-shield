@@ -1,6 +1,6 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — Gemini DOM Audit Engine (Prompt-Injection Hardened, Validated & Local Fallback)
+ * AEGIS-AI Shield v3.2.2 — Gemini DOM Audit Engine (Prompt-Injection Hardened, Validated & Local Fallback)
  * Separates trusted systemInstruction from untrusted webpage JSON data, validates AI outputs strictly
  * against local security rules (Blacklist, gambling, affiliate, Google Search hijack), computes
  * deterministic cache keys, and falls back seamlessly to local heuristic scoring on timeout/error.

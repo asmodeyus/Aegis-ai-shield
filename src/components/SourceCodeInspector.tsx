@@ -13,42 +13,42 @@ export const EXTENSION_FILES: ExtensionFileMeta[] = [
     name: 'content.js',
     path: '/extension-v2.1.6/content.js',
     summary:
-      'v3.2.1 (74.8 KB minified < 75 KB): Re-validasi untrusted bridge, closed Shadow DOM HUD/Video Dock, deteksi embed iframe video, ev.isTrusted + 2-langkah Trust, rate-limit UI, & video-tap shield.',
+      'v3.2.4 (80.1 KB minified): Anti-Anti-Adblock modal neutralizer modular (aman Whitelist/Safe Mode/CAPTCHA + pulihkan scroll), bypass gate terpusat, fix pil video 🎬(N) & drawer ☰.',
     changedIn221: true,
   },
   {
     name: 'background.js',
     path: '/extension-v2.1.6/background.js',
     summary:
-      'v3.2.1 (53.3 KB minified): OAuth precedence (P2), filter judol presisi (P1), opt-in Gemini gate (P5), relay video iframe, & migrasi storage termasuk geminiApiKey lama (P8).',
+      'v3.2.4 (56.7 KB minified): Fix false-positive BLOCK_BEFORE_NAV_SUSPICIOUS pada pencarian Chrome Omnibox & Back/Forward via evaluateBeforeNavigateGuard, bounce google.com/url droplink/adl220, OAuth (P2), & migrasi (P8).',
     changedIn221: true,
   },
   {
     name: 'main_world.js',
     path: '/extension-v2.1.6/main_world.js',
     summary:
-      'v3.2.1 (31.6 KB minified): Video-tap hijack shield (Navigation API + fallback native video), P6 timer hook cache 500ms + regex batas kata, P1/P2 unified classifier, & CAPTCHA restore.',
+      'v3.2.4 (32.7 KB minified): Sinkronisasi toggle Anti-Anti-Adblock untuk probe fetch(no-cors), Video-tap hijack shield, P6 timer hook cache 500ms, P1/P2 classifier, & CAPTCHA restore.',
     changedIn221: true,
   },
   {
     name: 'popup.html',
     path: '/extension-v2.1.6/popup.html',
     summary:
-      'v3.2.1: Toggle opt-in Gemini + disclosure data Google, peringatan persistent API key, konfirmasi inline Auto-Skip & Auto-Klik, copy anti-spoof jujur, & bebas _aistudio-iframe.js.',
+      'v3.2.4: Toggle khusus Anti-Anti-Adblock (default ON), opt-in Gemini + disclosure data, peringatan persistent API key, konfirmasi inline Auto-Skip & Auto-Klik, & bebas _aistudio-iframe.js.',
     changedIn221: true,
   },
   {
     name: 'popup.js',
     path: '/extension-v2.1.6/popup.js',
     summary:
-      'v3.2.1 (38.2 KB minified): Kontrol opt-in Gemini/Auto-Skip/Auto-Klik, pelestarian geminiApiKey lama saat update, sanitasi & limitasi restore backup JSON (P8), & Laporan FP tersensor.',
+      'v3.2.4 (39.2 KB minified): Kontrol toggle Anti-Anti-Adblock, opt-in Gemini/Auto-Skip/Auto-Klik, pelestarian geminiApiKey lama saat update, sanitasi backup JSON (P8), & Laporan FP tersensor.',
     changedIn221: true,
   },
   {
     name: 'manifest.json',
     path: '/extension-v2.1.6/manifest.json',
     summary:
-      'v3.2.1 (Update-Safe): Menyertakan "key" tetap agar ID ekstensi & seluruh settingan/storage lama terbawa saat update (varian -store.zip tanpa "key" tetap tersedia).',
+      'v3.2.4 (Update-Safe): Menyertakan "key" tetap agar ID ekstensi & seluruh settingan/storage lama terbawa saat update (varian -store.zip tanpa "key" tetap tersedia).',
     changedIn221: true,
   },
 ];

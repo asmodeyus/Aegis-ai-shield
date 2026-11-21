@@ -1,7 +1,7 @@
 // @ts-check
 /**
- * AEGIS-AI Shield v3.2.1 — MAIN World Hardened Native API Guard
- * v3.2.1 upgrades:
+ * AEGIS-AI Shield v3.2.4 — MAIN World Hardened Native API Guard
+ * v3.2.1–v3.2.4 upgrades:
  *  - Video-Tap vs Link-Click Gesture Guard: distinguishes <video>/media taps from <a href> clicks
  *    so first-touch video ad hijacks (pointerdown/touchstart/click -> location.href) are blocked
  *    synchronously in-page via Navigation API without page reload or custom-player conflicts.
@@ -130,6 +130,7 @@ import { diagnoseDestinationBlock, isAuthFlowUrl } from "../shared/url-classifie
     strictCrossOrigin: false,
     autoSkipCountdown: false, // P7: opt-in default OFF
     antiHistoryTrap: true,
+    antiAntiAdblock: true,
     captchaKillSwitchEnabled: true,
     loggingEnabled: true,
     tempAllowActive: false,
@@ -378,7 +379,9 @@ import { diagnoseDestinationBlock, isAuthFlowUrl } from "../shared/url-classifie
   // HOOK IMPLEMENTATIONS
   // =========================================================================
   function isAntiAdblockFetchProbe(reqUrl, initObj) {
-    if (!reqUrl || state.tempAllowActive || state.captchaDetected) return false;
+    if (!reqUrl || !state.antiAntiAdblock || state.tempAllowActive || state.captchaDetected) {
+      return false;
+    }
     return safeTry(
       "main_world.isAdblockProbe",
       () => {
@@ -945,6 +948,7 @@ import { diagnoseDestinationBlock, isAuthFlowUrl } from "../shared/url-classifie
       state.tempAllowActive = Boolean(d.tempAllowActive);
       if (d.globalSettings) {
         state.antiHistoryTrap = d.globalSettings.antiHistoryTrap !== false;
+        state.antiAntiAdblock = d.globalSettings.antiAntiAdblock !== false;
         state.captchaKillSwitchEnabled = d.globalSettings.captchaKillSwitchEnabled !== false;
         state.loggingEnabled = d.globalSettings.loggingEnabled !== false;
       }

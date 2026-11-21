@@ -45,6 +45,7 @@ const DEFAULT_GLOBAL_SETTINGS: GlobalSettingsState = {
   shortlinkBypassEnabled: true,
   shortlinkAutoClick: true,
   loggingEnabled: true,
+  antiAntiAdblock: true,
   removeTransparentOverlay: true,
   antiHistoryTrap: true,
   dnrEnabled: true,
@@ -132,7 +133,7 @@ export default function App() {
   const [localStats, setLocalStats] = useState({ blocked: 12, bypassed: 5, allowed: 18 });
   const [tempAllowMinutesLeft, setTempAllowMinutesLeft] = useState<number | null>(null);
   const [zipStatus, setZipStatus] = useState<string>(
-    'Paket update aegis-ai-shield-v3.2.1.zip siap diunduh (dengan Key ID tetap agar pengaturan lama terbawa · content.js 74.8 KB).'
+    'Paket update aegis-ai-shield-v3.2.4.zip siap diunduh (dengan Key ID tetap agar pengaturan lama terbawa).'
   );
   const [isBuildingZip, setIsBuildingZip] = useState(false);
 
@@ -227,23 +228,23 @@ export default function App() {
 
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'aegis-ai-shield-v3.2.1.zip';
+      a.download = 'aegis-ai-shield-v3.2.4.zip';
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 3000);
 
       setZipStatus(
-        `Berhasil mengunduh aegis-ai-shield-v3.2.1.zip (${(zipBytes.length / 1024).toFixed(1)} KB · 10 berkas · Key ID tetap terbawa).`
+        `Berhasil mengunduh aegis-ai-shield-v3.2.4.zip (${(zipBytes.length / 1024).toFixed(1)} KB · 10 berkas · Key ID tetap terbawa).`
       );
     } catch {
       const a = document.createElement('a');
-      a.href = '/aegis-ai-shield-v3.2.1.zip';
-      a.download = 'aegis-ai-shield-v3.2.1.zip';
+      a.href = '/aegis-ai-shield-v3.2.4.zip';
+      a.download = 'aegis-ai-shield-v3.2.4.zip';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setZipStatus('Mengunduh paket update aegis-ai-shield-v3.2.1.zip (dengan Key ID tetap)...');
+      setZipStatus('Mengunduh paket update aegis-ai-shield-v3.2.4.zip (dengan Key ID tetap)...');
     } finally {
       setIsBuildingZip(false);
     }
@@ -277,13 +278,13 @@ export default function App() {
             href="#package"
             className="hover:text-white transition-colors whitespace-nowrap shrink-0"
           >
-            Paket ZIP v3.2.1
+            Paket ZIP v3.2.4
           </a>
           <a
             href="#evaluation"
             className="hover:text-white transition-colors whitespace-nowrap shrink-0"
           >
-            Audit v3.2.1
+            Audit v3.2.4
           </a>
           <a
             href="#source"
@@ -301,7 +302,7 @@ export default function App() {
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold text-emerald-950 bg-emerald-500 hover:bg-emerald-400 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5" />
-            {isBuildingZip ? 'Mempaketkan ZIP...' : 'Unduh ZIP v3.2.1'}
+            {isBuildingZip ? 'Mempaketkan ZIP...' : 'Unduh ZIP v3.2.4'}
           </button>
         </div>
       </header>
@@ -314,23 +315,22 @@ export default function App() {
         >
           <div className="space-y-2.5 max-w-2xl">
             <div className="flex flex-wrap items-center gap-2 text-xs text-slate-400">
-              <span className="text-emerald-400 font-semibold">Rilis Perbaikan &amp; Store Hardening v3.2.1</span>
+              <span className="text-emerald-400 font-semibold">Rilis Fix Omnibox Search &amp; Anti-Anti-Adblock v3.2.4</span>
               <span aria-hidden="true">·</span>
-              <span>content.js 74.8 KB (&lt; 75 KB Minified)</span>
+              <span>Aman Pencarian Bilah Alamat (Strict/Balanced) · Anti-Anti-Adblock Default ON</span>
               <span aria-hidden="true">·</span>
-              <span>Update-Safe Key · Embed Video Pil · P1–P8</span>
+              <span>Key ID Tetap · Alur DropLink Utuh</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight text-balance">
-              AEGIS-AI Shield v3.2.1 — Video-Tap Hijack Shield, Filter Judol Presisi &amp; Kepatuhan Store
+              AEGIS-AI Shield v3.2.4 — Fix Omnibox Search, Anti-Anti-Adblock &amp; Store Hardening
             </h1>
 
             <p className="text-sm text-slate-300 leading-relaxed">
-              Pembaruan <strong className="text-white">v3.2.1</strong> menyelesaikan seluruh temuan review{' '}
-              <strong className="text-emerald-300">P1–P8</strong> sekaligus menutup celah{' '}
-              <strong className="text-sky-300">video-tap hijack</strong> (Lemur Android / Chromium Balanced):
-              pemisahan regex judol presisi, alur login OAuth aman, validasi ulang isolated world + closed Shadow DOM &amp; 2-langkah Trust,
-              penghapusan izin <code>tabs</code>, ikon 16/32/48px, Gemini &amp; auto-click opt-in, deteksi iframe embed video, dan preservasi Key ID saat update.
+              Pembaruan <strong className="text-white">v3.2.4</strong> memperbaiki false-positive{' '}
+              <code>BLOCK_BEFORE_NAV_SUSPICIOUS</code> saat pengguna melakukan pencarian lewat Chrome Omnibox (termasuk{' '}
+              <code>sourceid=chrome-mobile&amp;source=chrome.ob</code>) maupun tombol Back/Forward, sekaligus membawa modul{' '}
+              <strong className="text-emerald-300">Anti-Anti-Adblock Modal</strong> v3.2.3, pil video v3.2.2, dan Key ID ekstensi yang tetap.
             </p>
 
             <div className="pt-1 flex items-center gap-2 text-xs text-emerald-300">
@@ -346,12 +346,12 @@ export default function App() {
               className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-emerald-950 font-bold text-sm transition-colors whitespace-nowrap cursor-pointer"
             >
               <Download className="w-4 h-4" />
-              Unduh ZIP Update v3.2.1 (dengan Key)
+              Unduh ZIP Update v3.2.4 (dengan Key)
             </button>
 
             <a
-              href="/aegis-ai-shield-v3.2.1-store.zip"
-              download="aegis-ai-shield-v3.2.1-store.zip"
+              href="/aegis-ai-shield-v3.2.4-store.zip"
+              download="aegis-ai-shield-v3.2.4-store.zip"
               className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold text-xs transition-colors whitespace-nowrap text-center"
             >
               Unduh ZIP Store (tanpa Key)
@@ -359,17 +359,17 @@ export default function App() {
           </div>
         </section>
 
-        {/* Interactive HUD Layout Sandbox + Live Popup v3.2.1 Preview */}
+        {/* Interactive HUD Layout Sandbox + Live Popup v3.2.4 Preview */}
         <section id="simulator" className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">
-                01. Studio Tata Letak HUD Interaktif &amp; Pratinjau Popup v3.2.1
+                01. Studio Tata Letak HUD Interaktif &amp; Pratinjau Popup v3.2.4
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
-                Uji Tema Gelap/Terang, Safe Mode (15m / 1 Jam), statistik lokal real-time, Mode
+                Uji Anti-Anti-Adblock Modal, Tema Gelap/Terang, Safe Mode (15m / 1 Jam), statistik lokal real-time, Mode
                 Balanced vs Strict, Laporan False Positive tersensor, &amp; Import/Export Hostlist{' '}
-                <code>.txt</code> di Popup v3.2.1.
+                <code>.txt</code> di Popup v3.2.4.
               </p>
             </div>
 
@@ -473,27 +473,27 @@ export default function App() {
           </div>
         </section>
 
-        {/* Ringkasan Audit & Hardening v3.2.1 */}
+        {/* Ringkasan Audit & Hardening v3.2.4 */}
         <section id="evaluation" className="space-y-4">
           <div>
             <h2 className="text-xl font-bold text-white">
-              02. Ringkasan Perbaikan Review P1–P8 &amp; Video-Tap Hijack v3.2.1
+              02. Ringkasan Pembaruan v3.2.4 &amp; Audit Hardening P1–P8
             </h2>
             <p className="text-xs text-slate-400 mt-0.5">
-              Seluruh temuan review diselesaikan di source modular, dibundel ulang via esbuild, dan diverifikasi dengan unit test serta pengujian headless Chromium.
+              Seluruh temuan diselesaikan di source modular, dibundel ulang via esbuild, dan diverifikasi dengan unit test serta pengujian headless Chromium.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="border border-slate-800 bg-slate-900/80 rounded-xl p-4 space-y-2">
               <div className="text-xs font-bold text-emerald-400 uppercase tracking-wide">
-                1. Video-Tap Shield, P1 &amp; P2 (OAuth)
+                1. v3.2.4 Omnibox Fix &amp; Anti-Anti-Adblock
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                Memisahkan timestamp sentuhan <code>&lt;video&gt;</code> dari klik tautan nyata sehingga iklan sekali-sentuh (termasuk <code>/4/&lt;hex&gt;</code>) ditahan di HUD tanpa melempar tab balik. Filter judol dipisah spesifik vs token utuh hostname (nol false-positive pada <code>smartphone</code>, <code>startpage.com</code>, <code>judiciary.gov</code>).
+                <code>onBeforeNavigate</code> kini mendelegasikan URL mesin pencari bersih &amp; navigasi ambigu ke <code>onCommitted</code> agar pencarian Chrome Omnibox maupun tombol Back/Forward tidak diblokir sebagai <code>BLOCK_BEFORE_NAV_SUSPICIOUS</code>.
               </p>
               <p className="text-xs text-emerald-300 leading-relaxed">
-                Menghapus <code>redirect</code> telanjang dari parameter arbitrase &amp; mendahulukan OAuth Google/Microsoft/GitHub/Discord.
+                Modal deteksi Adblock (seperti <code>AntiAdBlock Core</code>) tetap ditutup otomatis &amp; nonaktif pada Whitelist, Safe Mode, &amp; CAPTCHA; pil video v3.2.2 tetap utuh.
               </p>
             </div>
 
@@ -528,16 +528,16 @@ export default function App() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-bold text-white">
-                03. Inspeksi Kode Sumber &amp; Berkas Ekstensi v3.2.1
+                03. Inspeksi Kode Sumber &amp; Berkas Ekstensi v3.2.4
               </h2>
               <p className="text-xs text-slate-400 mt-0.5">
                 Periksa hasil bundel produksi setiap berkas di dalam paket{' '}
-                <code className="text-emerald-400">aegis-ai-shield-v3.2.1.zip</code>.
+                <code className="text-emerald-400">aegis-ai-shield-v3.2.4.zip</code>.
               </p>
             </div>
             <div className="flex items-center gap-2 text-xs text-slate-400">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              <span>esbuild Minified · content.js 74.8 KB · Key ID Stabil</span>
+              <span>esbuild Minified · content.js 80.1 KB · background.js 56.7 KB · Key ID Stabil</span>
             </div>
           </div>
 
@@ -546,7 +546,7 @@ export default function App() {
       </main>
 
       <footer className="border-t border-slate-800/80 py-5 px-6 text-center text-xs text-slate-500">
-        AEGIS-AI Shield v3.2.1 · Anti-Redirect, Video-Tap Hijack Shield &amp; Chrome Web Store Hardened Studio
+        AEGIS-AI Shield v3.2.4 · Fix Omnibox Search, Anti-Anti-Adblock Modal, Pil Video Anti-Missclick &amp; Chrome Web Store Hardened Studio
       </footer>
     </div>
   );
