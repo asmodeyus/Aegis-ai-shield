@@ -1,6 +1,6 @@
 {
-  "name": "AEGIS-AI Shield v2.1.6 — Draggable HUD & Extension Builder",
-  "description": "Pembaruan ekstensi AEGIS-AI Shield v2.1.6 dengan fitur drag-and-drop & penyimpanan posisi otomatis untuk semua HUD (Notifikasi Blokir, Dock Video, Mini PiP) beserta unduhan paket ZIP siap pasang.",
+  "name": "AEGIS-AI Shield — Draggable HUD & Extension Builder",
+  "description": "Pembaruan ekstensi AEGIS-AI Shield dengan fitur drag-and-drop & penyimpanan posisi otomatis untuk semua HUD (Notifikasi Blokir, Dock Video, Mini PiP) beserta unduhan paket ZIP siap pasang.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
